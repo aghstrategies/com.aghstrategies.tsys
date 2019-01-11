@@ -128,6 +128,10 @@ function tsys_civicrm_managed(&$entities) {
       'is_recur' => 1,
       'payment_type' => 1
     ),
+    'metadata' => array(
+     'suppress_submit_button' => 1,
+     'payment_fields' => ['payment_token'],
+   ),
   );
   return _tsys_civix_civicrm_managed($entities);
 }
