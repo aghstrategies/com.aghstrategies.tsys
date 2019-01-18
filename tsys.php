@@ -14,8 +14,6 @@ function tsys_civicrm_buildForm($formName, &$form) {
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
 
     if ($formName == 'CRM_Contribute_Form_Contribution_Main') {
-      $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest($form->_params['payment_token'], $paymentProcessorId);
-
       // Add data-cayan attributes to credit card fields
       $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
       $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));

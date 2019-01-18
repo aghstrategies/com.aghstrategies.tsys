@@ -78,7 +78,8 @@ private $_islive = FALSE;
     // Get API Key and provide it to JS
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
     $publishableKey = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password");
-    CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey['password']));
+    $publishableKey = $publishableKey['password'];
+    CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
   }
 
   /**
@@ -135,13 +136,8 @@ private $_islive = FALSE;
                 <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
              </Credentials>
              <PaymentData>
-                <Source>Keyed</Source>
-                <CardNumber>4012000033330026</CardNumber>
-                <ExpirationDate>1218</ExpirationDate>
-                <CardHolder>John Doe</CardHolder>
-                <AvsStreetAddress>1 Federal Street</AvsStreetAddress>
-                <AvsZipCode>02110</AvsZipCode>
-                <CardVerificationValue>123</CardVerificationValue>
+                <Source>Vault</Source>
+                <VaultToken>{$token}</VaultToken>
               </PaymentData>
              <Request>
                 <Amount>1.05</Amount>
@@ -149,13 +145,6 @@ private $_islive = FALSE;
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
                 <InvoiceNumber>1556</InvoiceNumber>
-                <PurchaseOrderNumber>17801</PurchaseOrderNumber>
-                <CustomerCode>20</CustomerCode>
-                <RegisterNumber>35</RegisterNumber>
-                <MerchantTransactionId>166901</MerchantTransactionId>
-                <CardAcceptorTerminalId>3</CardAcceptorTerminalId>
-                <EnablePartialAuthorization>False</EnablePartialAuthorization>
-                <ForceDuplicate>False</ForceDuplicate>
              </Request>
           </Sale>
        </soap:Body>
@@ -188,7 +177,9 @@ HEREDOC;
     print $err;
   } else {
     curl_close($soap_do);
-    print $response;
+    $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
+    $xml = simplexml_load_string($response);
+    print_r($xml->Body->SaleResponse->SaleResult->ApprovalStatus);
   }
   die();
   }
