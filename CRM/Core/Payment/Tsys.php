@@ -123,7 +123,9 @@ private $_islive = FALSE;
    * @param  [type] $token [description]
    * @return [type]        [description]
    */
-  public static function composeSoapRequest($token, $paymentProcessorId) {
+  public static function composeSoapRequest($token, $paymentProcessorId, $amount) {
+    // TODO need to find a way to generate unique invoice ids cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
+    $invoiceID = 111;
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, array("signature", "subject", "user_name"));
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
@@ -140,11 +142,11 @@ private $_islive = FALSE;
                 <VaultToken>{$token}</VaultToken>
               </PaymentData>
              <Request>
-                <Amount>1.05</Amount>
+                <Amount>$amount</Amount>
                 <CashbackAmount>0.00</CashbackAmount>
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>1556</InvoiceNumber>
+                <InvoiceNumber>$invoiceID</InvoiceNumber>
              </Request>
           </Sale>
        </soap:Body>
@@ -179,7 +181,9 @@ HEREDOC;
     curl_close($soap_do);
     $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
     $xml = simplexml_load_string($response);
-    print_r($xml->Body->SaleResponse->SaleResult->ApprovalStatus);
+    // print_r($xml->Body->SaleResponse->SaleResult->ApprovalStatus);
+    print_r($xml);
+
   }
   die();
   }

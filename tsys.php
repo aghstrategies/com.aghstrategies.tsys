@@ -27,7 +27,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
 
     if ($formName == 'CRM_Contribute_Form_Contribution_Confirm') {
       if (!empty($form->_params['payment_token'])) {
-        $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest($form->_params['payment_token'], $paymentProcessorId);
+        $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest($form->_params['payment_token'], $paymentProcessorId, $form->_params['amount']);
         // TODO process transaction on submit
 
       }
