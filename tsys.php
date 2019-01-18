@@ -118,6 +118,7 @@ function tsys_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function tsys_civicrm_managed(&$entities) {
+  // TODO right now we use existing fields (subject_label and signature_label) I think we should make our own fields that are tsys specific
   $entities[] = array(
     'module' => 'com.aghstrategies.tsys',
     'name' => 'Tsys',
