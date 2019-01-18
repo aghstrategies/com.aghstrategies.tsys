@@ -13,17 +13,27 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // TODO Also verify that the payment processor being used is a tsys one
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
 
+    if ($formName == 'CRM_Contribute_Form_Contribution_Main') {
+      $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest($form->_params['payment_token'], $paymentProcessorId);
 
-    // Add data-cayan attributes to credit card fields
-    $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
-    $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
-    // TODO use getPaymentFieldMetadata() to make year and month their own form fields
-    // credit_card_exp_date is one form element but Tsys expects the month and year to be their own form elements using js to accomplish this
-    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/preparingForm.js', 'html-header');
-
+      // Add data-cayan attributes to credit card fields
+      $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
+      $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
+      // TODO use getPaymentFieldMetadata() to make year and month their own form fields
+      // credit_card_exp_date is one form element but Tsys expects the month and year to be their own form elements using js to accomplish this
+      CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/preparingForm.js', 'html-header');
+    }
     // TODO do we want to copy this file (as I have for now) or link to it?
     //  adding a local copy of https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/CayanCheckoutPlus.js', 'html-header');
+
+    if ($formName == 'CRM_Contribute_Form_Contribution_Confirm') {
+      if (!empty($form->_params['payment_token'])) {
+        $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest($form->_params['payment_token'], $paymentProcessorId);
+        // TODO process transaction on submit
+
+      }
+    }
   }
 }
 
@@ -119,8 +129,10 @@ function tsys_civicrm_managed(&$entities) {
       'description' => 'Tsys Payment Processor',
       'class_name' => 'Payment_Tsys',
       'billing_mode' => 'form',
-      'user_name_label' => 'User Name',
+      'user_name_label' => 'Merchant Name',
       'password_label' => 'Web API Key',
+      'signature_label' => 'Merchant Key',
+      'subject_label' => 'Merchant Site',
       'url_site_default' => 'https://cayan.accessaccountdetails.com/',
       'url_recur_default' => 'https://cayan.accessaccountdetails.com/',
       'url_site_test_default' => 'https://cayan.accessaccountdetails.com/',
