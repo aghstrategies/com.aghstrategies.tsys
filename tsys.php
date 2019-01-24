@@ -9,15 +9,18 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
-  if (!empty($form->_paymentProcessor)) {
-    // TODO Also verify that the payment processor being used is a tsys one
+  if (!empty($form->_paymentProcessor) && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
 
+    // Front End Contribution Form
     if ($formName == 'CRM_Contribute_Form_Contribution_Main') {
+
       // Add data-cayan attributes to credit card fields
       $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
       $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
+
       // TODO use getPaymentFieldMetadata() to make year and month their own form fields
+
       // credit_card_exp_date is one form element but Tsys expects the month and year to be their own form elements using js to accomplish this
       CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/preparingForm.js', 'html-header');
     }
