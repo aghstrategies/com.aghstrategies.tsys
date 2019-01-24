@@ -24,14 +24,6 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // TODO do we want to copy this file (as I have for now) or link to it?
     //  adding a local copy of https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/CayanCheckoutPlus.js', 'html-header');
-
-    if ($formName == 'CRM_Contribute_Form_Contribution_Confirm') {
-      if (!empty($form->_params['payment_token'])) {
-        $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest($form->_params['payment_token'], $paymentProcessorId, $form->_params['amount']);
-        // TODO process transaction on submit
-
-      }
-    }
   }
 }
 

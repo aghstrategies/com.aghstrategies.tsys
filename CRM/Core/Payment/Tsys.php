@@ -119,13 +119,52 @@ private $_islive = FALSE;
   }
 
   /**
+   * Process payment
+   *
+   * @param array $params
+   *   Assoc array of input parameters for this transaction.
+   *
+   * @param string $component
+   *
+   * @return array
+   *   Result array
+   *
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   */
+  public function doPayment(&$params, $component = 'contribute') {
+    if (!empty($params['payment_token'])) {
+      $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest(
+        $params['payment_token'],
+        $params['payment_processor_id'],
+        $params['amount'],
+        $params['contributionID']
+      );
+      if ($makeTransaction == "APPROVED") {
+        $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+
+        // TODO decide if we need these params
+        // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
+        // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
+        // $params['trxn_id'] = $stripeCharge->id;
+
+        $params['payment_status_id'] = $completedStatusId;
+        return $params;
+      }
+      // TODO not an approved transaction deal with failure
+      else {
+
+      }
+    }
+  }
+
+  /**
    * composes soap request and sends it to tsys
    * @param  [type] $token [description]
    * @return [type]        [description]
    */
-  public static function composeSoapRequest($token, $paymentProcessorId, $amount) {
+  public static function composeSoapRequest($token, $paymentProcessorId, $amount, $contribID) {
+    $response = "NO RESPONSE";
     // TODO need to find a way to generate unique invoice ids cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
-    $invoiceID = 111;
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, array("signature", "subject", "user_name"));
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
@@ -146,45 +185,49 @@ private $_islive = FALSE;
                 <CashbackAmount>0.00</CashbackAmount>
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>$invoiceID</InvoiceNumber>
+                <InvoiceNumber>$contribID</InvoiceNumber>
              </Request>
           </Sale>
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
 
-  $header = array(
-    "Content-type: text/xml;charset=\"utf-8\"",
-    "Accept: text/xml",
-    "Cache-Control: no-cache",
-    "Pragma: no-cache",
-    "Content-length: ".strlen($soap_request),
-  );
+    $header = array(
+      "Content-type: text/xml;charset=\"utf-8\"",
+      "Accept: text/xml",
+      "Cache-Control: no-cache",
+      "Pragma: no-cache",
+      "Content-length: ".strlen($soap_request),
+    );
 
-  $soap_do = curl_init();
-  curl_setopt($soap_do, CURLOPT_URL, "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx" );
-  curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 20);
-  curl_setopt($soap_do, CURLOPT_TIMEOUT,        20);
-  curl_setopt($soap_do, CURLOPT_RETURNTRANSFER, true );
-  curl_setopt($soap_do, CURLOPT_SSL_VERIFYPEER, false);
-  curl_setopt($soap_do, CURLOPT_SSL_VERIFYHOST, false);
-  curl_setopt($soap_do, CURLOPT_POST,           true );
-  curl_setopt($soap_do, CURLOPT_POSTFIELDS,     $soap_request);
-  curl_setopt($soap_do, CURLOPT_HTTPHEADER,     $header);
-  $response = curl_exec($soap_do);
+    $soap_do = curl_init();
+    curl_setopt($soap_do, CURLOPT_URL, "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx" );
+    curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 20);
+    curl_setopt($soap_do, CURLOPT_TIMEOUT,        20);
+    curl_setopt($soap_do, CURLOPT_RETURNTRANSFER, true );
+    curl_setopt($soap_do, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($soap_do, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($soap_do, CURLOPT_POST,           true );
+    curl_setopt($soap_do, CURLOPT_POSTFIELDS,     $soap_request);
+    curl_setopt($soap_do, CURLOPT_HTTPHEADER,     $header);
+    $response = curl_exec($soap_do);
 
-  if ($response === false) {
-    $err = 'Curl error: ' . curl_error($soap_do);
-    curl_close($soap_do);
-    print $err;
-  } else {
-    curl_close($soap_do);
-    $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
-    $xml = simplexml_load_string($response);
-    // print_r($xml->Body->SaleResponse->SaleResult->ApprovalStatus);
-    print_r($xml);
-
-  }
-  die();
+    if ($response === false) {
+      $err = 'Curl error: ' . curl_error($soap_do);
+      curl_close($soap_do);
+      print $err;
+    }
+    else {
+      curl_close($soap_do);
+      $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
+      $xml = simplexml_load_string($response);
+      if (!empty($xml->Body->SaleResponse->SaleResult->ApprovalStatus) && $xml->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
+        $response = $xml->Body->SaleResponse->SaleResult->ApprovalStatus;
+      }
+      else {
+        $response = $xml;
+      }
+    }
+    return $response;
   }
 }
