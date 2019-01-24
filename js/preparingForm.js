@@ -15,7 +15,27 @@
   function successCallback(tokenResponse) {
     // Populate a hidden field with the single-use token
     $('#payment_token').val(tokenResponse.token);
+    // Validate Form
+    continueWithFormSubmission();
+  }
 
+  function failureCallback(tokenResponse) {
+    // foreach thru error responses
+    $.each(tokenResponse, function(key, details) {
+      // TODO send error messages to Civi
+      // Failed validation because missing a required field ignore
+      if (details.error_code == "REQUIRED") {
+      }
+      // Failed validation because field did not pass tsys validation
+      if (details.error_code == "VALIDATION") {
+
+      }
+    });
+
+    continueWithFormSubmission();
+  }
+
+  function continueWithFormSubmission() {
     // Disable unload event handler
     window.onbeforeunload = null;
 
@@ -27,12 +47,7 @@
 
     // This triggers submit without generating a submit event (so we don't run submit handler again)
     $form.get(0).submit();
-}
-
-function failureCallback(tokenResponse) {
-  console.log(tokenResponse);
-
-}
+  }
 
   $(document).ready(function () {
 
