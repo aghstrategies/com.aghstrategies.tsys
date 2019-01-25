@@ -132,12 +132,15 @@ private $_islive = FALSE;
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
+    // TODO generate a better trxn_id
+    // TODO unique invoice ids cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
+    $params['trxn_id'] = rand(1, 1000000);
     if (!empty($params['payment_token'])) {
       $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest(
         $params['payment_token'],
         $params['payment_processor_id'],
         $params['amount'],
-        $params['contributionID']
+        $params['trxn_id']
       );
       if ($makeTransaction == "APPROVED") {
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
@@ -145,14 +148,15 @@ private $_islive = FALSE;
         // TODO decide if we need these params
         // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
         // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-        // $params['trxn_id'] = $stripeCharge->id;
 
         $params['payment_status_id'] = $completedStatusId;
         return $params;
       }
       // TODO not an approved transaction deal with failure
       else {
-
+        $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+        $params['payment_status_id'] = $failedStatusId;
+        return $params;
       }
     }
   }
@@ -162,9 +166,8 @@ private $_islive = FALSE;
    * @param  [type] $token [description]
    * @return [type]        [description]
    */
-  public static function composeSoapRequest($token, $paymentProcessorId, $amount, $contribID) {
+  public static function composeSoapRequest($token, $paymentProcessorId, $amount, $trxnID) {
     $response = "NO RESPONSE";
-    // TODO need to find a way to generate unique invoice ids cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, array("signature", "subject", "user_name"));
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
@@ -185,7 +188,7 @@ private $_islive = FALSE;
                 <CashbackAmount>0.00</CashbackAmount>
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>$contribID</InvoiceNumber>
+                <InvoiceNumber>$trxnID</InvoiceNumber>
              </Request>
           </Sale>
        </soap:Body>
