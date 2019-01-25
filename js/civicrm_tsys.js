@@ -29,7 +29,6 @@ CRM.$(function($) {
 
   // Response from tsys.createToken.
   function tsysFailureResponseHandler(tokenResponse) {
-    console.log(tokenResponse);
     $form = getBillingForm();
     $submit = getBillingSubmit();
 
@@ -80,6 +79,8 @@ CRM.$(function($) {
         // There is. Check if the selected payment processor is different
         // from the one we think we should be using.
         var ppid = $('#payment_processor_id').val();
+
+        // TODO this probably needs to be changed it is based on the stripe js
         if (ppid != $('#tsys-id').val()) {
           debugging('payment processor changed to id: ' + ppid);
           // It is! See if the new payment processor is also a tsys
@@ -315,18 +316,6 @@ CRM.$(function($) {
       // Disable the submit button to prevent repeated clicks
       $submit.prop('disabled', true);
 
-      // var cc_month = $form.find('#credit_card_exp_date_M').val();
-      // var cc_year = $form.find('#credit_card_exp_date_Y').val();
-
-      // tsys.card.createToken({
-      //   name: $form.find('#billing_first_name')
-      //     .val() + ' ' + $form.find('#billing_last_name').val(),
-      //   address_zip: $form.find('#billing_postal_code-5').val(),
-      //   number: $form.find('#credit_card_number').val(),
-      //   cvc: $form.find('#cvv2').val(),
-      //   exp_month: cc_month,
-      //   exp_year: cc_year
-      // }, tsysResponseHandler);
       CayanCheckoutPlus.createPaymentToken({
           success: tsysSuccessResponseHandler,
           error: tsysFailureResponseHandler
