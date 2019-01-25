@@ -19,7 +19,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // TODO use getPaymentFieldMetadata() to make year and month their own form fields
 
     // credit_card_exp_date is one form element but Tsys expects the month and year to be their own form elements using js to accomplish this
-    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/preparingForm.js', 'html-header');
+    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
 
     // TODO do we want to copy this file (as I have for now) or link to it?
     //  adding a local copy of https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
