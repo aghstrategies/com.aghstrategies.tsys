@@ -133,7 +133,7 @@ private $_islive = FALSE;
    */
   public function doPayment(&$params, $component = 'contribute') {
     // TODO generate a better trxn_id
-    // TODO unique invoice ids cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
+    // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
     if (!empty($params['payment_token'])) {
       $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest(
@@ -158,6 +158,11 @@ private $_islive = FALSE;
         $params['payment_status_id'] = $failedStatusId;
         return $params;
       }
+    }
+    // IF no Payment Token
+    else {
+      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
     }
   }
 

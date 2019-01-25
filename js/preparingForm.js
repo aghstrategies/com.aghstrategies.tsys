@@ -3,8 +3,6 @@
  * JS Integration between CiviCRM & Tysus
  */
 (function($, CRM) {
-  var formID = $('#billing-payment-block').closest('form').attr('id');
-
   // Set data-cayan attributes for expiration fields because cannot do it using quickform
   $("select#credit_card_exp_date_M").attr('data-cayan', 'expirationmonth');
   $("select#credit_card_exp_date_Y").attr('data-cayan', 'expirationyear');
@@ -35,11 +33,21 @@
     continueWithFormSubmission();
   }
 
+  function getBillingForm() {
+    // If we have a stripe billing form on the page
+    var $billingForm = $('input#payment_token').closest('form');
+
+    if (!$billingForm.length) {
+      // If we have multiple payment processors to select and stripe is not currently loaded
+      $billingForm = $('input[name=hidden_processor]').closest('form');
+    }
+    return $billingForm;
+  }
+
   function continueWithFormSubmission() {
     // Disable unload event handler
     window.onbeforeunload = null;
-
-    $form = $('input[name=hidden_processor]').closest('form');
+    $form = getBillingForm();
     $submit = $form.find('[type="submit"].validate');
 
     // Restore any onclickAction that was removed.
@@ -52,8 +60,6 @@
   $(document).ready(function () {
 
     // Disable the browser "Leave Page Alert" which is triggered because we mess with the form submit function.
-
-
     var $submit = $('[type="submit"].validate');
 
     // Store and remove any onclick Action currently assigned to the form.

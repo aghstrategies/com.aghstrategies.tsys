@@ -27,22 +27,6 @@ function tsys_civicrm_buildForm($formName, &$form) {
   }
 }
 
-
- function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-    if (empty($form->_paymentProcessor['payment_processor_type'])) {
-      return;
-    }
-    if ($form->_paymentProcessor['class_name'] == 'Payment_Tsys') {
-      if (isset($form->_elementIndex['payment_token'])) {
-        // If token is not set that means that credit card will not go thru
-        if ($form->_submitValues['payment_token'] == 'Authorization token') {
-          $form->setElementError('payment_token', ts('Credit Card failed validation'));
-        }
-      }
-    }
-    return;
-  }
-
 /**
  * Implements hook_civicrm_config().
  *
