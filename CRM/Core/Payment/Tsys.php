@@ -135,7 +135,12 @@ private $_islive = FALSE;
     // TODO generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
-    if (!empty($params['payment_token'])) {
+    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
+
+      // TODO decide if we need these params
+      // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
+      // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
+      
       $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest(
         $params['payment_token'],
         $params['payment_processor_id'],
@@ -144,11 +149,6 @@ private $_islive = FALSE;
       );
       if ($makeTransaction == "APPROVED") {
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-
-        // TODO decide if we need these params
-        // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
-        // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-
         $params['payment_status_id'] = $completedStatusId;
         return $params;
       }
