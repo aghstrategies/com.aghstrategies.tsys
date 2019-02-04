@@ -122,8 +122,15 @@ CRM.$(function($) {
   });
 
   function loadtsysBillingBlock() {
-    // Setup tsys.Js
-    CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.api);
+
+    // Get api key
+    if (typeof(CRM.vars.tsys.api) == 'undefined') {
+      debugging('No api key!');
+    }
+    else {
+      // Setup tsys.Js
+      CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.api);
+    }
 
     // Get the form containing payment details
     $form = getBillingForm();
@@ -131,6 +138,7 @@ CRM.$(function($) {
       debugging('No billing form!');
       return;
     }
+
     $submit = getBillingSubmit();
 
     // If another submit button on the form is pressed (eg. apply discount)
