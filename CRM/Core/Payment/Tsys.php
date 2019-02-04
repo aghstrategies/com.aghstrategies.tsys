@@ -149,15 +149,16 @@ private $_islive = FALSE;
         $params['trxn_id']
       );
 
-      // If transaction is recurring
-      if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
-        CRM_Core_Payment_Tsys::processRecurringDonation($params, $tsysCreds);
-      }
-      
       // If transaction approved
-      if ($makeTransaction == "APPROVED") {
+      if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
         $params['payment_status_id'] = $completedStatusId;
+
+        // If transaction is recurring
+        if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
+          CRM_Core_Payment_Tsys::processRecurringDonation($params, $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
+        }
+
         return $params;
       }
       // If transaction fails
@@ -174,19 +175,26 @@ private $_islive = FALSE;
     }
   }
 
-  public function processRecurringDonation(&$params, $tsysCreds) {
+  public function processRecurringDonation(&$params, $token, $tsysCreds) {
     // Board Card (save card) with TSYS
     $boardCard = CRM_Core_Payment_Tsys::composeBoardCardSoapRequest(
-      $params['payment_token'],
+      $token,
       $tsysCreds
     );
-    // Save token in civi Database
-    $query_params = array(
-      1 => array($params['payment_token'], 'String'),
-      2 => array($params['contributionRecurID'], 'Integer'),
-    );
-    CRM_Core_DAO::executeQuery("INSERT INTO civicrm_tsys_recur (vault_token, recur_id) VALUES (%1, %2)", $query_params);
-
+    // IF card boarded successfully save the vault token to the database
+    if (!empty($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken)) {
+      // Save token in civi Database
+      $query_params = array(
+        1 => array($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken, 'String'),
+        2 => array($params['contributionRecurID'], 'Integer'),
+      );
+      CRM_Core_DAO::executeQuery("INSERT INTO civicrm_tsys_recur (vault_token, recur_id) VALUES (%1, %2)", $query_params);
+    }
+    // If no vault token record Error
+    else {
+      CRM_Core_Error::statusBounce(ts('Card not saved for future use'));
+      Civi::log()->debug('Credit Card not boarded to Tsys Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
+    }
   }
 
   /**
@@ -236,7 +244,7 @@ HEREDOC;
          </Credentials>
          <PaymentData>
             <Source>PREVIOUSTRANSACTION</Source>
-            <token>$token</token>
+            <Token>{$token}</Token>
          </PaymentData>
       </BoardCard>
    </soap:Body>
@@ -276,16 +284,7 @@ HEREDOC;
       curl_close($soap_do);
       $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
       $xml = simplexml_load_string($response);
-
-      // If performing a sale and it is successul
-      if (!empty($xml->Body->SaleResponse->SaleResult->ApprovalStatus) && $xml->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
-        $response = $xml->Body->SaleResponse->SaleResult->ApprovalStatus;
-      }
-      // if its not a successful sale return the whole $xml
-      else {
-        $response = $xml;
-      }
     }
-    return $response;
+    return $xml;
   }
 }
