@@ -153,8 +153,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $dao = CRM_Core_DAO::executeQuery($update, $args);
   // Now we're ready to trigger payments
 
-  // TODO rework this as we do not have a civicrm_iats_customer_codes table
-  // Select the ongoing recurring payments for iATSServices where the next scheduled contribution date (NSCD) is before the end of of the current day.
+  // Select the ongoing recurring payments for Tsys Payment Processor where the next scheduled contribution date (NSCD) is before the end of of the current day.
   $select = 'SELECT cr.*, icc.recur_id as recur_id, icc.vault_token as vault_token, pp.class_name as pp_class_name, pp.url_site as url_site, pp.is_test
       FROM civicrm_contribution_recur cr
       INNER JOIN civicrm_payment_processor pp ON cr.payment_processor_id = pp.id
@@ -191,12 +190,13 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $error_count  = 0;
   $output  = array();
 
-  // TODO look at how iats settings work
-  $settings = CRM_Core_BAO_Setting::getItem('iATS Payments Extension', 'iats_settings');
-  $receipt_recurring = $settings['receipt_recurring'];
-  $email_failure_report = empty($settings['email_recurring_failure_report']) ? '' : $settings['email_recurring_failure_report'];
+  // TODO Do we want to have a receipt recurring setting?
+  // TODO Do we want to have a emaile recurring failure report?
+  // $settings = CRM_Core_BAO_Setting::getItem('iATS Payments Extension', 'iats_settings');
+  // $receipt_recurring = $settings['receipt_recurring'];
+  // $email_failure_report = empty($settings['email_recurring_failure_report']) ? '' : $settings['email_recurring_failure_report'];
   // By default, after 3 failures move the next scheduled contribution date forward.
-  $failure_threshhold = empty($settings['recurring_failure_threshhold']) ? 3 : (int) $settings['recurring_failure_threshhold'];
+  // $failure_threshhold = empty($settings['recurring_failure_threshhold']) ? 3 : (int) $settings['recurring_failure_threshhold'];
   /* while ($dao->fetch()) {
   foreach($dao as $key => $value) {
   echo "$value,";
@@ -321,6 +321,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           // ignore, if will fail correctly if there is no membership payment.
         }
       }
+      // TODO clean up this to work for tsys
       // So far so, good ... now create the pending contribution, and save its id
       // and then try to get the money, and do one of:
       // update the contribution to failed, leave as pending for server failure, complete the transaction,
