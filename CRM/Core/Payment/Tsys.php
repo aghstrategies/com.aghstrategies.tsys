@@ -135,19 +135,25 @@ private $_islive = FALSE;
     // TODO generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
-    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
+    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token" && !empty($params['payment_processor_id'])) {
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
 
       // Make transaction
       // TODO decide if we need these params
       // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
       // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-      $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest(
+      $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
         $params['payment_token'],
-        $params['payment_processor_id'],
+        $tsysCreds,
         $params['amount'],
         $params['trxn_id']
       );
 
+      // If transaction is recurring
+      if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
+        CRM_Core_Payment_Tsys::processRecurringDonation($params, $tsysCreds);
+      }
+      
       // If transaction approved
       if ($makeTransaction == "APPROVED") {
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
@@ -168,14 +174,27 @@ private $_islive = FALSE;
     }
   }
 
+  public function processRecurringDonation(&$params, $tsysCreds) {
+    // Board Card (save card) with TSYS
+    $boardCard = CRM_Core_Payment_Tsys::composeBoardCardSoapRequest(
+      $params['payment_token'],
+      $tsysCreds
+    );
+    // Save token in civi Database
+    $query_params = array(
+      1 => array($params['payment_token'], 'String'),
+      2 => array($params['contributionRecurID'], 'Integer'),
+    );
+    CRM_Core_DAO::executeQuery("INSERT INTO civicrm_tsys_recur (vault_token, recur_id) VALUES (%1, %2)", $query_params);
+
+  }
+
   /**
    * composes soap request and sends it to tsys
    * @param  [type] $token [description]
    * @return [type]        [description]
    */
-  public static function composeSoapRequest($token, $paymentProcessorId, $amount, $trxnID) {
-    $response = "NO RESPONSE";
-    $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, array("signature", "subject", "user_name"));
+  public static function composeSaleSoapRequest($token, $tsysCreds, $amount, $trxnID) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -201,7 +220,33 @@ private $_islive = FALSE;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
+    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+  }
 
+  public static function composeBoardCardSoapRequest($token, $tsysCreds) {
+    $soap_request = <<<HEREDOC
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+   <soap:Body>
+      <BoardCard xmlns="http://schemas.merchantwarehouse.com/merchantware/v45/">
+         <Credentials>
+           <MerchantName>{$tsysCreds['user_name']}</MerchantName>
+           <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
+           <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
+         </Credentials>
+         <PaymentData>
+            <Source>PREVIOUSTRANSACTION</Source>
+            <token>$token</token>
+         </PaymentData>
+      </BoardCard>
+   </soap:Body>
+</soap:Envelope>
+HEREDOC;
+    return CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+  }
+
+  public static function doSoapRequest($soap_request) {
+    $response = "NO RESPONSE";
     $header = array(
       "Content-type: text/xml;charset=\"utf-8\"",
       "Accept: text/xml",
@@ -231,9 +276,12 @@ HEREDOC;
       curl_close($soap_do);
       $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
       $xml = simplexml_load_string($response);
+
+      // If performing a sale and it is successul
       if (!empty($xml->Body->SaleResponse->SaleResult->ApprovalStatus) && $xml->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
         $response = $xml->Body->SaleResponse->SaleResult->ApprovalStatus;
       }
+      // if its not a successful sale return the whole $xml
       else {
         $response = $xml;
       }
