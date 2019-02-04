@@ -65,8 +65,6 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $domemberships = empty($params['ignoremembership']);
   unset($params['ignoremembership']);
   // TODO: what kind of extra security do we want or need here to prevent it from being triggered inappropriately? Or does it matter?
-  // The next scheduled contribution date field name is civicrm version dependent.
-  define('IATS_CIVICRM_NSCD_FID', _iats_civicrm_nscd_fid());
   // $config = &CRM_Core_Config::singleton();
   // $debug  = false;
   // do my calculations based on yyyymmddhhmmss representation of the time
@@ -89,7 +87,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       INNER JOIN civicrm_contribution c ON cr.id = c.contribution_recur_id
       INNER JOIN civicrm_payment_processor pp ON cr.payment_processor_id = pp.id
       WHERE
-        (pp.class_name = %1 OR pp.class_name = %2 OR pp.class_name = %3)
+        (pp.class_name = %1)
         AND (cr.installments > 0)
         AND (cr.contribution_status_id IN (1,5))
         AND (c.contribution_status_id IN (1,2))
@@ -123,7 +121,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       WHERE
         cr.contribution_status_id IN (1,5)
         AND NOT(cr.installments > 0)
-        AND (pp.class_name = %1 OR pp.class_name = %2 OR pp.class_name = %3)
+        AND (pp.class_name = %1)
         AND NOT(ISNULL(cr.end_date))';
   $dao = CRM_Core_DAO::executeQuery($update, $args);
   // Third, we update the status_id of the all in-progress or completed recurring contribution records
@@ -144,7 +142,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         cr.contribution_status_id = 1
       WHERE
         cr.contribution_status_id = 5
-        AND (pp.class_name = %1 OR pp.class_name = %2 OR pp.class_name = %3)
+        AND (pp.class_name = %1)
         AND (
           (NOT(cr.end_date IS NULL) AND cr.end_date <= NOW())
           OR
@@ -157,35 +155,35 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
 
   // TODO rework this as we do not have a civicrm_iats_customer_codes table
   // Select the ongoing recurring payments for iATSServices where the next scheduled contribution date (NSCD) is before the end of of the current day.
-  $select = 'SELECT cr.*, icc.customer_code, icc.expiry as icc_expiry, icc.cid as icc_contact_id, pp.class_name as pp_class_name, pp.url_site as url_site, pp.is_test
+  $select = 'SELECT cr.*, icc.recur_id as recur_id, icc.vault_token as vault_token, pp.class_name as pp_class_name, pp.url_site as url_site, pp.is_test
       FROM civicrm_contribution_recur cr
       INNER JOIN civicrm_payment_processor pp ON cr.payment_processor_id = pp.id
-      INNER JOIN civicrm_iats_customer_codes icc ON cr.id = icc.recur_id
+      INNER JOIN civicrm_tsys_recur icc ON cr.id = icc.recur_id
       WHERE
         cr.contribution_status_id = 5
-        AND (pp.class_name = %1 OR pp.class_name = %2 OR pp.class_name = %3)';
+        AND (pp.class_name = %1)';
   // AND pp.is_test = 0
   // in case the job was called to execute a specific recurring contribution id -- not yet implemented!
   if (!empty($params['recur_id'])) {
-    $select .= ' AND icc.recur_id = %4';
-    $args[4] = array($params['recur_id'], 'Int');
+    $select .= ' AND icc.recur_id = %2';
+    $args[2] = array($params['recur_id'], 'Int');
   }
   // If (!empty($params['scheduled'])) {.
   else {
     // normally, process all recurring contributions due today or earlier.
-    $select .= ' AND cr.' . IATS_CIVICRM_NSCD_FID . ' <= %4';
-    $args[4] = array($dtCurrentDayEnd, 'String');
+    $select .= ' AND cr.next_sched_contribution_date <= %3';
+    $args[3] = array($dtCurrentDayEnd, 'String');
     // ' AND cr.next_sched_contribution >= %2
     // $args[2] = array($dtCurrentDayStart, 'String');
     // also filter by cycle day.
     if (!empty($params['cycle_day'])) {
-      $select .= ' AND cr.cycle_day = %5';
-      $args[5] = array($params['cycle_day'], 'Int');
+      $select .= ' AND cr.cycle_day = %4';
+      $args[4] = array($params['cycle_day'], 'Int');
     }
     // Also filter by cycle day.
     if (isset($params['failure_count'])) {
-      $select .= ' AND cr.failure_count = %6';
-      $args[6] = array($params['failure_count'], 'Int');
+      $select .= ' AND cr.failure_count = %5';
+      $args[5] = array($params['failure_count'], 'Int');
     }
   }
   $dao = CRM_Core_DAO::executeQuery($select, $args);
