@@ -137,29 +137,31 @@ private $_islive = FALSE;
     $params['trxn_id'] = rand(1, 1000000);
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
 
+      // Make transaction
       // TODO decide if we need these params
       // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
       // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-      
       $makeTransaction = CRM_Core_Payment_Tsys::composeSoapRequest(
         $params['payment_token'],
         $params['payment_processor_id'],
         $params['amount'],
         $params['trxn_id']
       );
+
+      // If transaction approved
       if ($makeTransaction == "APPROVED") {
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
         $params['payment_status_id'] = $completedStatusId;
         return $params;
       }
-      // TODO not an approved transaction deal with failure
+      // If transaction fails
       else {
         $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
         $params['payment_status_id'] = $failedStatusId;
         return $params;
       }
     }
-    // IF no Payment Token
+    // IF no Payment Token throw error
     else {
       CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
