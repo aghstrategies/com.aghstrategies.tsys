@@ -132,7 +132,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         cr.contribution_status_id = 5
       WHERE
         cr.contribution_status_id = 1
-        AND (pp.class_name = %1 OR pp.class_name = %2 OR pp.class_name = %3)
+        AND (pp.class_name = %1)
         AND (cr.end_date IS NULL OR cr.end_date > NOW())';
   $dao = CRM_Core_DAO::executeQuery($update, $args);
   // Expire or badly-defined completed cycles.
@@ -397,7 +397,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       INNER JOIN civicrm_contribution c ON cr.id = c.contribution_recur_id
       INNER JOIN civicrm_payment_processor pp ON cr.payment_processor_id = pp.id
       WHERE
-        (pp.class_name = %1 OR pp.class_name = %2 OR pp.class_name = %3)
+        (pp.class_name = %1)
         AND (cr.installments > 0)
         AND (cr.contribution_status_id  = 5)
         AND (c.contribution_status_id IN (1,2))
