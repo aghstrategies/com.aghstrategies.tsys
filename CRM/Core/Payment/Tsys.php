@@ -135,30 +135,45 @@ private $_islive = FALSE;
     // TODO generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
-    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token" && !empty($params['payment_processor_id'])) {
-      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
 
-      // Make transaction
-      // TODO decide if we need these params
-      // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
-      // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-      $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
-        $params['payment_token'],
-        $tsysCreds,
-        $params['amount'],
-        $params['trxn_id']
-      );
+    // IF no Payment Token throw error
+    if (empty($params['payment_token']) || $params['payment_token'] == "Authorization token") {
+      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+    }
+
+    // Get tsys credentials
+    if (!empty($params['payment_processor_id'])) {
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
+    }
+
+    // Throw an error if no credentials found
+    if (empty($tsysCreds)) {
+      CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
+      Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+    }
+    // Make transaction
+    // TODO decide if we need these params
+    // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
+    // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
+    $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
+      $params['payment_token'],
+      $tsysCreds,
+      $params['amount'],
+      $params['trxn_id']
+    );
 
       // If transaction approved
       if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
         $params['payment_status_id'] = $completedStatusId;
+        $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
+        $queryParams = array(1 => array($params['payment_token'], 'String'));
 
-        // If transaction is recurring
-        if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
-          CRM_Core_Payment_Tsys::processRecurringDonation($params, $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
+        // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
+        if (CRM_Utils_Array::value('is_recur', $params) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($params['contributionRecurID'])) {
+          CRM_Core_Payment_Tsys::boardCard($params['contributionRecurID'], $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
         }
-
         return $params;
       }
       // If transaction fails
@@ -168,14 +183,14 @@ private $_islive = FALSE;
         return $params;
       }
     }
-    // IF no Payment Token throw error
-    else {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-    }
-  }
-
-  public function processRecurringDonation(&$params, $token, $tsysCreds) {
+  /**
+   * This is a recurring donation, save the card for future use
+   * @param  [type] $params    [description]
+   * @param  [type] $token     [description]
+   * @param  [type] $tsysCreds [description]
+   * @return [type]            [description]
+   */
+  public static function boardCard($recur_id, $token, $tsysCreds) {
     // Board Card (save card) with TSYS
     $boardCard = CRM_Core_Payment_Tsys::composeBoardCardSoapRequest(
       $token,
@@ -186,7 +201,7 @@ private $_islive = FALSE;
       // Save token in civi Database
       $query_params = array(
         1 => array($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken, 'String'),
-        2 => array($params['contributionRecurID'], 'Integer'),
+        2 => array($recur_id, 'Integer'),
       );
       CRM_Core_DAO::executeQuery("INSERT INTO civicrm_tsys_recur (vault_token, recur_id) VALUES (%1, %2)", $query_params);
     }

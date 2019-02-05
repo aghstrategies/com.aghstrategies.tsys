@@ -215,27 +215,23 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     $contribution_recur_id    = $dao->id;
     $original_contribution_id = $contribution_template['original_contribution_id'];
     $failure_count    = $dao->failure_count;
-    $subtype = substr($dao->pp_class_name, 19);
-    $source = "Tsys Payments $subtype Recurring Contribution (id=$contribution_recur_id)";
+    $source = "Tsys Payments Recurring Contribution (id=$contribution_recur_id)";
     $receive_ts = $catchup ? strtotime($dao->next_sched_contribution_date) : time();
     // i.e. now or whenever it was supposed to run if in catchup mode.
     $receive_date = date("YmdHis", $receive_ts);
     // Check if we already have an error.
     $errors = array();
-    if (empty($dao->customer_code)) {
-      $errors[] = ts('Recur id %1 is missing a customer code.', array(1 => $contribution_recur_id));
-    }
-    else {
-      if ($dao->contact_id != $dao->icc_contact_id) {
-        $errors[] = ts('Recur id %1 is has a mismatched contact id for the customer code.', array(1 => $contribution_recur_id));
-      }
-      if (($dao->icc_expiry != '0000') && ($dao->icc_expiry < $expiry_limit)) {
-        // $errors[] = ts('Recur id %1 is has an expired cc for the customer code.', array(1 => $contribution_recur_id));.
-      }
-    }
-    if (count($errors)) {
-      $source .= ' Errors: ' . implode(' ', $errors);
-    }
+    //
+    // if ($dao->contact_id != $dao->icc_contact_id) {
+    //   $errors[] = ts('Recur id %1 is has a mismatched contact id for the customer code.', array(1 => $contribution_recur_id));
+    // }
+    // if (($dao->icc_expiry != '0000') && ($dao->icc_expiry < $expiry_limit)) {
+    //   // $errors[] = ts('Recur id %1 is has an expired cc for the customer code.', array(1 => $contribution_recur_id));.
+    // }
+    //
+    // if (count($errors)) {
+    //   $source .= ' Errors: ' . implode(' ', $errors);
+    // }
     $contribution = array(
       'version'        => 3,
       'contact_id'       => $contact_id,
@@ -305,9 +301,9 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     else {
       // Assign basic options.
       $options = array(
-        'is_email_receipt' => (($receipt_recurring < 2) ? $receipt_recurring : $dao->is_email_receipt),
-        'customer_code' => $dao->customer_code,
-        'subtype' => $subtype,
+        // 'is_email_receipt' => (($receipt_recurring < 2) ? $receipt_recurring : $dao->is_email_receipt),
+        // 'customer_code' => $dao->customer_code,
+        // 'subtype' => $subtype,
       );
       // If our template contribution is a membership payment, make this one also.
       if ($domemberships && !empty($contribution_template['contribution_id'])) {
@@ -326,30 +322,30 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // and then try to get the money, and do one of:
       // update the contribution to failed, leave as pending for server failure, complete the transaction,
       // or update a pending ach/eft with it's transaction id.
-      $result = _iats_process_contribution_payment($contribution, $options, $original_contribution_id);
-      if ($email_failure_report && !empty($contribution['iats_reject_code'])) {
-        $failure_report_text .= "\n $result ";
-      }
+      $result = _tsys_process_contribution_payment($contribution, $options, $original_contribution_id);
+      // if ($email_failure_report && !empty($contribution['iats_reject_code'])) {
+      //   $failure_report_text .= "\n $result ";
+      // }
       $output[] = $result;
     }
     /* in case of critical failure set the series to pending */
-    if (!empty($contribution['iats_reject_code'])) {
-      switch ($contribution['iats_reject_code']) {
-        // Reported lost or stolen.
-        case 'REJECT: 25':
-          // Do not reprocess!
-        case 'REJECT: 100':
-          /* convert the contribution series to pending to avoid reprocessing until dealt with */
-          civicrm_api('ContributionRecur', 'create',
-            array(
-              'version' => 3,
-              'id'      => $contribution['contribution_recur_id'],
-              'contribution_status_id'   => 2,
-            )
-          );
-          break;
-      }
-    }
+    // if (!empty($contribution['iats_reject_code'])) {
+    //   switch ($contribution['iats_reject_code']) {
+    //     // Reported lost or stolen.
+    //     case 'REJECT: 25':
+    //       // Do not reprocess!
+    //     case 'REJECT: 100':
+    //       /* convert the contribution series to pending to avoid reprocessing until dealt with */
+    //       civicrm_api('ContributionRecur', 'create',
+    //         array(
+    //           'version' => 3,
+    //           'id'      => $contribution['contribution_recur_id'],
+    //           'contribution_status_id'   => 2,
+    //         )
+    //       );
+    //       break;
+    //   }
+    // }
     /* calculate the next collection date, based on the recieve date (note effect of catchup mode, above)  */
     $next_collection_date = date('Y-m-d H:i:s', strtotime("+$dao->frequency_interval $dao->frequency_unit", $receive_ts));
     /* by default, advance to the next schduled date and set the failure count back to 0 */
@@ -371,7 +367,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'source_contact_id'   => $contact_id,
         'source_record_id' => $contribution['id'],
         'assignee_contact_id' => $contact_id,
-        'subject'       => "Attempted Tsys Payments $subtype Recurring Contribution for " . $total_amount,
+        'subject'       => "Attempted Tsys Payments Recurring Contribution for " . $total_amount,
         'status_id'       => 2,
         'activity_date_time'  => date("YmdHis"),
       )
