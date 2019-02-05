@@ -1,4 +1,4 @@
--- install sql for iATS Services extension, create a table to hold custom codes
+-- install sql for TSYS 
 
 CREATE TABLE `civicrm_tsys_recur` (
   `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Id',
