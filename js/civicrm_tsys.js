@@ -83,6 +83,11 @@ CRM.$(function($) {
         // TODO this probably needs to be changed it is based on the stripe js
         if (ppid != $('#tsys-id').val()) {
           debugging('payment processor changed to id: ' + ppid);
+
+          // Make sure data-cayan attributes for expiration fields because cannot do it using quickform
+          $("select#credit_card_exp_date_M").attr('data-cayan', 'expirationmonth');
+          $("select#credit_card_exp_date_Y").attr('data-cayan', 'expirationyear');
+
           // It is! See if the new payment processor is also a tsys
           // Payment processor. First, find out what the tsys
           // payment processor type id is (we don't want to update
@@ -124,7 +129,7 @@ CRM.$(function($) {
   function loadtsysBillingBlock() {
 
     // Get api key
-    if (typeof(CRM.vars.tsys.api) == 'undefined') {
+    if (typeof CRM.vars.tsys.api === 'undefined') {
       debugging('No api key!');
     }
     else {
