@@ -9,7 +9,7 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
-  if (!empty($form->_paymentProcessor) && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
+  if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name']) && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
 
     // The backend credit card registration form does not build the payment form the same as the rest of the credit card forms so we need to send this special
