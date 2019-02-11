@@ -136,11 +136,9 @@ private $_islive = FALSE;
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
 
-    // IF no Payment Token throw error
-    if (empty($params['payment_token']) || $params['payment_token'] == "Authorization token") {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-    }
+    // TODO decide if we need these params
+    // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
+    // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
 
     // Get tsys credentials
     if (!empty($params['payment_processor_id'])) {
@@ -152,16 +150,49 @@ private $_islive = FALSE;
       CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
     }
-    // Make transaction
-    // TODO decide if we need these params
-    // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
-    // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-    $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
-      $params['payment_token'],
-      $tsysCreds,
-      $params['amount'],
-      $params['trxn_id']
-    );
+
+    // If there is a payment token use it to run the transaction
+    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
+      // Make transaction
+      $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestToken(
+        $params['payment_token'],
+        $tsysCreds,
+        $params['amount'],
+        $params['trxn_id']
+      );
+    }
+
+    // IF no Payment Token look for credit card fields
+    else {
+      if (!empty($params['credit_card_number']) &&
+      !empty($params['cvv2']) &&
+      !empty($params['credit_card_exp_date']['M']) &&
+      !empty($params['credit_card_exp_date']['Y'])
+    ) {
+        $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
+          array(
+            'credit_card' => $params['credit_card_number'],
+            'cvv' => $params['cvv2'],
+            'exp' => $params['credit_card_exp_date']['M'] . $params['credit_card_exp_date']['Y'],
+          ),
+          $tsysCreds,
+          $params['amount'],
+          $params['trxn_id']
+        );
+      }
+      // If no credit card fields throw an error
+      else {
+        CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+        Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      }
+    }
+
+    // IF no Payment Token throw error
+    if (empty($params['payment_token']) || $params['payment_token'] == "Authorization token") {
+      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+    }
+
 
       // If transaction approved
       if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
@@ -213,11 +244,11 @@ private $_islive = FALSE;
   }
 
   /**
-   * composes soap request and sends it to tsys
+   * composes soap request with token and sends it to tsys
    * @param  [type] $token [description]
    * @return [type]        [description]
    */
-  public static function composeSaleSoapRequest($token, $tsysCreds, $amount, $trxnID) {
+  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $trxnID) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -232,6 +263,45 @@ private $_islive = FALSE;
                 <Source>Vault</Source>
                 <VaultToken>{$token}</VaultToken>
               </PaymentData>
+             <Request>
+                <Amount>$amount</Amount>
+                <CashbackAmount>0.00</CashbackAmount>
+                <SurchargeAmount>0.00</SurchargeAmount>
+                <TaxAmount>0.00</TaxAmount>
+                <InvoiceNumber>$trxnID</InvoiceNumber>
+             </Request>
+          </Sale>
+       </soap:Body>
+    </soap:Envelope>
+HEREDOC;
+    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+  }
+
+  /**
+   * composes soap request with credit card and send it to tsys
+   * @param  [type] $token [description]
+   * @return [type]        [description]
+   */
+  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $trxnID) {
+    $soap_request = <<<HEREDOC
+<?xml version="1.0"?>
+    <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
+       <soap:Body>
+          <Sale xmlns='http://schemas.merchantwarehouse.com/merchantware/v45/'>
+             <Credentials>
+                <MerchantName>{$tsysCreds['user_name']}</MerchantName>
+                <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
+                <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
+             </Credentials>
+             <PaymentData>
+               <Source>Keyed</Source>
+               <CardNumber>{$cardInfo['credit_card']}</CardNumber>
+               <ExpirationDate>{$cardInfo['exp']}</ExpirationDate>
+               <CardHolder>John Doe</CardHolder>
+               <AvsStreetAddress>1 Federal Street</AvsStreetAddress>
+               <AvsZipCode>02110</AvsZipCode>
+               <CardVerificationValue>{$cardInfo['cvv']}</CardVerificationValue>
+            </PaymentData>
              <Request>
                 <Amount>$amount</Amount>
                 <CashbackAmount>0.00</CashbackAmount>

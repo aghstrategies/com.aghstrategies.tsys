@@ -63,7 +63,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
    */
   public function set_cc($type = 'works') {
     if ($type == 'works') {
-      $this->_cc = '4111111111111111';
+      $this->_cc = '4012000033330026';
     }
     elseif ($type == 'fails') {
       $this->_cc = '4000000000000002';
@@ -170,9 +170,15 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
     $params = array_merge(array(
       'payment_processor_id' => $this->_paymentProcessorID,
-      'amount' => $this->_total,
+      'amount' => 1.01,
       // Nonesense token
-      'payment_token' => 'CCC',
+      // 'payment_token' => 'SAL101',
+      //
+      'cvv2' => '123',
+      'credit_card_exp_date' => array(
+        'M' => 9,
+        'Y' => 12,
+      ),
       'email' => $this->contact->email,
       'contactID' => $this->contact->id,
       'description' => 'Test from tsys Test Code',
@@ -181,22 +187,28 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     ), $params);
 
     $ret = $tsys->doPayment($params);
+    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
 
-    if (array_key_exists('trxn_id', $ret)) {
-      $this->_trxn_id = $ret['trxn_id'];
-    }
-    if (array_key_exists('subscription_id', $ret)) {
-      $this->_subscriptionID = $ret['subscription_id'];
-    }
+    $this->assertEquals($ret['payment_status_id'], $completedStatusId);
+
+    //
+    // if (array_key_exists('trxn_id', $ret)) {
+    //   $this->_trxn_id = $ret['trxn_id'];
+    // }
+    // if (array_key_exists('subscription_id', $ret)) {
+    //   $this->_subscriptionID = $ret['subscription_id'];
+    // }
   }
 
   /**
    * Confirm that transaction id is legit and went through.
    *
    */
-  public function assertValidTrxn() {
-    $this->assertNotEmpty($this->_trxn_id, "A trxn id was assigned");
-  }
+  // public function assertValidTrxn() {
+  //   $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+  //   $params['payment_status_id'] = $failedStatusId;
+  //   $this->assertNotEmpty($this->_trxn_id, "A trxn id was assigned");
+  // }
   /**
    * Create contribition
    */
@@ -207,7 +219,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'payment_processor_id' => $this->_paymentProcessorID,
       // processor provided ID - use contact ID as proxy.
       'processor_id' => $this->_contactID,
-      'total_amount' => $this->_total,
+      'total_amount' => 1.01,
       'invoice_id' => $this->_invoiceID,
       'financial_type_id' => $this->_financialTypeID,
       'contribution_status_id' => 'Pending',
