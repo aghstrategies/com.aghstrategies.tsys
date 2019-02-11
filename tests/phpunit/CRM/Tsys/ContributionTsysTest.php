@@ -44,7 +44,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-   * Test making a recurring contribution.
+   * Test making a contribution.
    */
   public function testDirectSuccess() {
     $this->setupTransaction();
