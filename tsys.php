@@ -295,15 +295,17 @@ function tsys_civicrm_xmlMenu(&$files) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
 function tsys_civicrm_install() {
-  $sql = "CREATE TABLE `civicrm_tsys_recur` (
-    `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Id',
-    `vault_token` varchar(100) NOT NULL COMMENT 'Vault Token returned from TSYS',
-    `recur_id` int(10) unsigned DEFAULT '0' COMMENT 'CiviCRM recurring_contribution table id',
-    `identifier` varchar(255) DEFAULT 'CARD last 4' COMMENT 'Not used currently could be used to store identifying info for card',
-    PRIMARY KEY ( `id` ),
-    KEY (`recur_id`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Table to store vault tokens'";
-  $createTable = CRM_Core_DAO::executeQuery($sql);
+  if (CRM_Core_DAO::checkTableExists('civicrm_tsys_recur') == FALSE) {
+    $sql = "CREATE TABLE `civicrm_tsys_recur` (
+      `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Id',
+      `vault_token` varchar(100) NOT NULL COMMENT 'Vault Token returned from TSYS',
+      `recur_id` int(10) unsigned DEFAULT '0' COMMENT 'CiviCRM recurring_contribution table id',
+      `identifier` varchar(255) DEFAULT 'CARD last 4' COMMENT 'Not used currently could be used to store identifying info for card',
+      PRIMARY KEY ( `id` ),
+      KEY (`recur_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Table to store vault tokens'";
+    $createTable = CRM_Core_DAO::executeQuery($sql);
+  }
   _tsys_civix_civicrm_install();
 }
 
