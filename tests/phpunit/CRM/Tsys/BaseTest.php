@@ -36,8 +36,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   protected $_subscriptionID;
   protected $_membershipTypeID;
   // Secret/public keys are PTP test keys.
-  protected $_sk = 'sk_test_TlGdeoi8e1EOPC3nvcJ4q5UZ';
-  protected $_pk = 'pk_test_k2hELLGpBLsOJr6jZ2z9RaYh';
+  // protected $_sk = 'sk_test_TlGdeoi8e1EOPC3nvcJ4q5UZ';
+  // protected $_pk = 'pk_test_k2hELLGpBLsOJr6jZ2z9RaYh';
   protected $_cc = NULL;
 
   public function setUpHeadless() {
@@ -62,7 +62,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
    *
    */
   public function set_cc($type = 'works') {
-    // See https://stripe.com/docs/testing
     if ($type == 'works') {
       $this->_cc = '4111111111111111';
     }
@@ -101,7 +100,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   }
 
   /**
-   * Create a stripe payment processor.
+   * Create a tsys payment processor.
    *
    */
   function createPaymentProcessor($params = array()) {
@@ -143,7 +142,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   }
 
   /**
-   * Create a stripe contribution page.
+   * Create a tsys contribution page.
    *
    */
   function createContributionPage($params = array()) {
@@ -163,12 +162,12 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   }
 
   /**
-   * Submit to stripe
+   * Submit to tsys
    */
   public function doPayment($params = array()) {
     $mode = 'test';
     $pp = $this->_paymentProcessor;
-    $stripe = new CRM_Core_Payment_Tsys($mode, $pp);
+    $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
     $params = array_merge(array(
       'payment_processor_id' => $this->_paymentProcessorID,
       'amount' => $this->_total,
@@ -176,12 +175,12 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'payment_token' => 'CCC',
       'email' => $this->contact->email,
       'contactID' => $this->contact->id,
-      'description' => 'Test from Stripe Test Code',
+      'description' => 'Test from tsys Test Code',
       'currencyID' => 'USD',
       'invoiceID' => $this->_invoiceID,
     ), $params);
 
-    $ret = $stripe->doPayment($params);
+    $ret = $tsys->doPayment($params);
 
     if (array_key_exists('trxn_id', $ret)) {
       $this->_trxn_id = $ret['trxn_id'];
