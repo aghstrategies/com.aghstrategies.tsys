@@ -187,6 +187,7 @@ private $_islive = FALSE;
           'AvsZipCode' => '',
           'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
         );
+        print_r(substr($params['credit_card_exp_date']['Y'], -2)); die();
         if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
           $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
         }
