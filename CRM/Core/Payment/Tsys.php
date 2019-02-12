@@ -132,6 +132,18 @@ private $_islive = FALSE;
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
+    // Get contribution Statuses
+    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+
+    // Check if the contribution uses non us dollars
+    if ($params['currencyID'] != 'USD') {
+      CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
+      Civi::log()->debug('Tsys Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      $params['payment_status_id'] = $failedStatusId;
+      return $params;
+    }
+
     // TODO generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
@@ -167,12 +179,22 @@ private $_islive = FALSE;
       !empty($params['cvv2']) &&
       !empty($params['credit_card_exp_date']['M']) &&
       !empty($params['credit_card_exp_date']['Y'])) {
+      $creditCardInfo = array(
+          'credit_card' => $params['credit_card_number'],
+          'cvv' => $params['cvv2'],
+          'exp' => $params['credit_card_exp_date']['M'] . $params['credit_card_exp_date']['Y'],
+          'AvsStreetAddress' => '',
+          'AvsZipCode' => '',
+          'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
+        );
+        if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
+          $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
+        }
+        if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
+          $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
+        }
         $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
-          array(
-            'credit_card' => $params['credit_card_number'],
-            'cvv' => $params['cvv2'],
-            'exp' => $params['credit_card_exp_date']['M'] . $params['credit_card_exp_date']['Y'],
-          ),
+          $creditCardInfo,
           $tsysCreds,
           $params['amount'],
           $params['trxn_id']
@@ -187,7 +209,6 @@ private $_islive = FALSE;
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
     $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
-      $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
       if (!empty($params['payment_token'])) {
         $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
@@ -201,7 +222,6 @@ private $_islive = FALSE;
     }
     // If transaction fails
     else {
-      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
       $params['payment_status_id'] = $failedStatusId;
       return $params;
     }
@@ -289,9 +309,9 @@ HEREDOC;
                <Source>Keyed</Source>
                <CardNumber>{$cardInfo['credit_card']}</CardNumber>
                <ExpirationDate>{$cardInfo['exp']}</ExpirationDate>
-               <CardHolder>John Doe</CardHolder>
-               <AvsStreetAddress>1 Federal Street</AvsStreetAddress>
-               <AvsZipCode>02110</AvsZipCode>
+               <CardHolder>{$cardInfo['CardHolder']}</CardHolder>
+               <AvsStreetAddress>{$cardInfo['AvsStreetAddress']}</AvsStreetAddress>
+               <AvsZipCode>{$cardInfo['AvsZipCode']}</AvsZipCode>
                <CardVerificationValue>{$cardInfo['cvv']}</CardVerificationValue>
             </PaymentData>
              <Request>

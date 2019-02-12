@@ -35,10 +35,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   protected $_created_ts;
   protected $_subscriptionID;
   protected $_membershipTypeID;
-  // Secret/public keys are PTP test keys.
-  // protected $_sk = 'sk_test_TlGdeoi8e1EOPC3nvcJ4q5UZ';
-  // protected $_pk = 'pk_test_k2hELLGpBLsOJr6jZ2z9RaYh';
-  protected $_cc = NULL;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -54,20 +50,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $this->createContact();
     $this->createContributionPage();
     $this->_created_ts = time();
-    $this->set_cc();
-  }
-
-  /**
-   * Switch between test cc number that works and that fails
-   *
-   */
-  public function set_cc($type = 'works') {
-    if ($type == 'works') {
-      $this->_cc = '4012000033330026';
-    }
-    elseif ($type == 'fails') {
-      $this->_cc = '4000000000000002';
-    }
   }
 
   public function tearDown() {
@@ -184,14 +166,16 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $params = array_merge(array(
       'payment_processor_id' => $this->_paymentProcessorID,
       'amount' => 1.01,
-      // Nonesense token
-      // 'payment_token' => 'SAL101',
-      //
       'cvv2' => '123',
       'credit_card_exp_date' => array(
         'M' => '09',
         'Y' => '22',
       ),
+      'location_type_id' => 5,
+      'billing_street_address-5' => '555 north',
+      'billing_postal_code-5' => '12324',
+      'billing_first_name' => 'first',
+      'billing_last_name' => 'last',
       'credit_card_number' => '4012000033330026',
       'email' => $this->contact->email,
       'contactID' => $this->contact->id,
