@@ -132,15 +132,25 @@ private $_islive = FALSE;
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
+    // Get contribution Statuses
+    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+
+    // Check if the contribution uses non us dollars
+    if ($params['currencyID'] != 'USD') {
+      CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
+      Civi::log()->debug('Tsys Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      $params['payment_status_id'] = $failedStatusId;
+      return $params;
+    }
+
     // TODO generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
 
-    // IF no Payment Token throw error
-    if (empty($params['payment_token']) || $params['payment_token'] == "Authorization token") {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-    }
+    // TODO decide if we need these params
+    // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
+    // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
 
     // Get tsys credentials
     if (!empty($params['payment_processor_id'])) {
@@ -152,37 +162,70 @@ private $_islive = FALSE;
       CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
     }
-    // Make transaction
-    // TODO decide if we need these params
-    // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
-    // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-    $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
-      $params['payment_token'],
-      $tsysCreds,
-      $params['amount'],
-      $params['trxn_id']
-    );
 
-      // If transaction approved
-      if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
-        $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-        $params['payment_status_id'] = $completedStatusId;
+    // If there is a payment token use it to run the transaction
+    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
+      // Make transaction
+      $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestToken(
+        $params['payment_token'],
+        $tsysCreds,
+        $params['amount'],
+        $params['trxn_id']
+      );
+    }
+    // IF no Payment Token look for credit card fields
+    else {
+      if (!empty($params['credit_card_number']) &&
+      !empty($params['cvv2']) &&
+      !empty($params['credit_card_exp_date']['M']) &&
+      !empty($params['credit_card_exp_date']['Y'])) {
+      $creditCardInfo = array(
+          'credit_card' => $params['credit_card_number'],
+          'cvv' => $params['cvv2'],
+          'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
+          'AvsStreetAddress' => '',
+          'AvsZipCode' => '',
+          'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
+        );
+        if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
+          $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
+        }
+        if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
+          $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
+        }
+        $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
+          $creditCardInfo,
+          $tsysCreds,
+          $params['amount'],
+          $params['trxn_id']
+        );
+      }
+      // If no credit card fields throw an error
+      else {
+        CRM_Core_Error::statusBounce(ts('Unable to complete payment, missing credit card info! Please this to the site administrator with a description of what you were trying to do.'));
+        Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      }
+    }
+    // If transaction approved
+    if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
+    $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
+      $params['payment_status_id'] = $completedStatusId;
+      if (!empty($params['payment_token'])) {
         $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
         $queryParams = array(1 => array($params['payment_token'], 'String'));
-
         // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
         if (CRM_Utils_Array::value('is_recur', $params) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($params['contributionRecurID'])) {
           CRM_Core_Payment_Tsys::boardCard($params['contributionRecurID'], $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
         }
-        return $params;
       }
-      // If transaction fails
-      else {
-        $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-        $params['payment_status_id'] = $failedStatusId;
-        return $params;
-      }
+      return $params;
     }
+    // If transaction fails
+    else {
+      $params['payment_status_id'] = $failedStatusId;
+      return $params;
+    }
+  }
   /**
    * This is a recurring donation, save the card for future use
    * @param  [type] $params    [description]
@@ -213,11 +256,11 @@ private $_islive = FALSE;
   }
 
   /**
-   * composes soap request and sends it to tsys
+   * composes soap request with token and sends it to tsys
    * @param  [type] $token [description]
    * @return [type]        [description]
    */
-  public static function composeSaleSoapRequest($token, $tsysCreds, $amount, $trxnID) {
+  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $trxnID) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -232,6 +275,45 @@ private $_islive = FALSE;
                 <Source>Vault</Source>
                 <VaultToken>{$token}</VaultToken>
               </PaymentData>
+             <Request>
+                <Amount>$amount</Amount>
+                <CashbackAmount>0.00</CashbackAmount>
+                <SurchargeAmount>0.00</SurchargeAmount>
+                <TaxAmount>0.00</TaxAmount>
+                <InvoiceNumber>$trxnID</InvoiceNumber>
+             </Request>
+          </Sale>
+       </soap:Body>
+    </soap:Envelope>
+HEREDOC;
+    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+  }
+
+  /**
+   * composes soap request with credit card and send it to tsys
+   * @param  [type] $token [description]
+   * @return [type]        [description]
+   */
+  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $trxnID) {
+    $soap_request = <<<HEREDOC
+<?xml version="1.0"?>
+    <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
+       <soap:Body>
+          <Sale xmlns='http://schemas.merchantwarehouse.com/merchantware/v45/'>
+             <Credentials>
+                <MerchantName>{$tsysCreds['user_name']}</MerchantName>
+                <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
+                <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
+             </Credentials>
+             <PaymentData>
+               <Source>Keyed</Source>
+               <CardNumber>{$cardInfo['credit_card']}</CardNumber>
+               <ExpirationDate>{$cardInfo['exp']}</ExpirationDate>
+               <CardHolder>{$cardInfo['CardHolder']}</CardHolder>
+               <AvsStreetAddress>{$cardInfo['AvsStreetAddress']}</AvsStreetAddress>
+               <AvsZipCode>{$cardInfo['AvsZipCode']}</AvsZipCode>
+               <CardVerificationValue>{$cardInfo['cvv']}</CardVerificationValue>
+            </PaymentData>
              <Request>
                 <Amount>$amount</Amount>
                 <CashbackAmount>0.00</CashbackAmount>
