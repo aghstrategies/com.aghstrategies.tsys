@@ -119,15 +119,28 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     		'is_default' => 0,
     		'is_test' => 1,
     		'is_recur' => 1,
-    		'user_name' => 'Test',
-    		'password' => 'webApiKey',
-        'subject' => '111111111',
-        'signature' => '11111-11111-11111-11111-11111',
     		'url_site' => 'https://cayan.accessaccountdetails.com/',
     		'url_recur' => 'https://cayan.accessaccountdetails.com/',
     		'class_name' => 'Payment_Tsys',
     		'billing_mode' => 1
     	);
+
+      // To test one must send the following environment variables
+      $credentials = array(
+        'user_name',
+    		'password',
+        'subject',
+        'signature',
+      );
+      foreach ($credentials as $key => $credential) {
+        if (getenv($credential)) {
+          $params[$credential] = getenv($credential);
+        }
+        else {
+          $this->fail("no {$credential} environment variable passed.");
+         }
+      }
+
       // First see if it already exists.
       $tsysPaymentProcessor = civicrm_api3('PaymentProcessor', 'get', $params);
       if ($tsysPaymentProcessor['count'] != 1) {
@@ -176,9 +189,10 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       //
       'cvv2' => '123',
       'credit_card_exp_date' => array(
-        'M' => 9,
-        'Y' => 12,
+        'M' => '09',
+        'Y' => '22',
       ),
+      'credit_card_number' => '4012000033330026',
       'email' => $this->contact->email,
       'contactID' => $this->contact->id,
       'description' => 'Test from tsys Test Code',
@@ -190,25 +204,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
 
     $this->assertEquals($ret['payment_status_id'], $completedStatusId);
-
-    //
-    // if (array_key_exists('trxn_id', $ret)) {
-    //   $this->_trxn_id = $ret['trxn_id'];
-    // }
-    // if (array_key_exists('subscription_id', $ret)) {
-    //   $this->_subscriptionID = $ret['subscription_id'];
-    // }
   }
 
-  /**
-   * Confirm that transaction id is legit and went through.
-   *
-   */
-  // public function assertValidTrxn() {
-  //   $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-  //   $params['payment_status_id'] = $failedStatusId;
-  //   $this->assertNotEmpty($this->_trxn_id, "A trxn id was assigned");
-  // }
   /**
    * Create contribition
    */

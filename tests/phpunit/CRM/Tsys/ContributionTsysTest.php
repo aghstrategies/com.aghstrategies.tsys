@@ -49,6 +49,5 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   public function testDirectSuccess() {
     $this->setupTransaction();
     $this->doPayment();
-    // $this->assertValidTrxn();
   }
 }

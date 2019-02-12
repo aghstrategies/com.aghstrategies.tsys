@@ -161,14 +161,12 @@ private $_islive = FALSE;
         $params['trxn_id']
       );
     }
-
     // IF no Payment Token look for credit card fields
     else {
       if (!empty($params['credit_card_number']) &&
       !empty($params['cvv2']) &&
       !empty($params['credit_card_exp_date']['M']) &&
-      !empty($params['credit_card_exp_date']['Y'])
-    ) {
+      !empty($params['credit_card_exp_date']['Y'])) {
         $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
           array(
             'credit_card' => $params['credit_card_number'],
@@ -182,38 +180,32 @@ private $_islive = FALSE;
       }
       // If no credit card fields throw an error
       else {
-        CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+        CRM_Core_Error::statusBounce(ts('Unable to complete payment, missing credit card info! Please this to the site administrator with a description of what you were trying to do.'));
         Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       }
     }
-
-    // IF no Payment Token throw error
-    if (empty($params['payment_token']) || $params['payment_token'] == "Authorization token") {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-    }
-
-
-      // If transaction approved
-      if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
-        $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-        $params['payment_status_id'] = $completedStatusId;
+    // If transaction approved
+    if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
+    $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
+      $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+      $params['payment_status_id'] = $completedStatusId;
+      if (!empty($params['payment_token'])) {
         $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
         $queryParams = array(1 => array($params['payment_token'], 'String'));
-
         // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
         if (CRM_Utils_Array::value('is_recur', $params) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($params['contributionRecurID'])) {
           CRM_Core_Payment_Tsys::boardCard($params['contributionRecurID'], $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
         }
-        return $params;
       }
-      // If transaction fails
-      else {
-        $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-        $params['payment_status_id'] = $failedStatusId;
-        return $params;
-      }
+      return $params;
     }
+    // If transaction fails
+    else {
+      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+      $params['payment_status_id'] = $failedStatusId;
+      return $params;
+    }
+  }
   /**
    * This is a recurring donation, save the card for future use
    * @param  [type] $params    [description]
