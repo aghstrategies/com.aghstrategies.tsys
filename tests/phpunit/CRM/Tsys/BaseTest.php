@@ -169,7 +169,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'cvv2' => '123',
       'credit_card_exp_date' => array(
         'M' => '09',
-        'Y' => '22',
+        'Y' => '2022',
       ),
       'location_type_id' => 5,
       'billing_street_address-5' => '555 north',

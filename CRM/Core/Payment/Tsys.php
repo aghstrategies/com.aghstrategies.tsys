@@ -182,12 +182,11 @@ private $_islive = FALSE;
       $creditCardInfo = array(
           'credit_card' => $params['credit_card_number'],
           'cvv' => $params['cvv2'],
-          'exp' => $params['credit_card_exp_date']['M'] . $params['credit_card_exp_date']['Y'],
+          'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
           'AvsStreetAddress' => '',
           'AvsZipCode' => '',
           'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
         );
-        print_r(substr($params['credit_card_exp_date']['Y'], -2)); die();
         if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
           $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
         }
