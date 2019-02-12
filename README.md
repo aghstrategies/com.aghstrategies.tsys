@@ -1,44 +1,24 @@
-# com.aghstrategies.tsys
+# CiviCRM Tsys Payment Processor
 
-![Screenshot](/images/screenshot.png)
+Integrates the [Tsys](https://www.tsys.com/) payment processor (for Credit/Debit cards) into CiviCRM so it can be used it to accept Credit / Debit card payments on your site.
 
-(*FIXME: In one or two paragraphs, describe what the extension does and why one would download it. *)
+## Documentation
+Please see: https://github.com/aghstrategies/com.aghstrategies.tsys
 
-The extension is licensed under [AGPL-3.0](LICENSE.txt).
+## Configuration
+All configuration is in the standard Payment Processors settings area in CiviCRM admin
+You will need to enter the following credentials which will be provided on creation of your Tsys Account:
 
-## Requirements
++ Merchant Name
++ Web API Key
++ Merchant Key
++ Merchant Site
 
-* PHP v5.4+
-* CiviCRM (*FIXME: Version number*)
+See screenshot below.  
 
-## Installation (Web UI)
+![Screenshot of Settings - Payment Processor for Tsys](./images/tsysSettings.png)
 
-This extension has not yet been published for installation via the web UI.
-
-## Installation (CLI, Zip)
-
-Sysadmins and developers may download the `.zip` file for this extension and
-install it with the command-line tool [cv](https://github.com/civicrm/cv).
-
-```bash
-cd <extension-dir>
-cv dl com.aghstrategies.tsys@https://github.com/FIXME/com.aghstrategies.tsys/archive/master.zip
-```
-
-## Installation (CLI, Git)
-
-Sysadmins and developers may clone the [Git](https://en.wikipedia.org/wiki/Git) repo for this extension and
-install it with the command-line tool [cv](https://github.com/civicrm/cv).
-
-```bash
-git clone https://github.com/FIXME/com.aghstrategies.tsys.git
-cv en tsys
-```
-
-## Usage
-
-(* FIXME: Where would a new user navigate to get started? What changes would they see? *)
-
-## Known Issues
-
-(* FIXME *)
+## Installation
+There are no special installation requirements.
+The extension will show up in the extensions browser for automated installation.
+Otherwise, download and install as you would for any other CiviCRM extension.
