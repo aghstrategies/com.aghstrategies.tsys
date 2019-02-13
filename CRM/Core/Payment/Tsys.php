@@ -35,13 +35,12 @@ private $_islive = FALSE;
   *
   * @return void
   */
- public function __construct($mode, &$paymentProcessor) {
-   $this->_mode = $mode;
-   $this->_islive = ($mode == 'live' ? 1 : 0);
-   $this->_paymentProcessor = $paymentProcessor;
-   $this->_processorName = ts('Tsys');
- }
-
+  public function __construct($mode, &$paymentProcessor) {
+    $this->_mode = $mode;
+    $this->_islive = ($mode == 'live' ? 1 : 0);
+    $this->_paymentProcessor = $paymentProcessor;
+    $this->_processorName = ts('Tsys');
+  }
 
   /**
    * This function checks to see if we have the right config values.
