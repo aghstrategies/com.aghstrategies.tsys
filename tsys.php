@@ -12,71 +12,73 @@ function tsys_civicrm_buildForm($formName, &$form) {
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name']) && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
 
-    // The backend credit card registration form does not build the payment form the same as the rest of the credit card forms so we need to send this special
+    // The backend credit card registration form does not build the payment form
+    // the same as the other creditcard forms so we need to send this special:
     if ($formName == 'CRM_Event_Form_Participant') {
-      // Get API Key and provide it to JS
+      // Get API Key and provide it to JS:
       $publishableKey = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password");
       $publishableKey = $publishableKey['password'];
       CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
     }
 
-    // Add data-cayan attributes to credit card fields
+    // Add data-cayan attributes to credit card fields so that the
+    // CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
 
-    // TODO use getPaymentFieldMetadata() to make year and month their own form fields
-
-    // credit_card_exp_date is one form element but Tsys expects the month and year to be their own form elements using js to accomplish this
+    // Add tsys js to create payment tokens:
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
 
     // TODO do we want to copy this file (as I have for now) or link to it?
-    //  adding a local copy of https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
+    // adding a local copy of
+    // https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/CayanCheckoutPlus.js', 'html-header');
   }
 }
 
 /**
- * Implementation of hook_civicrm_validateForm().
+ * Implements hook_civicrm_validateForm().
  *
- * Prevent server validation of cc fields
- *
- * @param $formName - the name of the form
- * @param $fields - Array of name value pairs for all 'POST'ed form values
- * @param $files - Array of file properties as sent by PHP POST protocol
- * @param $form - reference to the form object
- * @param $errors - Reference to the errors array.
- *
+ * Prevent server validation of cc fields:
  */
- function stripe_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-    if (empty($form->_paymentProcessor['payment_processor_type'])) {
-      return;
-    }
-    // If Tsys is active here.
-    if ($form->_paymentProcessor['class_name'] == 'Payment_Tsys') {
-      if (isset($form->_elementIndex['payment_token'])) {
-        if ($form->elementExists('credit_card_number')) {
-          $cc_field = $form->getElement('credit_card_number');
-          $form->removeElement('credit_card_number', true);
-          $form->addElement($cc_field);
-        }
-        if ($form->elementExists('cvv2')) {
-          $cvv2_field = $form->getElement('cvv2');
-          $form->removeElement('cvv2', true);
-          $form->addElement($cvv2_field);
-        }
+function stripe_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  // NOTE this is copied from stripe:
+  // https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125,
+  // but i dont think it actually gets rid of the credit card field data.
+  // TODO ensure we are clearing credit card number and cvv2 fields.
+  if (empty($form->_paymentProcessor['payment_processor_type'])) {
+    return;
+  }
+  // If Tsys is active here.
+  if ($form->_paymentProcessor['class_name'] == 'Payment_Tsys') {
+    if (isset($form->_elementIndex['payment_token'])) {
+      if ($form->elementExists('credit_card_number')) {
+        $cc_field = $form->getElement('credit_card_number');
+        $form->removeElement('credit_card_number', TRUE);
+        $form->addElement($cc_field);
       }
-    } else {
-      return;
+      if ($form->elementExists('cvv2')) {
+        $cvv2_field = $form->getElement('cvv2');
+        $form->removeElement('cvv2', TRUE);
+        $form->addElement($cvv2_field);
+      }
     }
   }
+  else {
+    return;
+  }
+}
 
 /**
- * For a recurring contribution, find a reasonable candidate for a template, where possible.
+ * For a recurring contribution, find a candidate for a template!
  */
 function tsys_civicrm_getContributionTemplate($contribution) {
-  // Get the first contribution in this series that matches the same total_amount, if present.
+  // Get the 1st contribution in the series that matches the total_amount:
   $template = array();
-  $get = array('contribution_recur_id' => $contribution['contribution_recur_id'], 'options' => array('sort' => ' id', 'limit' => 1));
+  $get = array(
+    'contribution_recur_id' => $contribution['contribution_recur_id'],
+    'options' => array('sort' => ' id', 'limit' => 1),
+  );
   if (!empty($contribution['total_amount'])) {
     $get['total_amount'] = $contribution['total_amount'];
   }
@@ -91,7 +93,15 @@ function tsys_civicrm_getContributionTemplate($contribution) {
     if (!empty($result['values'])) {
       foreach ($result['values'] as $initial_line_item) {
         $line_item = array();
-        foreach (array('price_field_id', 'qty', 'line_total', 'unit_price', 'label', 'price_field_value_id', 'financial_type_id') as $key) {
+        foreach (array(
+          'price_field_id',
+          'qty',
+          'line_total',
+          'unit_price',
+          'label',
+          'price_field_value_id',
+          'financial_type_id',
+        ) as $key) {
           $line_item[$key] = $initial_line_item[$key];
         }
         $template['line_items'][] = $line_item;

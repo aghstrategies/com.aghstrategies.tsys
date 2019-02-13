@@ -108,6 +108,9 @@ private $_islive = FALSE;
    * @return array
    */
   protected function getCreditCardFormFields() {
+
+    // TODO use getPaymentFieldMetadata() to make year and month their own form fields?
+
     return array(
       'credit_card_type',
       'credit_card_number',
