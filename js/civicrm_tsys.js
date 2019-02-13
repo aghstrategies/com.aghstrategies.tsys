@@ -2,11 +2,11 @@
  * @file
  * JS Integration between CiviCRM & tsys.
  */
-CRM.$(function($) {
+CRM.$(function ($) {
 
   // Set data-cayan attributes for expiration fields because cannot do it using quickform
-  $("select#credit_card_exp_date_M").attr('data-cayan', 'expirationmonth');
-  $("select#credit_card_exp_date_Y").attr('data-cayan', 'expirationyear');
+  $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
+  $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
 
   // Response from tsys.createToken.
   function tsysSuccessResponseHandler(tokenResponse) {
@@ -14,7 +14,7 @@ CRM.$(function($) {
     $submit = getBillingSubmit();
 
     // Update form with the token & submit.
-    $form.find("input#payment_token").val(tokenResponse.token);
+    $form.find('input#payment_token').val(tokenResponse.token);
 
     // Disable unload event handler
     window.onbeforeunload = null;
@@ -32,31 +32,36 @@ CRM.$(function($) {
     $form = getBillingForm();
     $submit = getBillingSubmit();
 
-    $('html, body').animate({scrollTop: 0}, 300);
+    $('html, body').animate({ scrollTop: 0 }, 300);
+
     // Show the errors on the form.
-    if ($(".messages.crm-error.tsys-message").length > 0) {
-      $(".messages.crm-error.tsys-message").slideUp();
-      $(".messages.crm-error.tsys-message:first").remove();
+    if ($('.messages.crm-error.tsys-message').length > 0) {
+      $('.messages.crm-error.tsys-message').slideUp();
+      $('.messages.crm-error.tsys-message:first').remove();
     }
 
     // foreach thru error responses
-    $.each(tokenResponse, function(key, details) {
-      $form.prepend('<div class="messages alert alert-block alert-danger error crm-error tsys-message">'
+    $.each(tokenResponse, function (key, details) {
+      $form.prepend(
+        '<div class="messages alert alert-block alert-danger error crm-error tsys-message">'
         + '<strong>Payment Error Response:</strong>'
         + '<ul id="errorList">'
         + '<li>' + details.error_code + ': ' + details.reason + '</li>'
         + '</ul>'
         + '</div>');
     });
+
     $form.data('submitted', false);
     $submit.prop('disabled', false);
   }
 
   // Prepare the form.
   var onclickAction = null;
-  $(document).ready(function() {
-    // Disable the browser "Leave Page Alert" which is triggered because we mess with the form submit function.
+  $(document).ready(function () {
+    // Disable the browser "Leave Page Alert" which is triggered
+    // because we mess with the form submit function.
     window.onbeforeunload = null;
+
     // Load tsys onto the form.
     loadtsysBillingBlock();
     $submit = getBillingSubmit();
@@ -68,11 +73,12 @@ CRM.$(function($) {
   });
 
   // Re-prep form when we've loaded a new payproc
-  $( document ).ajaxComplete(function( event, xhr, settings ) {
+  $(document).ajaxComplete(function (event, xhr, settings) {
     // /civicrm/payment/form? occurs when a payproc is selected on page
-    // /civicrm/contact/view/participant occurs when payproc is first loaded on event credit card payment
-    if ((settings.url.match("/civicrm/payment/form?"))
-       || (settings.url.match("/civicrm/contact/view/participant?"))) {
+    // /civicrm/contact/view/participant occurs when payproc is first
+    // loaded on event credit card payment
+    if ((settings.url.match('/civicrm/payment/form?')) ||
+    (settings.url.match('/civicrm/contact/view/participant?'))) {
       // See if there is a payment processor selector on this form
       // (e.g. an offline credit card contribution page).
       if ($('#payment_processor_id').length > 0) {
@@ -84,36 +90,36 @@ CRM.$(function($) {
         if (ppid != $('#tsys-id').val()) {
           debugging('payment processor changed to id: ' + ppid);
 
-          // Make sure data-cayan attributes for expiration fields because cannot do it using quickform
-          $("select#credit_card_exp_date_M").attr('data-cayan', 'expirationmonth');
-          $("select#credit_card_exp_date_Y").attr('data-cayan', 'expirationyear');
+          // Make sure data-cayan attributes for expiration fields
+          // because cannot do it using quickform
+          $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
+          $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
 
           // It is! See if the new payment processor is also a tsys
           // Payment processor. First, find out what the tsys
           // payment processor type id is (we don't want to update
           // the tsys pub key with a value from another payment processor).
           CRM.api3('PaymentProcessorType', 'getvalue', {
-            "sequential": 1,
-            "return": "id",
-            "name": "tsys"
-          }).done(function(result) {
+            sequential: 1,
+            return: 'id',
+            name: 'tsys',
+          }).done(function (result) {
             // Now, see if the new payment processor id is a tsys
             // payment processor.
-            var tsys_pp_type_id = result['result'];
+            var tsysPpTypeId = result.result;
             CRM.api3('PaymentProcessor', 'getvalue', {
-              "sequential": 1,
-              "return": "password",
-              "id": ppid,
-              "payment_processor_type_id": tsys_pp_type_id,
-            }).done(function(result) {
-              var pub_key = result['result'];
-              if (pub_key) {
+              sequential: 1,
+              return: 'password',
+              id: ppid,
+              payment_processor_type_id: tsysPpTypeId,
+            }).done(function (result) {
+              var pubKey = result.result;
+              if (pubKey) {
                 // It is a tsys payment processor, so update the key.
-                debugging("Setting new tsys key to: " + pub_key);
-                $('#tsys-pub-key').val(pub_key);
-              }
-              else {
-                debugging("New payment processor is not tsys, setting tsys-pub-key to null");
+                debugging('Setting new tsys key to: ' + pubKey);
+                $('#tsys-pub-key').val(pubKey);
+              } else {
+                debugging('New payment processor is not tsys, setting tsys-pub-key to null');
                 $('#tsys-pub-key').val(null);
               }
               // Now reload the billing block.

@@ -5,6 +5,8 @@
 /**
  * Job.TsysRecurringContributions API specification.
  *
+ * Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/master/api/v3/Job/Iatsrecurringcontributions.php
+ *
  * @param array $spec description of fields supported by this API call
  *
  * @return void
@@ -42,6 +44,7 @@ function _civicrm_api3_job_tsysrecurringcontributions_spec(&$spec) {
     'api.required' => 0,
   );
 }
+
 /**
  * Job.TsysRecurringContributions API.
  *
@@ -55,7 +58,7 @@ function _civicrm_api3_job_tsysrecurringcontributions_spec(&$spec) {
  * @throws API_Exception
  */
 function civicrm_api3_job_tsysrecurringcontributions($params) {
-  // Running this job in parallell could generate bad duplicate contributions.
+  // Running this job in parallel could generate bad duplicate contributions.
   $lock = new CRM_Core_Lock('civicrm.job.TsysRecurringContributions');
   if (!$lock->acquire()) {
     return civicrm_api3_create_success(ts('Failed to acquire lock. No contribution records were processed.'));
@@ -67,16 +70,19 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   // TODO: what kind of extra security do we want or need here to prevent it from being triggered inappropriately? Or does it matter?
   // $config = &CRM_Core_Config::singleton();
   // $debug  = false;
+
   // do my calculations based on yyyymmddhhmmss representation of the time
   // not sure about time-zone issues.
   $dtCurrentDay    = date("Ymd", mktime(0, 0, 0, date("m"), date("d"), date("Y")));
   $dtCurrentDayStart = $dtCurrentDay . "000000";
   $dtCurrentDayEnd   = $dtCurrentDay . "235959";
   $expiry_limit = date('ym');
+
   // Restrict this method of recurring contribution processing to only this payment processors.
   $args = array(
     1 => array('Payment_Tsys', 'String'),
   );
+
   // Before triggering payments, we need to do some housekeeping of the civicrm_contribution_recur records.
   // First update the end_date and then the complete/in-progress values.
   // We do this both to fix any failed settings previously, and also
