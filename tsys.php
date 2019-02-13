@@ -71,6 +71,7 @@ function stripe_civicrm_validateForm($formName, &$fields, &$files, &$form, &$err
 
 /**
  * For a recurring contribution, find a candidate for a template!
+ * TODO not using right now, can remove or implement
  */
 function tsys_civicrm_getContributionTemplate($contribution) {
   // Get the 1st contribution in the series that matches the total_amount:
@@ -126,6 +127,7 @@ function tsys_civicrm_getContributionTemplate($contribution) {
  */
 function _tsys_process_contribution_payment(&$contribution, $options, $original_contribution_id) {
   // By default, don't use repeattransaction:
+  // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1285
   $use_repeattransaction = FALSE;
   $is_recurrence = !empty($original_contribution_id);
   // First try and get the money with iATS Payments, using my cover function.
@@ -264,6 +266,8 @@ function _tsys_process_contribution_payment(&$contribution, $options, $original_
 }
 
 function _tsys_process_transaction($contribution, $options) {
+  // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
+
   // TODO generate a better trxn_id
   // cannot use invoice id in civi because it needs to be less than 8 numbers
   // and all numeric.
@@ -347,6 +351,7 @@ function tsys_civicrm_xmlMenu(&$files) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
 function tsys_civicrm_install() {
+  // If civicrm_tsys_recur table does not exist create it.
   if (CRM_Core_DAO::checkTableExists('civicrm_tsys_recur') == FALSE) {
     $sql = "CREATE TABLE `civicrm_tsys_recur` (
       `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Id',
@@ -416,6 +421,7 @@ function tsys_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  */
 function tsys_civicrm_managed(&$entities) {
   // TODO right now we use existing fields (subject_label and signature_label) I think we should make our own fields that are tsys specific
+  // Creates the payment processor entity for the Tsys Payment Processor
   $entities[] = array(
     'module' => 'com.aghstrategies.tsys',
     'name' => 'Tsys',
