@@ -122,12 +122,14 @@ CRM.$(function ($) {
                 debugging('New payment processor is not tsys, setting tsys-pub-key to null');
                 $('#tsys-pub-key').val(null);
               }
+
               // Now reload the billing block.
               loadtsysBillingBlock();
             });
           });
         }
       }
+
       loadtsysBillingBlock();
     }
   });
@@ -137,8 +139,7 @@ CRM.$(function ($) {
     // Get api key
     if (typeof CRM.vars.tsys.api === 'undefined') {
       debugging('No api key!');
-    }
-    else {
+    } else {
       // Setup tsys.Js
       CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.api);
     }
@@ -155,16 +156,17 @@ CRM.$(function ($) {
     // If another submit button on the form is pressed (eg. apply discount)
     //  add a flag that we can set to stop payment submission
     $form.data('submit-dont-process', '0');
+
     // Find submit buttons which should not submit payment
     $form.find('[type="submit"][formnovalidate="1"], ' +
       '[type="submit"][formnovalidate="formnovalidate"], ' +
       '[type="submit"].cancel, ' +
-      '[type="submit"].webform-previous').click( function() {
+      '[type="submit"].webform-previous').click(function () {
       debugging('adding submit-dont-process');
       $form.data('submit-dont-process', 1);
     });
 
-    $submit.click( function(event) {
+    $submit.click(function (event) {
       // Take over the click function of the form.
       debugging('clearing submit-dont-process');
       $form.data('submit-dont-process', 0);
@@ -182,6 +184,7 @@ CRM.$(function ($) {
         $form.get(0).submit();
         return true;
       }
+
       // Otherwise, this is a tsys submission - don't handle normally.
       // The code for completing the submission is all managed in the
       // tsys handler (tsysResponseHandler) which gets execute after
@@ -190,7 +193,7 @@ CRM.$(function ($) {
     });
 
     // Add a keypress handler to set flag if enter is pressed
-    $form.find('input#discountcode').keypress( function(e) {
+    $form.find('input#discountcode').keypress(function (e) {
       if (e.which === 13) {
         $form.data('submit-dont-process', 1);
       }
@@ -204,24 +207,26 @@ CRM.$(function ($) {
       if (!($('#action').length)) {
         $form.append($('<input type="hidden" name="op" id="action" />'));
       }
+
       var $actions = $form.find('[type=submit]');
-      $('[type=submit]').click(function() {
+      $('[type=submit]').click(function () {
         $('#action').val(this.value);
       });
+
       // If enter pressed, use our submit function
-      $form.keypress(function(event) {
+      $form.keypress(function (event) {
         if (event.which === 13) {
           $('#action').val(this.value);
           submit(event);
         }
       });
+
       $('#billingcheckbox:input').hide();
       $('label[for="billingcheckbox"]').hide();
-    }
-    else {
+    } else {
       // As we use credit_card_number to pass token, make sure it is empty when shown
-      $form.find("input#credit_card_number").val('');
-      $form.find("input#cvv2").val('');
+      $form.find('input#credit_card_number').val('');
+      $form.find('input#cvv2').val('');
     }
 
     function submit(event) {
@@ -240,15 +245,19 @@ CRM.$(function ($) {
         var tsysProcessorId;
         var chosenProcessorId;
         tsysProcessorId = $('#tsys-id').val();
-        // this element may or may not exist on the webform, but we are dealing with a single (tsys) processor enabled.
+
+        // this element may or may not exist on the webform, but we are
+        // dealing with a single (tsys) processor enabled.
         if (!$('input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]').length) {
           chosenProcessorId = tsysProcessorId;
         } else {
           chosenProcessorId = $form.find('input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]:checked').val();
         }
       }
+
       // else {
-      //   // Most forms have payment_processor-section but event registration has credit_card_info-section
+      //   // Most forms have payment_processor-section but event
+      //   // registration has credit_card_info-section
       //   if (($form.find(".crm-section.payment_processor-section").length > 0)
       //       || ($form.find(".crm-section.credit_card_info-section").length > 0)) {
       //     tsysProcessorId = $('#tsys-id').val();
@@ -259,7 +268,8 @@ CRM.$(function ($) {
       // // If any of these are true, we are not using the tsys processor:
       // // - Is the selected processor ID pay later (0)
       // // - Is the tsys processor ID defined?
-      // // - Is selected processor ID and tsys ID undefined? If we only have tsys ID, then there is only one (tsys) processor on the page
+      // // - Is selected processor ID and tsys ID undefined? If we only
+      // // have tsys ID, then there is only one (tsys) processor on the page
       // if ((chosenProcessorId === 0)
       //     || (tsysProcessorId == null)
       //     || ((chosenProcessorId == null) && (tsysProcessorId == null))) {
@@ -295,7 +305,8 @@ CRM.$(function ($) {
         // If we have more than one processor (user-select) then we have a set of radio buttons:
         var $processorFields = $('[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]');
         if ($processorFields.length) {
-          if ($processorFields.filter(':checked').val() === '0' || $processorFields.filter(':checked').val() === 0) {
+          if ($processorFields.filter(':checked').val() === '0' ||
+          $processorFields.filter(':checked').val() === 0) {
             debugging('no payment processor selected');
             return true;
           }
@@ -308,7 +319,7 @@ CRM.$(function ($) {
       if (typeof calculateTotalFee == 'function') {
         var totalFee = calculateTotalFee();
         if (totalFee == '0') {
-          debugging("Total amount is 0");
+          debugging('Total amount is 0');
           return true;
         }
       }
@@ -319,6 +330,7 @@ CRM.$(function ($) {
         debugging('No credit card field');
         return true;
       }
+
       // Lock to prevent multiple submissions
       if ($form.data('submitted') === true) {
         // Previously submitted - don't submit again
@@ -327,7 +339,7 @@ CRM.$(function ($) {
       } else {
         // Mark it so that the next submit can be ignored
         // ADDED requirement that form be valid
-        if($form.valid()) {
+        if ($form.valid()) {
           $form.data('submitted', true);
         }
       }
@@ -336,8 +348,8 @@ CRM.$(function ($) {
       $submit.prop('disabled', true);
 
       CayanCheckoutPlus.createPaymentToken({
-          success: tsysSuccessResponseHandler,
-          error: tsysFailureResponseHandler
+        success: tsysSuccessResponseHandler,
+        error: tsysFailureResponseHandler,
       });
       return false;
     }
@@ -354,10 +366,12 @@ CRM.$(function ($) {
       // If we are in a webform
       $billingForm = $('.webform-client-form');
     }
+
     if (!$billingForm.length) {
       // If we have multiple payment processors to select and tsys is not currently loaded
       $billingForm = $('input[name=hidden_processor]').closest('form');
     }
+
     return $billingForm;
   }
 
@@ -367,14 +381,14 @@ CRM.$(function ($) {
 
     if (isWebform) {
       $submit = $form.find('[type="submit"].webform-submit');
-    }
-    else {
+    } else {
       $submit = $form.find('[type="submit"].validate');
     }
+
     return $submit;
   }
 
-  function debugging (errorCode) {
+  function debugging(errorCode) {
     // Uncomment the following to debug unexpected returns.
     console.log(new Date().toISOString() + ' civicrm_tsys.js: ' + errorCode);
   }
