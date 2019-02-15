@@ -214,7 +214,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   while ($dao->fetch()) {
     // Strategy: create the contribution record with status = 2 (= pending), try the payment, and update the status to 1 if successful
     // Try to get a contribution template for this contribution series - if none matches (e.g. if a donation amount has been changed), we'll just be naive about it.
-    $contribution_template = tsys_civicrm_getContributionTemplate(array('contribution_recur_id' => $dao->id, 'total_amount' => $dao->amount));
+    $contribution_template = CRM_Tsys_Recur::getContributionTemplate(array('contribution_recur_id' => $dao->id, 'total_amount' => $dao->amount));
     $contact_id = $dao->contact_id;
     $total_amount = $dao->amount;
     $hash = md5(uniqid(rand(), TRUE));
@@ -328,7 +328,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // and then try to get the money, and do one of:
       // update the contribution to failed, leave as pending for server failure, complete the transaction,
       // or update a pending ach/eft with it's transaction id.
-      $result = _tsys_process_contribution_payment($contribution, $options, $original_contribution_id);
+      $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
       // if ($email_failure_report && !empty($contribution['iats_reject_code'])) {
       //   $failure_report_text .= "\n $result ";
       // }

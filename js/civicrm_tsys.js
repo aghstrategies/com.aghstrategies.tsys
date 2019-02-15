@@ -3,6 +3,7 @@
  * JS Integration between CiviCRM & tsys.
  */
 CRM.$(function ($) {
+  var onclickAction = null;
 
   // Set data-cayan attributes for expiration fields because cannot do it using quickform
   $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
@@ -11,7 +12,7 @@ CRM.$(function ($) {
   // Response from tsys.createToken.
   function tsysSuccessResponseHandler(tokenResponse) {
     $form = getBillingForm();
-    $submit = getBillingSubmit();
+    $submit = getBillingSubmit($form);
 
     // Update form with the token & submit.
     $form.find('input#payment_token').val(tokenResponse.token);
@@ -30,7 +31,7 @@ CRM.$(function ($) {
   // Response from tsys.createToken.
   function tsysFailureResponseHandler(tokenResponse) {
     $form = getBillingForm();
-    $submit = getBillingSubmit();
+    $submit = getBillingSubmit($form);
 
     $('html, body').animate({ scrollTop: 0 }, 300);
 
@@ -56,7 +57,6 @@ CRM.$(function ($) {
   }
 
   // Prepare the form.
-  var onclickAction = null;
   $(document).ready(function () {
     // Disable the browser "Leave Page Alert" which is triggered
     // because we mess with the form submit function.
@@ -64,7 +64,8 @@ CRM.$(function ($) {
 
     // Load tsys onto the form.
     loadtsysBillingBlock();
-    $submit = getBillingSubmit();
+    $form = getBillingForm();
+    $submit = getBillingSubmit($form);
 
     // Store and remove any onclick Action currently assigned to the form.
     // We will re-add it if the transaction goes through.
@@ -86,6 +87,9 @@ CRM.$(function ($) {
         // from the one we think we should be using.
         var ppid = $('#payment_processor_id').val();
 
+        // TODO rework by  calling api in the buildForm hook and assigning a var
+        // with ppids and publishable keys for all tsys processors
+        // TODO check if this works with multiple tsys payment processors
         // TODO this probably needs to be changed it is based on the stripe js
         if (ppid != $('#tsys-id').val()) {
           debugging('payment processor changed to id: ' + ppid);
@@ -151,7 +155,7 @@ CRM.$(function ($) {
       return;
     }
 
-    $submit = getBillingSubmit();
+    $submit = getBillingSubmit($form);
 
     // If another submit button on the form is pressed (eg. apply discount)
     //  add a flag that we can set to stop payment submission
@@ -179,7 +183,7 @@ CRM.$(function ($) {
         // process tsys.
         // Restore any onclickAction that was removed.
         $form = getBillingForm();
-        $submit = getBillingSubmit();
+        $submit = getBillingSubmit($form);
         $submit.attr('onclick', onclickAction);
         $form.get(0).submit();
         return true;
@@ -255,6 +259,7 @@ CRM.$(function ($) {
         }
       }
 
+      // TODO is all this needed? looks like case of submitting other payment processor
       // else {
       //   // Most forms have payment_processor-section but event
       //   // registration has credit_card_info-section
@@ -293,7 +298,7 @@ CRM.$(function ($) {
         return true;
       }
 
-      $submit = getBillingSubmit();
+      $submit = getBillingSubmit($form);
 
       if (isWebform) {
         // If we have selected tsys but amount is 0 we don't submit via tsys
@@ -364,6 +369,8 @@ CRM.$(function ($) {
     var $billingForm = $('input#payment_token').closest('form');
     if (!$billingForm.length && getIsWebform()) {
       // If we are in a webform
+      // TODO Can we distinguish that this is a webform w/ a payment in case
+      // there's another webform in the sidebar?
       $billingForm = $('.webform-client-form');
     }
 
@@ -375,8 +382,7 @@ CRM.$(function ($) {
     return $billingForm;
   }
 
-  function getBillingSubmit() {
-    $form = getBillingForm();
+  function getBillingSubmit($form) {
     var isWebform = getIsWebform();
 
     if (isWebform) {

@@ -1,6 +1,8 @@
 <?php
 /*
- * Payment Processor class for Stripe
+ * Payment Processor class for Tsys
+ *
+ * copied from Payment Processor class for Stripe
  */
 class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
 
@@ -76,29 +78,29 @@ private $_islive = FALSE;
   public function buildForm(&$form) {
     // Get API Key and provide it to JS
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
-    $publishableKey = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password");
-    $publishableKey = $publishableKey['password'];
+    $publishableKey = CRM_Utils_Array::value('password', CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password"));
+    // TODO throw error if no publishable key
     CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
   }
 
   /**
-   * Given a payment processor id, return the publishable key (password field)
+   * Given a payment processor id, return details including publishable key
    *
-   * @param $paymentProcessorId
-   *
-   * @return string
+   * @param int $paymentProcessorId
+   * @param array $fields
+   * @return array
    */
   public static function getPaymentProcessorSettings($paymentProcessorId, $fields) {
    try {
-     $publishableKey = civicrm_api3('PaymentProcessor', 'getsingle', array(
+     $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
        'return' => $fields,
        'id' => $paymentProcessorId,
      ));
    }
    catch (CiviCRM_API3_Exception $e) {
-     return '';
+     return [];
    }
-   return $publishableKey;
+   return $paymentProcessorDetails;
   }
 
   /**
