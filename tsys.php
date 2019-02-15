@@ -46,7 +46,6 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
   // NOTE this is copied from stripe:
   // https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125,
   // but i dont think it actually gets rid of the credit card field data.
-  // TODO ensure we are clearing credit card number and cvv2 fields.
   if (empty($form->_paymentProcessor['payment_processor_type'])) {
     return;
   }
