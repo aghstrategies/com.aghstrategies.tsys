@@ -5,18 +5,17 @@
 class CRM_Tsys_Recur {
 
   /**
-   * TODO update this description
-   * _tsys_process_contribution_payment()
-   *
    * @param $contribution an array of a contribution to be created (or in case of future start date,
    * possibly an existing pending contribution to recycle, if it already has a contribution id).
-   * @param $options must include customer code, subtype and iats_domain, may include a membership id
+   * @param $options like is membership or send email receipt
    * @param $original_contribution_id if included, use as a template for a recurring contribution.
    *
    *   A high-level utility function for making a contribution payment from an existing recurring schedule
-   *   Used in the Iatsrecurringcontributions.php job and the one-time ('card on file') form.
+   *   Used in the Tsysrecurringcontributions.php job and the one-time ('card on file') form.
    *
    *   Since 4.7.12, we can are using the new repeattransaction api.
+   *
+   * Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/master/iats.php#L1285 _iats_process_contribution_payment
    */
   function processContributionPayment(&$contribution, $options, $original_contribution_id) {
     // By default, don't use repeattransaction:
@@ -159,14 +158,12 @@ class CRM_Tsys_Recur {
   }
 
   /**
-   * TODO Update this description
-   * @param  [type] $contribution [description]
-   * @param  [type] $options      [description]
-   * @return [type]               [description]
+   * @param  array $contribution the contribution
+   * @param  array $options      options selected
+   * @return array              the contribution
+   * Borrowed from _iats_process_transaction https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
    */
   function processTransaction($contribution, $options) {
-    // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
-
     // TODO generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers
     // and all numeric.
