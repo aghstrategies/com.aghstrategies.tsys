@@ -79,7 +79,6 @@ private $_islive = FALSE;
     // Get API Key and provide it to JS
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
     $publishableKey = CRM_Utils_Array::value('password', CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password"));
-    // TODO throw error if no publishable key
     CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
   }
 
@@ -99,6 +98,13 @@ private $_islive = FALSE;
    }
    catch (CiviCRM_API3_Exception $e) {
      return [];
+   }
+   // Throw an error if credential not found
+   foreach ($fields as $key => $field) {
+     if (empty($paymentProcessorDetails[$field])) {
+       CRM_Core_Error::statusBounce(ts('Could not find valid Tsys Payment Processor credentials'));
+       Civi::log()->debug("Tsys Credential $field not found.");
+     }
    }
    return $paymentProcessorDetails;
   }
