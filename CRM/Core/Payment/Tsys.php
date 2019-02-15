@@ -76,9 +76,14 @@ private $_islive = FALSE;
    * @param \CRM_Core_Form $form
    */
   public function buildForm(&$form) {
-    // Get API Key and provide it to JS
+
+    // Get all tsys payment processor ids keyed to their webapikeys
+    $allTsysWebApiKeys = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+    CRM_Core_Resources::singleton()->addVars('tsys', array('allApiKeys' => $allTsysWebApiKeys));
+
+    // send api key for current payment processor
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
-    $publishableKey = CRM_Utils_Array::value('password', CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password"));
+    $publishableKey = CRM_Utils_Array::value($paymentProcessorId, $allTsysWebApiKeys);
     CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
   }
 
@@ -107,6 +112,29 @@ private $_islive = FALSE;
      }
    }
    return $paymentProcessorDetails;
+  }
+
+  /**
+   * Get all Tsys payment processors and their web api keys
+   * @return array of payment processor id => web api key
+   */
+  public static function getAllTsysPaymentProcessors() {
+    $allTsysPaymentProcessors = array();
+    try {
+      $tsysPaymentProcessors = civicrm_api3('PaymentProcessorType', 'getsingle', [
+        'title' => "Tsys",
+        'api.PaymentProcessor.get' => ['payment_processor_type_id' => "\$value.id"],
+      ]);
+    }
+    catch (Exception $e) {
+      // ignore, we'll proceed normally without a contribution id
+    }
+    foreach ($tsysPaymentProcessors['api.PaymentProcessor.get']['values'] as $key => $processor) {
+      if (!empty($processor['id']) && !empty($processor['password'])) {
+        $allTsysPaymentProcessors[$processor['id']] = $processor['password'];
+      }
+    }
+    return $allTsysPaymentProcessors;
   }
 
   /**

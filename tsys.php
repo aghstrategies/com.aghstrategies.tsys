@@ -17,7 +17,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // the same as the other creditcard forms so we need to send this special:
     if ($formName == 'CRM_Event_Form_Participant') {
       // Get API Key and provide it to JS:
-      $publishableKey = CRM_Utils_Array::value('password', CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, "password"));
+      $publishableKey = CRM_Utils_Array::value('password', CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, array('password')));
       CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
     }
 
@@ -25,6 +25,11 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
+
+    // get webapi keys for all tsys payment processors and send to the js just
+    // in case there are two tsys payment processors and the user toggles between them
+    $allTsysWebApiKeys = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+    CRM_Core_Resources::singleton()->addVars('tsys', array('allApiKeys' => $allTsysWebApiKeys));
 
     // Add tsys js to create payment tokens:
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');

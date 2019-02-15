@@ -83,14 +83,12 @@ CRM.$(function ($) {
       // See if there is a payment processor selector on this form
       // (e.g. an offline credit card contribution page).
       if ($('#payment_processor_id').length > 0) {
+        debugging('payment processor changed to id: ' + $('#payment_processor_id'));
+
         // There is. Check if the selected payment processor is different
         // from the one we think we should be using.
         var ppid = $('#payment_processor_id').val();
 
-        // TODO rework by  calling api in the buildForm hook and assigning a var
-        // with ppids and publishable keys for all tsys processors
-        // TODO check if this works with multiple tsys payment processors
-        // TODO this probably needs to be changed it is based on the stripe js
         if (ppid != $('#tsys-id').val()) {
           debugging('payment processor changed to id: ' + ppid);
 
@@ -99,38 +97,17 @@ CRM.$(function ($) {
           $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
           $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
 
-          // It is! See if the new payment processor is also a tsys
-          // Payment processor. First, find out what the tsys
-          // payment processor type id is (we don't want to update
-          // the tsys pub key with a value from another payment processor).
-          CRM.api3('PaymentProcessorType', 'getvalue', {
-            sequential: 1,
-            return: 'id',
-            name: 'tsys',
-          }).done(function (result) {
-            // Now, see if the new payment processor id is a tsys
-            // payment processor.
-            var tsysPpTypeId = result.result;
-            CRM.api3('PaymentProcessor', 'getvalue', {
-              sequential: 1,
-              return: 'password',
-              id: ppid,
-              payment_processor_type_id: tsysPpTypeId,
-            }).done(function (result) {
-              var pubKey = result.result;
-              if (pubKey) {
-                // It is a tsys payment processor, so update the key.
-                debugging('Setting new tsys key to: ' + pubKey);
-                $('#tsys-pub-key').val(pubKey);
-              } else {
-                debugging('New payment processor is not tsys, setting tsys-pub-key to null');
-                $('#tsys-pub-key').val(null);
-              }
+          // see if the new payment processor id is a tsys payment processor.
+          if (CRM.vars.tsys.allApiKeys[ppid]) {
+            // It is a tsys payment processor, so update the key.
+            debugging('Setting new tsys key to: ' + CRM.vars.tsys.allApiKeys[ppid]);
+            CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.allApiKeys[ppid]);
+          } else {
+            debugging('New payment processor is not tsys');
+          }
 
-              // Now reload the billing block.
-              loadtsysBillingBlock();
-            });
-          });
+          // Now reload the billing block.
+          loadtsysBillingBlock();
         }
       }
 
