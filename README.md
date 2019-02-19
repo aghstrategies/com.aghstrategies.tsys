@@ -22,3 +22,7 @@ See screenshot below.
 There are no special installation requirements.
 The extension will show up in the extensions browser for automated installation.
 Otherwise, download and install as you would for any other CiviCRM extension.
+
+
+## Contribute Transact API
+This processor works with the Contribution Transact API but one needs to pass the Currency as USD.
