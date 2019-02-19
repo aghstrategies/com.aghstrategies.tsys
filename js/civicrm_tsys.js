@@ -236,7 +236,7 @@ CRM.$(function ($) {
         }
       }
 
-      // TODO is all this needed? looks like case of submitting other payment processor
+      // FIXME is all this needed? looks like case of submitting other payment processor
       // else {
       //   // Most forms have payment_processor-section but event
       //   // registration has credit_card_info-section

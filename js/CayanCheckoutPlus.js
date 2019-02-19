@@ -339,10 +339,9 @@ var CayanCheckoutPlus = (function () {
                 if (allInputs[i].getAttribute("data-cayan") !== null) {
                     var type = allInputs[i].getAttribute("data-cayan");
                     // clear out cardnumber and cvv after reading them
-                    // NOTE this is breaking validation commenting it out for now
-                    // if (type == 'cardnumber' || type == 'cvv') {
-                    //     allInputs[i].value = '';
-                    // }
+                    if (type == 'cardnumber' || type == 'cvv') {
+                        allInputs[i].value = '';
+                    }
                 }
             }
         };

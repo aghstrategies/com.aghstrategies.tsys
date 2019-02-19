@@ -34,7 +34,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // Add tsys js to create payment tokens:
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
 
-    // TODO do we want to copy this file (as I have for now) or link to it?
+    // FIXME do we want to copy this file (as I have for now) or link to it?
     // adding a local copy of
     // https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/CayanCheckoutPlus.js', 'html-header');
@@ -58,9 +58,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
  * Prevent server validation of cc fields:
  */
 function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-  // NOTE this is copied from stripe:
-  // https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125,
-  // but i dont think it actually gets rid of the credit card field data.
+  // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
   if (empty($form->_paymentProcessor['payment_processor_type'])) {
     return;
   }
@@ -114,7 +112,6 @@ function tsys_civicrm_install() {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function tsys_civicrm_managed(&$entities) {
-  // TODO right now we use existing fields (subject_label and signature_label) I think we should make our own fields that are tsys specific
   // Creates the payment processor entity for the Tsys Payment Processor
   $entities[] = array(
     'module' => 'com.aghstrategies.tsys',

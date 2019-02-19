@@ -162,7 +162,7 @@ class CRM_Tsys_Recur {
    * Borrowed from _iats_process_transaction https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
    */
   function processTransaction($contribution, $options) {
-    // TODO generate a better trxn_id
+    // FIXME generate a better trxn_id
     // cannot use invoice id in civi because it needs to be less than 8 numbers
     // and all numeric.
     if (empty($contribution['trxn_id'])) {
@@ -190,9 +190,11 @@ class CRM_Tsys_Recur {
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
     }
     // Make transaction
+
     // FIXME decide if we need these params
     // $contribution['fee_amount'] = $stripeBalanceTransaction->fee / 100;
     // $contribution['net_amount'] = $stripeBalanceTransaction->net / 100;
+
     $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
       $contribution['payment_token'],
       $tsysCreds,
@@ -223,8 +225,7 @@ class CRM_Tsys_Recur {
 
   /**
    * For a recurring contribution, find a candidate for a template!
-   * TODO not using right now, can remove or implement
-   * TODO update this description
+   * FIXME not using right now, can remove or implement
    */
   function getContributionTemplate($contribution) {
     // Get the 1st contribution in the series that matches the total_amount:

@@ -196,8 +196,8 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $error_count  = 0;
   $output  = array();
 
-  // TODO Do we want to have a receipt recurring setting?
-  // TODO Do we want to have a emaile recurring failure report?
+  // FIXME Do we want to have a receipt recurring setting?
+  // FIXME Do we want to have a email recurring failure report?
   // $settings = CRM_Core_BAO_Setting::getItem('iATS Payments Extension', 'iats_settings');
   // $receipt_recurring = $settings['receipt_recurring'];
   // $email_failure_report = empty($settings['email_recurring_failure_report']) ? '' : $settings['email_recurring_failure_report'];
@@ -323,17 +323,18 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           // ignore, if will fail correctly if there is no membership payment.
         }
       }
-      // FIXME clean up this to work for tsys
       // So far so, good ... now create the pending contribution, and save its id
       // and then try to get the money, and do one of:
       // update the contribution to failed, leave as pending for server failure, complete the transaction,
       // or update a pending ach/eft with it's transaction id.
       $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
+      // FIXME clean up this to work for tsys
       // if ($email_failure_report && !empty($contribution['iats_reject_code'])) {
       //   $failure_report_text .= "\n $result ";
       // }
       $output[] = $result;
     }
+    // FIXME clean up this to work for tsys
     /* in case of critical failure set the series to pending */
     // if (!empty($contribution['iats_reject_code'])) {
     //   switch ($contribution['iats_reject_code']) {
