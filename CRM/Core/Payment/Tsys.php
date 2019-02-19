@@ -178,8 +178,20 @@ private $_islive = FALSE;
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
 
+    // Make sure using us dollars as the currency
+    $currency = NULL;
+
+    // when coming from a contribution form
+    if (!empty($params['currencyID'])) {
+      $currency = $params['currencyID'];
+    }
+
+    // when coming from a contribution.transact api call
+    if (!empty($params['currency'])) {
+      $currency = $params['currency'];
+    }
     // Check if the contribution uses non us dollars
-    if ($params['currencyID'] != 'USD') {
+    if ($currency != 'USD') {
       CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
       Civi::log()->debug('Tsys Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
@@ -194,9 +206,14 @@ private $_islive = FALSE;
     // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
     // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
 
-    // Get tsys credentials
+    // Get tsys credentials ($params come from a form)
     if (!empty($params['payment_processor_id'])) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
+    }
+
+    // Get tsys credentials ($params come from a Contribution.transact api call)
+    if (!empty($params['payment_processor'])) {
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor'], array("signature", "subject", "user_name"));
     }
 
     // Throw an error if no credentials found
