@@ -55,12 +55,16 @@ private $_islive = FALSE;
   public function checkConfig() {
     // $config = CRM_Core_Config::singleton();
     $error = array();
-    // TODO fix this up to be Tsys specific
-    if (empty($this->_paymentProcessor['user_name'])) {
-      $error[] = ts('The "Secret Key" is not set in the Tsys Payment Processor settings.');
-    }
-    if (empty($this->_paymentProcessor['password'])) {
-      $error[] = ts('The "Publishable Key" is not set in the Tsys Payment Processor settings.');
+    $credFields = array(
+      'user_name' => 'Merchant Name',
+      'password' => 'Web API Key',
+      'signature' => 'Merchant Site Key',
+      'subject' => 'Merchant Site ID',
+    );
+    foreach ($credFields as $name => $label) {
+      if (empty($this->_paymentProcessor[$name])) {
+        $error[] = ts("The '%1' is not set in the Tsys Payment Processor settings.", array(1 => $label));
+      }
     }
     if (!empty($error)) {
       return implode('<p>', $error);
