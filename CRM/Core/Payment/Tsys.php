@@ -202,7 +202,7 @@ private $_islive = FALSE;
     // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
     $params['trxn_id'] = rand(1, 1000000);
 
-    // TODO decide if we need these params
+    // FIXME decide if we need these params
     // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
     // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
 

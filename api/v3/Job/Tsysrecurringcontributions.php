@@ -323,7 +323,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           // ignore, if will fail correctly if there is no membership payment.
         }
       }
-      // TODO clean up this to work for tsys
+      // FIXME clean up this to work for tsys
       // So far so, good ... now create the pending contribution, and save its id
       // and then try to get the money, and do one of:
       // update the contribution to failed, leave as pending for server failure, complete the transaction,
