@@ -39,17 +39,6 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/CayanCheckoutPlus.js', 'html-header');
   }
-  if ($formName == 'CRM_Contribute_Form_Contribution_Confirm') {
-    $result = civicrm_api3('Contribution', 'transact', [
-      'financial_type_id' => "Donation",
-      'total_amount' => 5,
-      'contact_id' => 147,
-      'payment_processor' => 7,
-      'payment_token' => $form->_params['payment_token'],
-      'currency' => "USD",
-    ]);
-    print_r($result); die();
-  }
 }
 
 /**

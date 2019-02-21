@@ -218,7 +218,6 @@ private $_islive = FALSE;
       CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
     }
-
     // If there is a payment token use it to run the transaction
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
       // Make transaction
@@ -432,6 +431,7 @@ HEREDOC;
       $err = 'Curl error: ' . curl_error($soap_do);
       curl_close($soap_do);
       print $err;
+      $xml = $err;
     }
     else {
       curl_close($soap_do);
