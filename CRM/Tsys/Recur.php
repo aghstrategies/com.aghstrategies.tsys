@@ -22,6 +22,7 @@ class CRM_Tsys_Recur {
     // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1285
     $use_repeattransaction = FALSE;
     $is_recurrence = !empty($original_contribution_id);
+    // FIXME get token from paymentToken API
     $contribution['payment_token'] = CRM_Core_DAO::singleValueQuery("SELECT vault_token FROM civicrm_tsys_recur WHERE recur_id = " . $contribution['contribution_recur_id']);
     $result = $this->processTransaction($contribution, 'contribute');
 
@@ -190,11 +191,6 @@ class CRM_Tsys_Recur {
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
     }
     // Make transaction
-
-    // FIXME decide if we need these params
-    // $contribution['fee_amount'] = $stripeBalanceTransaction->fee / 100;
-    // $contribution['net_amount'] = $stripeBalanceTransaction->net / 100;
-
     $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
       $contribution['payment_token'],
       $tsysCreds,

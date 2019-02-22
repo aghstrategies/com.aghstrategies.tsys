@@ -39,7 +39,7 @@ private $_islive = FALSE;
   */
   public function __construct($mode, &$paymentProcessor) {
     $this->_mode = $mode;
-    $this->_islive = ($mode == 'live' ? 1 : 0);
+    $this->_islive = ($mode == 'live') ? 1 : 0;
     $this->_paymentProcessor = $paymentProcessor;
     $this->_processorName = ts('Tsys');
   }
@@ -87,6 +87,7 @@ private $_islive = FALSE;
 
     // send api key for current payment processor
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
+    // FIXME send ID only, not publishable key since that can be found in `allApiKeys`
     $publishableKey = CRM_Utils_Array::value($paymentProcessorId, $allTsysWebApiKeys);
     CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
   }
@@ -127,7 +128,10 @@ private $_islive = FALSE;
     try {
       $tsysPaymentProcessors = civicrm_api3('PaymentProcessorType', 'getsingle', [
         'title' => "Tsys",
-        'api.PaymentProcessor.get' => ['payment_processor_type_id' => "\$value.id"],
+        'api.PaymentProcessor.get' => [
+          'payment_processor_type_id' => '$value.id',
+          'return' => ['id', 'password'],
+        ],
       ]);
     }
     catch (Exception $e) {
@@ -187,6 +191,7 @@ private $_islive = FALSE;
     if (!empty($params['currency'])) {
       $currency = $params['currency'];
     }
+    // FIXME confirm that other payment processors require currency
     // Check if the contribution uses non us dollars
     if ($currency != 'USD') {
       CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
@@ -261,6 +266,11 @@ private $_islive = FALSE;
         Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       }
     }
+    // FIXME map things to civicrm_financial_trxn:
+    // AuthorizationCode => trxn_result_code
+    // Token => trxn_id
+    // CardNumber => pan_truncation (last four)
+    //
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
     $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
@@ -270,13 +280,14 @@ private $_islive = FALSE;
         $queryParams = array(1 => array($params['payment_token'], 'String'));
         // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
         if (CRM_Utils_Array::value('is_recur', $params) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($params['contributionRecurID'])) {
-          CRM_Core_Payment_Tsys::boardCard($params['contributionRecurID'], $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
+          self::boardCard($params['contributionRecurID'], $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
         }
       }
       return $params;
     }
     // If transaction fails
     else {
+      // FIXME record failed transactions too
       $params['payment_status_id'] = $failedStatusId;
       return $params;
     }
@@ -297,6 +308,7 @@ private $_islive = FALSE;
     // IF card boarded successfully save the vault token to the database
     if (!empty($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken)) {
       // Save token in civi Database
+      // FIXME use paymentToken API
       $query_params = array(
         1 => array($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken, 'String'),
         2 => array($recur_id, 'Integer'),
@@ -309,6 +321,8 @@ private $_islive = FALSE;
       Civi::log()->debug('Credit Card not boarded to Tsys Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
     }
   }
+
+  // FIXME Move all SOAP to new CRM_Tsys_Soap class
 
   /**
    * composes soap request with token and sends it to tsys
@@ -335,7 +349,7 @@ private $_islive = FALSE;
                 <CashbackAmount>0.00</CashbackAmount>
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>$trxnID</InvoiceNumber>
+                <InvoiceNumber>0</InvoiceNumber>
              </Request>
           </Sale>
        </soap:Body>
