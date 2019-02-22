@@ -200,14 +200,6 @@ private $_islive = FALSE;
       return $params;
     }
 
-    // FIXME generate a better trxn_id
-    // cannot use invoice id in civi because it needs to be less than 8 numbers and all numeric.
-    $params['trxn_id'] = rand(1, 1000000);
-
-    // FIXME decide if we need these params
-    // $params['fee_amount'] = $stripeBalanceTransaction->fee / 100;
-    // $params['net_amount'] = $stripeBalanceTransaction->net / 100;
-
     // Get tsys credentials ($params come from a form)
     if (!empty($params['payment_processor_id'])) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
@@ -226,11 +218,10 @@ private $_islive = FALSE;
     // If there is a payment token use it to run the transaction
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
       // Make transaction
-      $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestToken(
+      $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
         $params['payment_token'],
         $tsysCreds,
-        $params['amount'],
-        $params['trxn_id']
+        $params['amount']
       );
     }
     // IF no Payment Token look for credit card fields
@@ -256,8 +247,7 @@ private $_islive = FALSE;
         $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
           $creditCardInfo,
           $tsysCreds,
-          $params['amount'],
-          $params['trxn_id']
+          $params['amount']
         );
       }
       // If no credit card fields throw an error
@@ -320,138 +310,5 @@ private $_islive = FALSE;
       CRM_Core_Error::statusBounce(ts('Card not saved for future use'));
       Civi::log()->debug('Credit Card not boarded to Tsys Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
     }
-  }
-
-  // FIXME Move all SOAP to new CRM_Tsys_Soap class
-
-  /**
-   * composes soap request with token and sends it to tsys
-   * @param  [type] $token [description]
-   * @return [type]        [description]
-   */
-  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $trxnID) {
-    $soap_request = <<<HEREDOC
-<?xml version="1.0"?>
-    <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
-       <soap:Body>
-          <Sale xmlns='http://schemas.merchantwarehouse.com/merchantware/v45/'>
-             <Credentials>
-                <MerchantName>{$tsysCreds['user_name']}</MerchantName>
-                <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
-                <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
-             </Credentials>
-             <PaymentData>
-                <Source>Vault</Source>
-                <VaultToken>{$token}</VaultToken>
-              </PaymentData>
-             <Request>
-                <Amount>$amount</Amount>
-                <CashbackAmount>0.00</CashbackAmount>
-                <SurchargeAmount>0.00</SurchargeAmount>
-                <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>0</InvoiceNumber>
-             </Request>
-          </Sale>
-       </soap:Body>
-    </soap:Envelope>
-HEREDOC;
-    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
-  }
-
-  /**
-   * composes soap request with credit card and send it to tsys
-   * @param  [type] $token [description]
-   * @return [type]        [description]
-   */
-  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $trxnID) {
-    $soap_request = <<<HEREDOC
-<?xml version="1.0"?>
-    <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
-       <soap:Body>
-          <Sale xmlns='http://schemas.merchantwarehouse.com/merchantware/v45/'>
-             <Credentials>
-                <MerchantName>{$tsysCreds['user_name']}</MerchantName>
-                <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
-                <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
-             </Credentials>
-             <PaymentData>
-               <Source>Keyed</Source>
-               <CardNumber>{$cardInfo['credit_card']}</CardNumber>
-               <ExpirationDate>{$cardInfo['exp']}</ExpirationDate>
-               <CardHolder>{$cardInfo['CardHolder']}</CardHolder>
-               <AvsStreetAddress>{$cardInfo['AvsStreetAddress']}</AvsStreetAddress>
-               <AvsZipCode>{$cardInfo['AvsZipCode']}</AvsZipCode>
-               <CardVerificationValue>{$cardInfo['cvv']}</CardVerificationValue>
-            </PaymentData>
-             <Request>
-                <Amount>$amount</Amount>
-                <CashbackAmount>0.00</CashbackAmount>
-                <SurchargeAmount>0.00</SurchargeAmount>
-                <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>$trxnID</InvoiceNumber>
-             </Request>
-          </Sale>
-       </soap:Body>
-    </soap:Envelope>
-HEREDOC;
-    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
-  }
-
-  public static function composeBoardCardSoapRequest($token, $tsysCreds) {
-    $soap_request = <<<HEREDOC
-<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
-   <soap:Body>
-      <BoardCard xmlns="http://schemas.merchantwarehouse.com/merchantware/v45/">
-         <Credentials>
-           <MerchantName>{$tsysCreds['user_name']}</MerchantName>
-           <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
-           <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
-         </Credentials>
-         <PaymentData>
-            <Source>PREVIOUSTRANSACTION</Source>
-            <Token>{$token}</Token>
-         </PaymentData>
-      </BoardCard>
-   </soap:Body>
-</soap:Envelope>
-HEREDOC;
-    return CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
-  }
-
-  public static function doSoapRequest($soap_request) {
-    $response = "NO RESPONSE";
-    $header = array(
-      "Content-type: text/xml;charset=\"utf-8\"",
-      "Accept: text/xml",
-      "Cache-Control: no-cache",
-      "Pragma: no-cache",
-      "Content-length: ".strlen($soap_request),
-    );
-
-    $soap_do = curl_init();
-    curl_setopt($soap_do, CURLOPT_URL, "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx" );
-    curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 20);
-    curl_setopt($soap_do, CURLOPT_TIMEOUT,        20);
-    curl_setopt($soap_do, CURLOPT_RETURNTRANSFER, true );
-    curl_setopt($soap_do, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($soap_do, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($soap_do, CURLOPT_POST,           true );
-    curl_setopt($soap_do, CURLOPT_POSTFIELDS,     $soap_request);
-    curl_setopt($soap_do, CURLOPT_HTTPHEADER,     $header);
-    $response = curl_exec($soap_do);
-
-    if ($response === false) {
-      $err = 'Curl error: ' . curl_error($soap_do);
-      curl_close($soap_do);
-      print $err;
-      $xml = $err;
-    }
-    else {
-      curl_close($soap_do);
-      $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
-      $xml = simplexml_load_string($response);
-    }
-    return $xml;
   }
 }

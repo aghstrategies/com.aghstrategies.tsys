@@ -85,6 +85,7 @@ class CRM_Tsys_Recur {
               'id' => $contribution['id'],
               'payment_processor_id' => $contribution['payment_processor'],
               'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
+              // FIXME make sure the trxn_id is set to be the payment_token
               'trxn_id' => $result['trxn_id'],
               'receive_date' => $contribution['receive_date'],
             ));
@@ -119,6 +120,7 @@ class CRM_Tsys_Recur {
         $complete = array(
           'id' => $contribution['id'],
           'payment_processor_id' => $contribution['payment_processor'],
+          // FIXME make sure the trxn_id is the payment_token
           'trxn_id' => $trxn_id,
           'receive_date' => $contribution['receive_date'],
         );
@@ -131,18 +133,6 @@ class CRM_Tsys_Recur {
           // next contribution date for example.
           $contribution['source'] .= ' [with unexpected api.completetransaction error: ' . $e->getMessage() . ']';
         }
-        // Restore my source field that ipn code irritatingly overwrites,
-        // and make sure that the trxn_id is set also.
-        civicrm_api3('contribution', 'setvalue', array(
-          'id' => $contribution['id'],
-          'value' => $contribution['source'],
-          'field' => 'source',
-        ));
-        civicrm_api3('contribution', 'setvalue', array(
-          'id' => $contribution['id'],
-          'value' => $trxn_id,
-          'field' => 'trxn_id',
-        ));
         $message = $is_recurrence ? ts('Successfully processed contribution in recurring series id %1: ', array(1 => $contribution['contribution_recur_id'])) : ts('Successfully processed one-time contribution: ');
         return $message . $result['auth_result'];
       }
@@ -163,13 +153,6 @@ class CRM_Tsys_Recur {
    * Borrowed from _iats_process_transaction https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
    */
   function processTransaction($contribution, $options) {
-    // FIXME generate a better trxn_id
-    // cannot use invoice id in civi because it needs to be less than 8 numbers
-    // and all numeric.
-    if (empty($contribution['trxn_id'])) {
-      $contribution['trxn_id'] = rand(1, 1000000);
-    }
-
     // IF no Payment Token throw error.
     if (empty($contribution['payment_token']) || $contribution['payment_token'] == "Authorization token") {
       CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
@@ -191,15 +174,15 @@ class CRM_Tsys_Recur {
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
     }
     // Make transaction
-    $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequest(
+    $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
       $contribution['payment_token'],
       $tsysCreds,
-      $contribution['total_amount'],
-      $contribution['trxn_id']
+      $contribution['total_amount']
     );
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
+      // FIXME set trxn_id to be the payment_token
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $contribution['contribution_status_id'] = $completedStatusId;
       $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
