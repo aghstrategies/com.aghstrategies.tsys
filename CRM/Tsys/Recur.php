@@ -56,8 +56,12 @@ class CRM_Tsys_Recur {
         ));
         $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
       }
-      catch (Exception $e) {
-        // Ignore this, though perhaps I should log it.
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
       }
       if (empty($contribution['id'])) {
         // Assume I failed completely and fall back to doing it the manual way.
@@ -90,9 +94,12 @@ class CRM_Tsys_Recur {
               'receive_date' => $contribution['receive_date'],
             ));
           }
-          catch (Exception $e) {
-            // Log the error and continue.
-            CRM_Core_Error::debug_var('Unexpected Exception', $e);
+          catch (CiviCRM_API3_Exception $e) {
+            $error = $e->getMessage();
+            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+              'domain' => 'com.aghstrategies.tsys',
+              1 => $error,
+            )));
           }
         }
       }
@@ -110,8 +117,12 @@ class CRM_Tsys_Recur {
         try {
           civicrm_api3('MembershipPayment', 'create', array('contribution_id' => $contribution['id'], 'membership_id' => $options['membership_id']));
         }
-        catch (Exception $e) {
-          // Ignore.
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
         }
       }
       /* And then I'm done unless it completed */
@@ -128,10 +139,13 @@ class CRM_Tsys_Recur {
         try {
           $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
         }
-        catch (Exception $e) {
-          // Don't throw an exception here, or else I won't have updated my
-          // next contribution date for example.
-          $contribution['source'] .= ' [with unexpected api.completetransaction error: ' . $e->getMessage() . ']';
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          $contribution['source'] .= ' [with unexpected api.completetransaction error: ' . $error . ']';
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
         }
         $message = $is_recurrence ? ts('Successfully processed contribution in recurring series id %1: ', array(1 => $contribution['contribution_recur_id'])) : ts('Successfully processed one-time contribution: ');
         return $message . $result['auth_result'];

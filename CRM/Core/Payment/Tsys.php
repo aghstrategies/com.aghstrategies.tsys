@@ -107,6 +107,11 @@ private $_islive = FALSE;
      ));
    }
    catch (CiviCRM_API3_Exception $e) {
+     $error = $e->getMessage();
+     CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+       'domain' => 'com.aghstrategies.tsys',
+       1 => $error,
+     )));
      return [];
    }
    // Throw an error if credential not found
@@ -134,8 +139,12 @@ private $_islive = FALSE;
         ],
       ]);
     }
-    catch (Exception $e) {
-      // ignore, we'll proceed normally without a contribution id
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
     }
     foreach ($tsysPaymentProcessors['api.PaymentProcessor.get']['values'] as $key => $processor) {
       if (!empty($processor['id']) && !empty($processor['password'])) {

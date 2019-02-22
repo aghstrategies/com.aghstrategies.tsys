@@ -278,8 +278,12 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           $options['membership_id'] = $membership_payment['membership_id'];
         }
       }
-      catch (Exception $e) {
-        // ignore, if will fail correctly if there is no membership payment.
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
       }
     }
     // So far so, good ... now create the pending contribution, and save its id
