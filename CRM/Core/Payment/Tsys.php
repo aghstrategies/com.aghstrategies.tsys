@@ -256,15 +256,18 @@ private $_islive = FALSE;
         Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       }
     }
-    // FIXME map things to civicrm_financial_trxn:
-    // AuthorizationCode => trxn_result_code
-    // Token => trxn_id
-    // CardNumber => pan_truncation (last four)
-    //
+
+
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
     $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
       $params['payment_status_id'] = $completedStatusId;
+
+      // FIXME make sure these get saved to civicrm_financial_trxn:
+      $params['trxn_id'] = $makeTransaction->Body->SaleResponse->SaleResult->Token;
+      $params['trxn_result_code'] = $makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode;
+      $params['pan_truncation'] = substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4);
+
       if (!empty($params['payment_token'])) {
         $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
         $queryParams = array(1 => array($params['payment_token'], 'String'));

@@ -182,7 +182,11 @@ class CRM_Tsys_Recur {
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
-      // FIXME set trxn_id to be the payment_token
+      // FIXME make sure these get saved to civicrm_financial_trxn:
+      $contribution['trxn_id'] = $makeTransaction->Body->SaleResponse->SaleResult->Token;
+      $contribution['trxn_result_code'] = $makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode;
+      $contribution['pan_truncation'] = substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4);
+
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $contribution['contribution_status_id'] = $completedStatusId;
       $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
