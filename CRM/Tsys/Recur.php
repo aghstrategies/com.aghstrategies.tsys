@@ -27,7 +27,7 @@ class CRM_Tsys_Recur {
     $result = $this->processTransaction($contribution, 'contribute');
 
     // Initialize the status to pending:
-    $contribution['contribution_status_id'] = 2;
+    $contribution['contribution_status_id'] = "Pending";
 
     // We processed it successflly and I can try to use repeattransaction.
     // Requires the original contribution id.
@@ -222,7 +222,6 @@ class CRM_Tsys_Recur {
 
   /**
    * For a recurring contribution, find a candidate for a template!
-   * FIXME not using right now, can remove or implement
    */
   function getContributionTemplate($contribution) {
     // Get the 1st contribution in the series that matches the total_amount:
@@ -261,5 +260,56 @@ class CRM_Tsys_Recur {
       }
     }
     return $template;
+  }
+
+  function getInstallmentsDone($type = 'simple') {
+    // Restrict this method of recurring contribution processing to only this payment processors.
+    $args = array(
+      1 => array('Payment_Tsys', 'String'),
+    );
+
+    if ($type == 'simple') {
+      $select = 'SELECT cr.id, count(c.id) AS installments_done, cr.installments
+        FROM civicrm_contribution_recur cr
+          INNER JOIN civicrm_contribution c ON cr.id = c.contribution_recur_id
+          INNER JOIN civicrm_payment_processor pp ON cr.payment_processor_id = pp.id
+          LEFT JOIN civicrm_option_group og
+            ON og.name = "contribution_status"
+          LEFT JOIN civicrm_option_value rs
+            ON cr.contribution_status_id = rs.value
+            AND rs.option_group_id = og.id
+          LEFT JOIN civicrm_option_value cs
+            ON c.contribution_status_id = cs.value
+            AND cs.option_group_id = og.id
+        WHERE
+          (pp.class_name = %1)
+          AND (cr.installments > 0)
+          AND (rs.name IN ("In Progress"))
+          AND (cs.name IN ("Completed", "Pending"))
+        GROUP BY c.contribution_recur_id';
+    }
+    elseif ($type == 'dates') {
+      $select = 'SELECT cr.id, count(c.id) AS installments_done, cr.installments, cr.end_date, NOW() as test_now
+          FROM civicrm_contribution_recur cr
+          INNER JOIN civicrm_contribution c ON cr.id = c.contribution_recur_id
+          INNER JOIN civicrm_payment_processor pp
+            ON cr.payment_processor_id = pp.id
+              AND pp.class_name = %1
+          LEFT JOIN civicrm_option_group og
+            ON og.name = "contribution_status"
+          LEFT JOIN civicrm_option_value rs
+            ON cr.contribution_status_id = rs.value
+            AND rs.option_group_id = og.id
+          LEFT JOIN civicrm_option_value cs
+            ON c.contribution_status_id = cs.value
+            AND cs.option_group_id = og.id
+          WHERE
+            (cr.installments > 0)
+            AND (rs.name IN ("In Progress", "Completed"))
+            AND (cs.name IN ("Completed", "Pending"))
+          GROUP BY c.contribution_recur_id';
+    }
+    $dao = CRM_Core_DAO::executeQuery($select, $args);
+    return $dao;
   }
 }
