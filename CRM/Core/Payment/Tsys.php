@@ -278,13 +278,20 @@ private $_islive = FALSE;
       $params['pan_truncation'] = substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4);
 
       if (!empty($params['payment_token'])) {
-        $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
+        $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
         $queryParams = array(1 => array($params['payment_token'], 'String'));
         // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
         if (CRM_Utils_Array::value('is_recur', $params) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($params['contributionRecurID'])) {
-          self::boardCard($params['contributionRecurID'], $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
+          $paymentTokenId = self::boardCard(
+            $params['contributionRecurID'],
+            $makeTransaction->Body->SaleResponse->SaleResult->Token,
+            $tsysCreds,
+            $params['contact_id'],
+            $params['payment_processor']
+          );
         }
       }
+      $params['token'] = $paymentTokenId;
       return $params;
     }
     // If transaction fails
@@ -301,7 +308,8 @@ private $_islive = FALSE;
    * @param  [type] $tsysCreds [description]
    * @return [type]            [description]
    */
-  public static function boardCard($recur_id, $token, $tsysCreds) {
+  public static function boardCard($recur_id, $token, $tsysCreds, $contactId, $paymentProcessor) {
+    $paymentTokenId = NULL;
     // Board Card (save card) with TSYS
     $boardCard = CRM_Core_Payment_Tsys::composeBoardCardSoapRequest(
       $token,
@@ -310,17 +318,32 @@ private $_islive = FALSE;
     // IF card boarded successfully save the vault token to the database
     if (!empty($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken)) {
       // Save token in civi Database
-      // FIXME use paymentToken API
-      $query_params = array(
-        1 => array($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken, 'String'),
-        2 => array($recur_id, 'Integer'),
-      );
-      CRM_Core_DAO::executeQuery("INSERT INTO civicrm_tsys_recur (vault_token, recur_id) VALUES (%1, %2)", $query_params);
+      try {
+        $paymentToken = civicrm_api3('PaymentToken', 'create', [
+          'contact_id' => $contactId,
+          'payment_processor_id' => $paymentProcessor,
+          'token' => $token,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      if (!empty($paymentToken['id'])) {
+        $paymentTokenId = $paymentToken['id'];
+      }
+      if ($paymentToken['is_error'] == 1) {
+        CRM_Core_Error::statusBounce(ts('Error saving payment token to database'));
+      }
     }
     // If no vault token record Error
     else {
       CRM_Core_Error::statusBounce(ts('Card not saved for future use'));
       Civi::log()->debug('Credit Card not boarded to Tsys Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
     }
+    return $paymentTokenId;
   }
 }

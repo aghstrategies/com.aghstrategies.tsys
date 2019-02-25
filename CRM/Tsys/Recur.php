@@ -23,7 +23,12 @@ class CRM_Tsys_Recur {
     $use_repeattransaction = FALSE;
     $is_recurrence = !empty($original_contribution_id);
     // FIXME get token from paymentToken API
-    $contribution['payment_token'] = CRM_Core_DAO::singleValueQuery("SELECT vault_token FROM civicrm_tsys_recur WHERE recur_id = " . $contribution['contribution_recur_id']);
+    $contribution['payment_token'] = CRM_Core_DAO::singleValueQuery("SELECT pt.token
+      FROM civicrm_payment_token pt
+      LEFT JOIN civicrm_contribution_recur cr
+        ON pt.id = cr.payment_token_id
+      WHERE cr.id = " . $contribution['contribution_recur_id']
+    );
     $result = $this->processTransaction($contribution, 'contribute');
 
     // Initialize the status to pending:
@@ -203,12 +208,13 @@ class CRM_Tsys_Recur {
 
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $contribution['contribution_status_id'] = $completedStatusId;
-      $query = "SELECT COUNT(vault_token) FROM civicrm_tsys_recur WHERE vault_token = %1";
+      $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
       $queryParams = array(1 => array($contribution['payment_token'], 'String'));
       // If transaction is recurring AND there is not an existing vault token
       // saved.
       if (CRM_Utils_Array::value('is_recur', $contribution) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($contribution['contribution_recur_id'])) {
-        CRM_Core_Payment_Tsys::boardCard($recur_id, $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds);
+        $paymentTokenId = CRM_Core_Payment_Tsys::boardCard($recur_id, $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds, $contribution['contact_id'], $contribution['payment_processor']);
+        $contribution['token'] = $paymentTokenId;
       }
       return $contribution;
     }
