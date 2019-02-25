@@ -76,14 +76,22 @@ class CRM_Tsys_Recur {
         // If repeattransaction succeded.
         // First restore/add various fields that the repeattransaction api may
         // overwrite or ignore.
-        // TODO - fix this in core to allow these to be set above.
-        civicrm_api3('contribution', 'create', array(
-          'id' => $contribution['id'],
-          'invoice_id' => $contribution['invoice_id'],
-          'source' => $contribution['source'],
-          'receive_date' => $contribution['receive_date'],
-          'payment_instrument_id' => $contribution['payment_instrument_id'],
-        ));
+        try {
+          civicrm_api3('contribution', 'create', array(
+            'id' => $contribution['id'],
+            'invoice_id' => $contribution['invoice_id'],
+            'source' => $contribution['source'],
+            'receive_date' => $contribution['receive_date'],
+            'payment_instrument_id' => $contribution['payment_instrument_id'],
+          ));
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
         // Save my status in the contribution array that was passed in.
         $contribution['contribution_status_id'] = $result['contribution_status_id'];
         if ($result['contribution_status_id'] == 1) {

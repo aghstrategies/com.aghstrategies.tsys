@@ -191,6 +191,24 @@ private $_islive = FALSE;
     // Make sure using us dollars as the currency
     $currency = NULL;
 
+    try {
+      $defaultCurrency = civicrm_api3('Setting', 'get', [
+        'sequential' => 1,
+        'return' => ["defaultCurrency"],
+        'defaultCurrency' => "USD",
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    // look up the default currency, if its usd set this transaction to use us dollars
+    if (!empty($defaultCurrency['values'][0]['defaultCurrency']) && $defaultCurrency['values'][0]['defaultCurrency'] == 'USD') {
+      $currency = $defaultCurrency['values'][0]['defaultCurrency'];
+    }
     // when coming from a contribution form
     if (!empty($params['currencyID'])) {
       $currency = $params['currencyID'];
@@ -200,7 +218,7 @@ private $_islive = FALSE;
     if (!empty($params['currency'])) {
       $currency = $params['currency'];
     }
-    // FIXME confirm that other payment processors require currency
+
     // Check if the contribution uses non us dollars
     if ($currency != 'USD') {
       CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
