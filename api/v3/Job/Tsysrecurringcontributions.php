@@ -67,9 +67,6 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   unset($params['catchup']);
   $domemberships = empty($params['ignoremembership']);
   unset($params['ignoremembership']);
-  // TODO: what kind of extra security do we want or need here to prevent it from being triggered inappropriately? Or does it matter?
-  // $config = &CRM_Core_Config::singleton();
-  // $debug  = false;
 
   // do my calculations based on yyyymmddhhmmss representation of the time
   // not sure about time-zone issues.
@@ -88,17 +85,24 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   // We do this both to fix any failed settings previously, and also
   // to deal with the possibility that the settings for the number of payments (installments) for an existing record has changed.
   // First check for recur end date values on non-open-ended recurring contribution records that are either complete or in-progress.
-  // FIXME get contribution status ids from names, not hard-coded IDs
   $select = 'SELECT cr.id, count(c.id) AS installments_done, cr.installments, cr.end_date, NOW() as test_now
       FROM civicrm_contribution_recur cr
       INNER JOIN civicrm_contribution c ON cr.id = c.contribution_recur_id
       INNER JOIN civicrm_payment_processor pp
         ON cr.payment_processor_id = pp.id
           AND pp.class_name = %1
+      LEFT JOIN civicrm_option_group og
+        ON og.name = "contribution_status"
+      LEFT JOIN civicrm_option_value rs
+        ON cr.contribution_status_id = rs.value
+        AND rs.option_group_id = og.id
+      LEFT JOIN civicrm_option_value cs
+        ON c.contribution_status_id = cs.value
+        AND cs.option_group_id = og.id
       WHERE
         (cr.installments > 0)
-        AND (cr.contribution_status_id IN (1,5))
-        AND (c.contribution_status_id IN (1,2))
+        AND (rs.name IN ("In Progress", "Completed"))
+        AND (cs.name IN ("Completed", "Pending"))
       GROUP BY c.contribution_recur_id';
   $dao = CRM_Core_DAO::executeQuery($select, $args);
   while ($dao->fetch()) {
@@ -107,18 +111,42 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     if ($dao->installments_done < $dao->installments) {
       // Unset the end_date.
       if (($dao->end_date > 0) && ($dao->end_date <= $dao->test_now)) {
-        // FIXME move this and the next query to API calls, and fix hard-coded contrib status id
-        $update = 'UPDATE civicrm_contribution_recur SET end_date = NULL, contribution_status_id = 5 WHERE id = %1';
-        CRM_Core_DAO::executeQuery($update, array(1 => array($dao->id, 'Int')));
+        try {
+          $update = civicrm_api3('ContributionRecur', 'create', [
+            'end_date' => NULL,
+            'contribution_status_id' => "In Progress",
+            'id' => $dao->id,
+          ]);
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
       }
     }
     // otherwise, check if my end date should be set to the past because I have finished
     // I'm done with installments.
     elseif ($dao->installments_done >= $dao->installments) {
       if (empty($dao->end_date) || ($dao->end_date >= $dao->test_now)) {
+        $enddate = strtotime ('-1 hour' , strtotime(date('Y-m-d H:i:s'))) ;
+        $enddate = date('Y-m-d H:i:s' , $enddate);
         // This interval complete, set the end_date to an hour ago.
-        $update = 'UPDATE civicrm_contribution_recur SET end_date = DATE_SUB(NOW(),INTERVAL 1 HOUR) WHERE id = %1';
-        CRM_Core_DAO::executeQuery($update, array(1 => array($dao->id, 'Int')));
+        try {
+          $update = civicrm_api3('ContributionRecur', 'create', [
+            'end_date' => $enddate,
+            'id' => $dao->id,
+          ]);
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
       }
     }
   }
