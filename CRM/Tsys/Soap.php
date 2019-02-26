@@ -37,7 +37,7 @@ class CRM_Tsys_Soap {
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+    return $response = self::doSoapRequest($soap_request);
   }
 
   /**
@@ -78,7 +78,7 @@ HEREDOC;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    return $response = CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+    return $response = self::doSoapRequest($soap_request);
   }
 
   /**
@@ -106,7 +106,7 @@ HEREDOC;
    </soap:Body>
 </soap:Envelope>
 HEREDOC;
-    return CRM_Core_Payment_Tsys::doSoapRequest($soap_request);
+    return self::doSoapRequest($soap_request);
   }
 
   /**
