@@ -22,13 +22,22 @@ class CRM_Tsys_Recur {
     // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1285
     $use_repeattransaction = FALSE;
     $is_recurrence = !empty($original_contribution_id);
-    // FIXME get token from paymentToken API
-    $contribution['payment_token'] = CRM_Core_DAO::singleValueQuery("SELECT pt.token
-      FROM civicrm_payment_token pt
-      LEFT JOIN civicrm_contribution_recur cr
-        ON pt.id = cr.payment_token_id
-      WHERE cr.id = " . $contribution['contribution_recur_id']
-    );
+    try {
+      $paymentToken = civicrm_api3('ContributionRecur', 'getsingle', [
+        'return' => ["payment_token_id.token"],
+        'id' => $contribution['contribution_recur_id'],
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    if (!empty($paymentToken['payment_token_id.token'])) {
+      $contribution['payment_token'] = $paymentToken['payment_token_id.token'];
+    }
     $result = $this->processTransaction($contribution, 'contribute');
 
     // Initialize the status to pending:
@@ -103,7 +112,7 @@ class CRM_Tsys_Recur {
               'payment_processor_id' => $contribution['payment_processor'],
               'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
               // FIXME make sure the trxn_id is set to be the payment_token
-              'trxn_id' => $result['trxn_id'],
+              'trxn_id' => $result['payment_token'],
               'receive_date' => $contribution['receive_date'],
             ));
           }

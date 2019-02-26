@@ -317,6 +317,7 @@ private $_islive = FALSE;
       return $params;
     }
   }
+  
   /**
    * This is a recurring donation, save the card for future use
    * @param  [type] $params    [description]
