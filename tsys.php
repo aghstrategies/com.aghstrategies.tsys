@@ -17,8 +17,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // the same as the other creditcard forms so we need to send this special:
     if ($formName == 'CRM_Event_Form_Participant') {
       // Get API Key and provide it to JS:
-      $publishableKey = CRM_Utils_Array::value('password', CRM_Core_Payment_Tsys::getPaymentProcessorSettings($paymentProcessorId, array('password')));
-      CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
+      CRM_Core_Resources::singleton()->addVars('tsys', array('pp' => $paymentProcessorId));
     }
 
     // Add data-cayan attributes to credit card fields so that the

@@ -85,11 +85,9 @@ private $_islive = FALSE;
     $allTsysWebApiKeys = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
     CRM_Core_Resources::singleton()->addVars('tsys', array('allApiKeys' => $allTsysWebApiKeys));
 
-    // send api key for current payment processor
+    // send current payment processor
     $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
-    // FIXME send ID only, not publishable key since that can be found in `allApiKeys`
-    $publishableKey = CRM_Utils_Array::value($paymentProcessorId, $allTsysWebApiKeys);
-    CRM_Core_Resources::singleton()->addVars('tsys', array('api' => $publishableKey));
+    CRM_Core_Resources::singleton()->addVars('tsys', array('pp' => $paymentProcessorId));
   }
 
   /**

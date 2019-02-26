@@ -118,11 +118,17 @@ CRM.$(function ($) {
   function loadtsysBillingBlock() {
 
     // Get api key
-    if (typeof CRM.vars.tsys.api === 'undefined') {
-      debugging('No api key!');
+    if (typeof CRM.vars.tsys.pp === 'undefined') {
+      debugging('No payment processor id found');
+    } else if (typeof CRM.vars.tsys.allApiKeys === 'undefined') {
+      debugging('No payment processors array found');
     } else {
-      // Setup tsys.Js
-      CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.api);
+      if (CRM.vars.tsys.allApiKeys[CRM.vars.tsys.pp]) {
+        // Setup tsys.Js
+        CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.allApiKeys[CRM.vars.tsys.pp]);
+      } else {
+        debugging('current payment processor web api key not found');
+      }
     }
 
     // Get the form containing payment details
