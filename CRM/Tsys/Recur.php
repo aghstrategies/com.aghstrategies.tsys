@@ -38,7 +38,7 @@ class CRM_Tsys_Recur {
     if (!empty($paymentToken['payment_token_id.token'])) {
       $contribution['payment_token'] = $paymentToken['payment_token_id.token'];
     }
-    $result = $this->processTransaction($contribution, 'contribute');
+    $result = self::processTransaction($contribution, 'contribute');
 
     // Initialize the status to pending:
     $contribution['contribution_status_id'] = "Pending";
@@ -230,8 +230,13 @@ class CRM_Tsys_Recur {
       // If transaction is recurring AND there is not an existing vault token
       // saved.
       if (CRM_Utils_Array::value('is_recur', $contribution) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($contribution['contribution_recur_id'])) {
-        $paymentTokenId = CRM_Core_Payment_Tsys::boardCard($recur_id, $makeTransaction->Body->SaleResponse->SaleResult->Token, $tsysCreds, $contribution['contact_id'], $contribution['payment_processor']);
-        $contribution['token'] = $paymentTokenId;
+        $paymentTokenId = CRM_Core_Payment_Tsys::boardCard(
+          $recur_id,
+          $makeTransaction->Body->SaleResponse->SaleResult->Token,
+          $tsysCreds,
+          $contribution['contact_id'],
+          $contribution['payment_processor']
+        );
       }
       return $contribution;
     }

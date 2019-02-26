@@ -164,7 +164,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       'is_test',
       'payment_processor_id',
     ],
-    'next_sched_contribution_date' => ['>=' => date("Y-m-d") . ' 23:59:59'],
+    'next_sched_contribution_date' => ['>=' => date("Y-m-d") . ' 00:00:00'],
   ];
   // Also filter by cycle day if it exists.
   if (!empty($params['cycle_day'])) {
@@ -334,7 +334,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     }
   }
   $lock->release();
-  
+
   // If errors ..
   if ($error_count > 0) {
     return civicrm_api3_create_error(
