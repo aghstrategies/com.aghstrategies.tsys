@@ -182,6 +182,8 @@ private $_islive = FALSE;
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
+    $params['invoice_number'] = rand(1, 1000000);
+
     // Get contribution Statuses
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
@@ -246,7 +248,8 @@ private $_islive = FALSE;
       $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
         $params['payment_token'],
         $tsysCreds,
-        $params['amount']
+        $params['amount'],
+        $params['invoice_number']
       );
     }
     // IF no Payment Token look for credit card fields
@@ -272,7 +275,8 @@ private $_islive = FALSE;
         $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
           $creditCardInfo,
           $tsysCreds,
-          $params['amount']
+          $params['amount'],
+          $params['invoice_number']
         );
       }
       // If no credit card fields throw an error
@@ -287,12 +291,66 @@ private $_islive = FALSE;
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
     $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
       $params['payment_status_id'] = $completedStatusId;
+      $retrieveFromXML = [
+        'trxn_id' => 'Token',
+        // FIXME make sure this gets saved to civicrm_financial_trxn table
+        // 'trxn_result_code' => 'AuthorizationCode',
+        'pan_truncation' => 'CardNumber',
+        'card_type_id' => 'CardType',
+      ];
 
+      // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale
+      $tsysCardTypes = [
+        4 => 'Visa',
+        3 => 'MasterCard',
+        1 => 'Amex',
+        2 => 'Discover',
+      ];
+      foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
+        if (isset($makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML)) {
+          $XMLvalueAsString = (string) $makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML;
+          switch ($fieldInXML) {
+            case 'CardType':
+              if (!empty($tsysCardTypes[$XMLvalueAsString])) {
+                try {
+                  $cardType = civicrm_api3('OptionValue', 'getsingle', [
+                    'sequential' => 1,
+                    'return' => ["value"],
+                    'option_group_id' => "accept_creditcard",
+                    'name' => $tsysCardTypes[$XMLvalueAsString],
+                  ]);
+                }
+                catch (CiviCRM_API3_Exception $e) {
+                  $error = $e->getMessage();
+                  CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                    'domain' => 'com.aghstrategies.tsys',
+                    1 => $error,
+                  )));
+                }
+              }
+              if (!empty($cardType['value'])) {
+                $params[$fieldInCivi] = $cardType['value'];
+              }
+              break;
+
+            case 'CardNumber':
+              $params[$fieldInCivi] = substr($XMLvalueAsString, -4);
+              break;
+
+            default:
+              $params[$fieldInCivi] = $XMLvalueAsString;
+              break;
+          }
+        } else {
+          CRM_Core_Error::statusBounce(ts("Error saving $fieldInXML to database"));
+        }
+      }
       // FIXME make sure these get saved to civicrm_financial_trxn:
-      $params['trxn_id'] = settype($makeTransaction->Body->SaleResponse->SaleResult->Token, 'string');
-      $params['trxn_result_code'] = settype($makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode, 'string');
-      $params['pan_truncation'] = settype(substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4), 'string');
-
+      // $params['trxn_id'] = settype($makeTransaction->Body->SaleResponse->SaleResult->Token, 'string');
+      // $params['trxn_result_code'] = settype($makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode, 'string');
+      // $params['pan_truncation'] = settype(substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4), 'string');
+      // print_r($makeTransaction);
+      // print_r($params); die();
       if (!empty($params['payment_token'])) {
         $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
         $queryParams = array(1 => array($params['payment_token'], 'String'));
@@ -305,9 +363,9 @@ private $_islive = FALSE;
             $params['contact_id'],
             $params['payment_processor']
           );
+          $params['token'] = $paymentTokenId;
         }
       }
-      $params['token'] = $paymentTokenId;
       return $params;
     }
     // If transaction fails

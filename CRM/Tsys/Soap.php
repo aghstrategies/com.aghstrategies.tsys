@@ -11,7 +11,7 @@ class CRM_Tsys_Soap {
    * @param  int $amount      transaction amount
    * @return                 response from tsys
    */
-  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount) {
+  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -31,7 +31,7 @@ class CRM_Tsys_Soap {
                 <CashbackAmount>0.00</CashbackAmount>
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>0</InvoiceNumber>
+                <InvoiceNumber>$invoiceNumber</InvoiceNumber>
              </Request>
           </Sale>
        </soap:Body>
@@ -47,7 +47,7 @@ HEREDOC;
    * @param  int   $amount    transaction amount
    * @return                  response from tsys
    */
-  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount) {
+  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -72,7 +72,7 @@ HEREDOC;
                 <CashbackAmount>0.00</CashbackAmount>
                 <SurchargeAmount>0.00</SurchargeAmount>
                 <TaxAmount>0.00</TaxAmount>
-                <InvoiceNumber>0</InvoiceNumber>
+                <InvoiceNumber>$invoiceNumber</InvoiceNumber>
              </Request>
           </Sale>
        </soap:Body>
