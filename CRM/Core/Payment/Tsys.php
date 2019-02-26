@@ -289,9 +289,9 @@ private $_islive = FALSE;
       $params['payment_status_id'] = $completedStatusId;
 
       // FIXME make sure these get saved to civicrm_financial_trxn:
-      $params['trxn_id'] = $makeTransaction->Body->SaleResponse->SaleResult->Token;
-      $params['trxn_result_code'] = $makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode;
-      $params['pan_truncation'] = substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4);
+      $params['trxn_id'] = settype($makeTransaction->Body->SaleResponse->SaleResult->Token, 'string');
+      $params['trxn_result_code'] = settype($makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode, 'string');
+      $params['pan_truncation'] = settype(substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4), 'string');
 
       if (!empty($params['payment_token'])) {
         $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
@@ -317,7 +317,7 @@ private $_islive = FALSE;
       return $params;
     }
   }
-  
+
   /**
    * This is a recurring donation, save the card for future use
    * @param  [type] $params    [description]
