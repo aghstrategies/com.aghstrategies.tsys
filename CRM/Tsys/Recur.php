@@ -242,17 +242,6 @@ class CRM_Tsys_Recur {
     }
     // If transaction fails.
     else {
-      // Send an email to the System Administrator
-      list($fromName, $fromEmail) = CRM_Core_BAO_Domain::getNameAndEmail();
-      $mailparams = array(
-        'from' => $fromName . ' <' . $fromEmail . '> ',
-        'to' => 'System Administrator <' . $fromEmail . '>',
-        'subject' => ts('Tsys recurring payment failed: ' . date('c')),
-        'text' => " The following recurring contribution was attempted and failed:" . print_r($contribution),
-        'returnPath' => $fromEmail,
-      );
-      CRM_Utils_Mail::send($mailparams);
-
       // Record Failed Transaction
       $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
       $contribution['contribution_status_id'] = $failedStatusId;

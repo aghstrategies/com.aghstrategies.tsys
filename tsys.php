@@ -69,6 +69,46 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
 }
 
 /**
+ * Implementation of hook_civicrm_check().
+ */
+function tsys_civicrm_check(&$messages) {
+  try {
+    $failedContributions = civicrm_api3('Contribution', 'get', [
+      'sequential' => 1,
+      'contribution_recur_id' => ['IS NOT NULL' => 1],
+      'contribution_status_id' => "Failed",
+    ]);
+  }
+  catch (CiviCRM_API3_Exception $e) {
+    $error = $e->getMessage();
+    CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      'domain' => 'com.aghstrategies.tsys',
+      1 => $error,
+    )));
+  }
+  if ($failedContributions['count'] > 0) {
+    $warningLevel = 'NOTICE';
+    if ($failedContributions['count'] > 3) {
+      $warningLevel = 'WARNING';
+    }
+    if ($failedContributions['count'] > 5) {
+      $warningLevel = 'ERROR';
+    }
+    $tsParams = array(
+      1 => $failedContributions['count'],
+    );
+    $details = ts('%1 Failed Recurring Contributions Found.', $tsParams);
+    $messages[] = new CRM_Utils_Check_Message(
+      'failed_recurring_contributions_found',
+      $details,
+      ts('Failed Recurring Tsys Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+      \Psr\Log\LogLevel::$warningLevel,
+      'fa-user-times'
+    );
+  }
+}
+
+/**
  * Implements hook_civicrm_managed().
  *
  * Generate a list of entities to create/deactivate/delete when this module
