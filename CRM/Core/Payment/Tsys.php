@@ -293,8 +293,7 @@ private $_islive = FALSE;
       $params['payment_status_id'] = $completedStatusId;
       $retrieveFromXML = [
         'trxn_id' => 'Token',
-        // FIXME make sure this gets saved to civicrm_financial_trxn table
-        // 'trxn_result_code' => 'AuthorizationCode',
+        'trxn_result_code' => 'AuthorizationCode',
         'pan_truncation' => 'CardNumber',
         'card_type_id' => 'CardType',
       ];
