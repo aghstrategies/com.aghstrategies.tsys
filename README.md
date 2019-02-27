@@ -26,3 +26,5 @@ Otherwise, download and install as you would for any other CiviCRM extension.
 
 ## Contribute Transact API
 This processor works with the Contribution Transact API but one needs to pass the Currency as USD.
+
+## [Credit Card Numbers to test with](https://docs.cayan.com/knowledge-base/testing-certification-tools/test-processor)
