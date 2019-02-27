@@ -33,10 +33,8 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // Add tsys js to create payment tokens:
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
 
-    // FIXME do we want to copy this file (as I have for now) or link to it?
-    // adding a local copy of
-    // https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js
-    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/CayanCheckoutPlus.js', 'html-header');
+    // adding Cayan script
+    CRM_Core_Resources::singleton()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
   }
 }
 
