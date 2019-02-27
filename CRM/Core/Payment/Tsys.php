@@ -252,41 +252,21 @@ private $_islive = FALSE;
         $params['invoice_number']
       );
     }
-    // IF no Payment Token look for credit card fields
+    // If no token fields throw an error
     else {
-      if (!empty($params['credit_card_number']) &&
-      !empty($params['cvv2']) &&
-      !empty($params['credit_card_exp_date']['M']) &&
-      !empty($params['credit_card_exp_date']['Y'])) {
-      $creditCardInfo = array(
-          'credit_card' => $params['credit_card_number'],
-          'cvv' => $params['cvv2'],
-          'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
-          'AvsStreetAddress' => '',
-          'AvsZipCode' => '',
-          'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
-        );
-        if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
-          $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
-        }
-        if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
-          $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
-        }
-        $makeTransaction = CRM_Core_Payment_Tsys::composeSaleSoapRequestCC(
-          $creditCardInfo,
-          $tsysCreds,
-          $params['amount'],
-          $params['invoice_number']
-        );
-      }
-      // If no credit card fields throw an error
-      else {
-        CRM_Core_Error::statusBounce(ts('Unable to complete payment, missing credit card info! Please this to the site administrator with a description of what you were trying to do.'));
-        Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-      }
+      CRM_Core_Error::statusBounce(ts('Unable to complete payment, no tsys payment token! Please this to the site administrator with a description of what you were trying to do.'));
+      Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
     }
+    return self::processTransaction($makeTransaction, $params);
+  }
 
-
+  /**
+   * process response from Tsys
+   * @param  object $makeTransaction response from tsys
+   * @param  array $params           payment params
+   * @return $param                 payment params with relevant info from Tsys
+   */
+  public static function processTransaction($makeTransaction, &$params) {
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
     $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {

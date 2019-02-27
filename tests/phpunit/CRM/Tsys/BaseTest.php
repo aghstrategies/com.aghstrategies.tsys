@@ -171,12 +171,44 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'description' => 'Test from tsys Test Code',
       'currencyID' => 'USD',
       'invoiceID' => $this->_invoiceID,
+      'invoice_number' => 'x',
     ), $params);
 
+    $tsysCreds = $tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
+    generateTokenFromCreditCard($params, $tsysCreds);
     $ret = $tsys->doPayment($params);
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
 
     $this->assertEquals($ret['payment_status_id'], $completedStatusId);
+  }
+
+  public function generateTokenFromCreditCard($params, $tsysCreds) {
+    if (!empty($params['credit_card_number']) &&
+    !empty($params['cvv2']) &&
+    !empty($params['credit_card_exp_date']['M']) &&
+    !empty($params['credit_card_exp_date']['Y'])) {
+    $creditCardInfo = array(
+        'credit_card' => $params['credit_card_number'],
+        'cvv' => $params['cvv2'],
+        'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
+        'AvsStreetAddress' => '',
+        'AvsZipCode' => '',
+        'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
+      );
+      if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
+        $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
+      }
+      if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
+        $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
+      }
+      $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestCC(
+        $creditCardInfo,
+        $tsysCreds,
+        $params['amount'],
+        $params['invoice_number']
+      );
+    }
+    return $makeTransaction;
   }
 
   /**
