@@ -235,10 +235,14 @@ CRM.$(function ($) {
 
         // this element may or may not exist on the webform, but we are
         // dealing with a single (tsys) processor enabled.
-        if (!$('input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]').length) {
+        if (!$(
+          'input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]'
+        ).length) {
           chosenProcessorId = tsysProcessorId;
         } else {
-          chosenProcessorId = $form.find('input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]:checked').val();
+          chosenProcessorId = $form.find(
+            'input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]:checked'
+          ).val();
         }
       }
 
@@ -291,7 +295,9 @@ CRM.$(function ($) {
         }
 
         // If we have more than one processor (user-select) then we have a set of radio buttons:
-        var $processorFields = $('[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+        var $processorFields = $(
+          '[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]'
+        );
         if ($processorFields.length) {
           if ($processorFields.filter(':checked').val() === '0' ||
           $processorFields.filter(':checked').val() === 0) {
