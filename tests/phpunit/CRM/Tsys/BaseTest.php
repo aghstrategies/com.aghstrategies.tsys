@@ -175,10 +175,9 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     ), $params);
 
     $tsysCreds = $tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
-    generateTokenFromCreditCard($params, $tsysCreds);
-    $ret = $tsys->doPayment($params);
+    $makeTransaction = $this->generateTokenFromCreditCard($params, $tsysCreds);
+    $ret = $tsys->processTransaction($makeTransaction, $params);
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-
     $this->assertEquals($ret['payment_status_id'], $completedStatusId);
   }
 
