@@ -111,7 +111,6 @@ class CRM_Tsys_Recur {
               'id' => $contribution['id'],
               'payment_processor_id' => $contribution['payment_processor'],
               'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
-              // FIXME make sure the trxn_id is set to be the payment_token
               'trxn_id' => $result['payment_token'],
               'receive_date' => $contribution['receive_date'],
             ));
@@ -153,7 +152,6 @@ class CRM_Tsys_Recur {
         $complete = array(
           'id' => $contribution['id'],
           'payment_processor_id' => $contribution['payment_processor'],
-          // FIXME make sure the trxn_id is the payment_token
           'trxn_id' => $contribution['payment_token'],
           'receive_date' => $contribution['receive_date'],
         );
@@ -218,7 +216,6 @@ class CRM_Tsys_Recur {
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
-      // FIXME make sure these get saved to civicrm_financial_trxn:
       $contribution['trxn_id'] = $makeTransaction->Body->SaleResponse->SaleResult->Token;
       $contribution['trxn_result_code'] = $makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode;
       $contribution['pan_truncation'] = substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4);
@@ -379,6 +376,7 @@ class CRM_Tsys_Recur {
           $result = civicrm_api3('ContributionRecur', 'create', [
             'id' => $recur_id,
             'payment_token_id' => $paymentToken['id'],
+            'processor_id' => $paymentProcessor,
           ]);
         }
         catch (CiviCRM_API3_Exception $e) {

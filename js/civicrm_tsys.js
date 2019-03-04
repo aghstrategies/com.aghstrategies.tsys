@@ -242,7 +242,7 @@ CRM.$(function ($) {
         }
       }
 
-      // yeahFIXME is all this needed? looks like case of submitting other payment processor
+      // FIXME is all this needed? looks like case of submitting other payment processor
       // else {
       //   debugging(CRM.vars.tsys.allApiKeys);
       //   debugging(CRM.vars.tsys.pp);
