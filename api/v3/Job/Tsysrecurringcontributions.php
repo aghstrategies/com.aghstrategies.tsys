@@ -282,22 +282,12 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
       $output[] = $result;
 
-      // So far so, good ... now create the pending contribution, and save its id
-      // $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
-      // $output[] = $result;
-      /* calculate the next collection date, based on the recieve date (note effect of catchup mode, above)  */
-      // $next_collection_date = date('Y-m-d H:i:s', strtotime("+{$donation['frequency_interval']} {$donation['frequency_unit']}", $receive_ts));
-      /* by default, advance to the next schduled date and set the failure count back to 0 */
-      // $contribution_recur_set = [
-      //   'id' => $contribution['contribution_recur_id'],
-      //   'failure_count' => '0',
-      //   'next_sched_contribution_date' => $next_collection_date,
-      // ];
       $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
 
       /* special handling for failures */
       if ($failedStatusId == $contribution['contribution_status_id']) {
         $contribution_recur_set['failure_count'] = $failure_count + 1;
+        ++$error_count;
         /* if it has failed but the failure threshold will not be reached with this failure, leave the next sched contribution date as it was */
         if ($contribution_recur_set['failure_count'] < $failure_threshhold) {
           // Should the failure count be reset otherwise? It is not.

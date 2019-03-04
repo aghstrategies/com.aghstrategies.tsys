@@ -18,6 +18,7 @@ class CRM_Tsys_Recur {
    * Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/master/iats.php#L1285 _iats_process_contribution_payment
    */
   function processContributionPayment(&$contribution, $options, $original_contribution_id) {
+    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
     // By default, don't use repeattransaction:
     // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1285
     $use_repeattransaction = FALSE;
@@ -61,11 +62,11 @@ class CRM_Tsys_Recur {
           'original_contribution_id' => $original_contribution_id,
           'contribution_status_id' => 'Pending',
           'is_email_receipt' => 0,
-          // 'invoice_id' => $contribution['invoice_id'],
-          // 'receive_date' => $contribution['receive_date'],
-          // 'campaign_id' => $contribution['campaign_id'],
-          // 'financial_type_id' => $contribution['financial_type_id'],
-          // 'payment_processor_id' => $contribution['payment_processor'],
+          'invoice_id' => $contribution['invoice_id'],
+          'receive_date' => $contribution['receive_date'],
+          'campaign_id' => $contribution['campaign_id'],
+          'financial_type_id' => $contribution['financial_type_id'],
+          'payment_processor_id' => $contribution['payment_processor'],
           'contribution_recur_id' => $contribution['contribution_recur_id'],
         ));
         $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
@@ -103,7 +104,7 @@ class CRM_Tsys_Recur {
         }
         // Save my status in the contribution array that was passed in.
         $contribution['contribution_status_id'] = $result['contribution_status_id'];
-        if ($result['contribution_status_id'] == 1) {
+        if ($result['contribution_status_id'] == $completedStatusId) {
           // My transaction completed, so record that fact in CiviCRM,
           // potentially sending an invoice.
           try {
@@ -147,7 +148,7 @@ class CRM_Tsys_Recur {
         }
       }
       /* And then I'm done unless it completed */
-      if ($result['contribution_status_id'] == 1 && !empty($result['status'])) {
+      if ($result['contribution_status_id'] == $completedStatusId && !empty($result['status'])) {
         /* success, and the transaction has completed */
         $complete = array(
           'id' => $contribution['id'],
@@ -171,8 +172,9 @@ class CRM_Tsys_Recur {
         return $message . $result['auth_result'];
       }
     }
+
     // Now return the appropriate message.
-    if ($result['contribution_status_id'] == 1) {
+    if ($result['contribution_status_id'] == $completedStatusId) {
       return ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
     else {
@@ -211,15 +213,13 @@ class CRM_Tsys_Recur {
     $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
       $contribution['payment_token'],
       $tsysCreds,
-      $contribution['total_amount']
+      $contribution['total_amount'],
+      rand(1, 1000000)
     );
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
-      $contribution['trxn_id'] = $makeTransaction->Body->SaleResponse->SaleResult->Token;
-      $contribution['trxn_result_code'] = $makeTransaction->Body->SaleResponse->SaleResult->AuthorizationCode;
-      $contribution['pan_truncation'] = substr($makeTransaction->Body->SaleResponse->SaleResult->CardNumber, -4);
-
+      $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction);
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $contribution['contribution_status_id'] = $completedStatusId;
       $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
@@ -229,7 +229,7 @@ class CRM_Tsys_Recur {
       if (CRM_Utils_Array::value('is_recur', $contribution) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($contribution['contribution_recur_id'])) {
         $paymentTokenId = CRM_Tsys_Recur::boardCard(
           $recur_id,
-          $makeTransaction->Body->SaleResponse->SaleResult->Token,
+          $contribution['trxn_id'],
           $tsysCreds,
           $contribution['contact_id'],
           $contribution['payment_processor']

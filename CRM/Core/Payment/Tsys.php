@@ -274,59 +274,7 @@ private $_islive = FALSE;
       $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
-      $retrieveFromXML = [
-        'trxn_id' => 'Token',
-        'trxn_result_code' => 'AuthorizationCode',
-        'pan_truncation' => 'CardNumber',
-        'card_type_id' => 'CardType',
-      ];
-
-      // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale
-      $tsysCardTypes = [
-        4 => 'Visa',
-        3 => 'MasterCard',
-        1 => 'Amex',
-        2 => 'Discover',
-      ];
-      foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
-        if (isset($makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML)) {
-          $XMLvalueAsString = (string) $makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML;
-          switch ($fieldInXML) {
-            case 'CardType':
-              if (!empty($tsysCardTypes[$XMLvalueAsString])) {
-                try {
-                  $cardType = civicrm_api3('OptionValue', 'getsingle', [
-                    'sequential' => 1,
-                    'return' => ["value"],
-                    'option_group_id' => "accept_creditcard",
-                    'name' => $tsysCardTypes[$XMLvalueAsString],
-                  ]);
-                }
-                catch (CiviCRM_API3_Exception $e) {
-                  $error = $e->getMessage();
-                  CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-                    'domain' => 'com.aghstrategies.tsys',
-                    1 => $error,
-                  )));
-                }
-              }
-              if (!empty($cardType['value'])) {
-                $params[$fieldInCivi] = $cardType['value'];
-              }
-              break;
-
-            case 'CardNumber':
-              $params[$fieldInCivi] = substr($XMLvalueAsString, -4);
-              break;
-
-            default:
-              $params[$fieldInCivi] = $XMLvalueAsString;
-              break;
-          }
-        } else {
-          CRM_Core_Error::statusBounce(ts("Error saving $fieldInXML to database"));
-        }
-      }
+      $params = self::processResponseFromTsys($params, $makeTransaction);
       $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
       $queryParams = array(1 => array($previousTransactionToken, 'String'));
       // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
@@ -350,5 +298,62 @@ private $_islive = FALSE;
       $params['payment_status_id'] = $failedStatusId;
       return $params;
     }
+  }
+
+  public static function processResponseFromTsys(&$params, $makeTransaction) {
+    $retrieveFromXML = [
+      'trxn_id' => 'Token',
+      'trxn_result_code' => 'AuthorizationCode',
+      'pan_truncation' => 'CardNumber',
+      'card_type_id' => 'CardType',
+    ];
+
+    // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale
+    $tsysCardTypes = [
+      4 => 'Visa',
+      3 => 'MasterCard',
+      1 => 'Amex',
+      2 => 'Discover',
+    ];
+    foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
+      if (isset($makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML)) {
+        $XMLvalueAsString = (string) $makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML;
+        switch ($fieldInXML) {
+          case 'CardType':
+            if (!empty($tsysCardTypes[$XMLvalueAsString])) {
+              try {
+                $cardType = civicrm_api3('OptionValue', 'getsingle', [
+                  'sequential' => 1,
+                  'return' => ["value"],
+                  'option_group_id' => "accept_creditcard",
+                  'name' => $tsysCardTypes[$XMLvalueAsString],
+                ]);
+              }
+              catch (CiviCRM_API3_Exception $e) {
+                $error = $e->getMessage();
+                CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                  'domain' => 'com.aghstrategies.tsys',
+                  1 => $error,
+                )));
+              }
+            }
+            if (!empty($cardType['value'])) {
+              $params[$fieldInCivi] = $cardType['value'];
+            }
+            break;
+
+          case 'CardNumber':
+            $params[$fieldInCivi] = substr($XMLvalueAsString, -4);
+            break;
+
+          default:
+            $params[$fieldInCivi] = $XMLvalueAsString;
+            break;
+        }
+      } else {
+        CRM_Core_Error::statusBounce(ts("Error saving $fieldInXML to database"));
+      }
+    }
+    return $params;
   }
 }
