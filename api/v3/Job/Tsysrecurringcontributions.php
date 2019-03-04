@@ -163,6 +163,8 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       'failure_count',
       'is_test',
       'payment_processor_id',
+      'frequency_interval',
+      'frequency_unit',
     ],
     'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 00:00:00'],
   ];
@@ -252,17 +254,45 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           )));
         }
       }
-      // So far so, good ... now create the pending contribution, and save its id
-      $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
-      $output[] = $result;
+      // Before talking to iATS, advance the next collection date now so that in case of partial server failure I don't try to take money again.
+      // Save the current value to restore in some cases of confirmed payment failure
+      $saved_next_sched_contribution_date = $donation['next_sched_contribution_date'];
       /* calculate the next collection date, based on the recieve date (note effect of catchup mode, above)  */
       $next_collection_date = date('Y-m-d H:i:s', strtotime("+{$donation['frequency_interval']} {$donation['frequency_unit']}", $receive_ts));
-      /* by default, advance to the next schduled date and set the failure count back to 0 */
-      $contribution_recur_set = [
+      /* advance to the next scheduled date */
+      $contribution_recur_set = array(
         'id' => $contribution['contribution_recur_id'],
-        'failure_count' => '0',
         'next_sched_contribution_date' => $next_collection_date,
-      ];
+      );
+      try {
+        $recurUpdate = civicrm_api3('ContributionRecur', 'create', $contribution_recur_set);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+
+      // So far so, good ... now create the pending contribution, and save its id
+      // and then try to get the money, and do one of:
+      // update the contribution to failed, leave as pending for server failure, complete the transaction,
+      // or update a pending ach/eft with it's transaction id.
+      $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
+      $output[] = $result;
+
+      // So far so, good ... now create the pending contribution, and save its id
+      // $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
+      // $output[] = $result;
+      /* calculate the next collection date, based on the recieve date (note effect of catchup mode, above)  */
+      // $next_collection_date = date('Y-m-d H:i:s', strtotime("+{$donation['frequency_interval']} {$donation['frequency_unit']}", $receive_ts));
+      /* by default, advance to the next schduled date and set the failure count back to 0 */
+      // $contribution_recur_set = [
+      //   'id' => $contribution['contribution_recur_id'],
+      //   'failure_count' => '0',
+      //   'next_sched_contribution_date' => $next_collection_date,
+      // ];
       $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
 
       /* special handling for failures */
