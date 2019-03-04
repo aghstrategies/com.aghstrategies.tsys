@@ -186,7 +186,6 @@ private $_islive = FALSE;
 
     // Get contribution Statuses
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
 
     // Make sure using us dollars as the currency
     $currency = NULL;
@@ -257,7 +256,8 @@ private $_islive = FALSE;
       CRM_Core_Error::statusBounce(ts('Unable to complete payment, no tsys payment token! Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
     }
-    return self::processTransaction($makeTransaction, $params);
+    $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
+    return $params;
   }
 
   /**
@@ -266,10 +266,13 @@ private $_islive = FALSE;
    * @param  array $params           payment params
    * @return $param                 payment params with relevant info from Tsys
    */
-  public static function processTransaction($makeTransaction, &$params) {
+  public static function processTransaction($makeTransaction, &$params, $tsysCreds) {
     // If transaction approved
-    if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) &&
-    $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED") {
+    if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
+    && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED"
+    && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
+      $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
+      $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
       $retrieveFromXML = [
         'trxn_id' => 'Token',
@@ -324,21 +327,19 @@ private $_islive = FALSE;
           CRM_Core_Error::statusBounce(ts("Error saving $fieldInXML to database"));
         }
       }
-      if (!empty($params['payment_token'])) {
-        $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
-        $queryParams = array(1 => array($params['payment_token'], 'String'));
-        // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
-        if (CRM_Utils_Array::value('is_recur', $params)
-        && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0
-        && !empty($params['contributionRecurID'])) {
-          $paymentTokenId = CRM_Tsys_Recur::boardCard(
-            $params['contributionRecurID'],
-            $makeTransaction->Body->SaleResponse->SaleResult->Token,
-            $tsysCreds,
-            $params['contactID'],
-            $params['payment_processor_id']
-          );
-        }
+      $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
+      $queryParams = array(1 => array($previousTransactionToken, 'String'));
+      // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
+      if (CRM_Utils_Array::value('is_recur', $params)
+      && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0
+      && !empty($params['contributionRecurID'])) {
+        $paymentTokenId = CRM_Tsys_Recur::boardCard(
+          $params['contributionRecurID'],
+          $previousTransactionToken,
+          $tsysCreds,
+          $params['contactID'],
+          $params['payment_processor_id']
+        );
       }
       return $params;
     }

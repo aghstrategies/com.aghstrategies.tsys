@@ -230,7 +230,7 @@ class CRM_Tsys_Recur {
       // If transaction is recurring AND there is not an existing vault token
       // saved.
       if (CRM_Utils_Array::value('is_recur', $contribution) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($contribution['contribution_recur_id'])) {
-        $paymentTokenId = CRM_Core_Payment_Tsys::boardCard(
+        $paymentTokenId = CRM_Tsys_Recur::boardCard(
           $recur_id,
           $makeTransaction->Body->SaleResponse->SaleResult->Token,
           $tsysCreds,
