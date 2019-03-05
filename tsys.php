@@ -82,7 +82,12 @@ function tsys_civicrm_check(&$messages) {
       1 => $error,
     )));
   }
-  if ($failedContributions['count'] > 0) {
+  if (!empty($failedContributions['values']) && $failedContributions['count'] > 0) {
+    $recurContributionToLookInto = [];
+    foreach ($failedContributions['values'] as $key => $value) {
+      $recurContributionToLookInto[] = $value['id'];
+    }
+    $recurContributionToLookInto = implode(', ', $recurContributionToLookInto);
     $warningLevel = \Psr\Log\LogLevel::NOTICE;
     if ($failedContributions['count'] > 3) {
       $warningLevel = \Psr\Log\LogLevel::WARNING;
@@ -92,12 +97,13 @@ function tsys_civicrm_check(&$messages) {
     }
     $tsParams = array(
       1 => $failedContributions['count'],
+      2 => $recurContributionToLookInto,
     );
-    $details = ts('%1 Recurring Contribution Found. Do a Find Contributions Search for Failed ', $tsParams);
+    $details = ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
     $messages[] = new CRM_Utils_Check_Message(
       'failed_recurring_contributions_found',
       $details,
-      ts('Failed Recurring Tsys Contributions Found, do a search', array('domain' => 'com.aghstrategies.tsys')),
+      ts('Uncompleted Recurring Tsys Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
       $warningLevel,
       'fa-user-times'
     );
