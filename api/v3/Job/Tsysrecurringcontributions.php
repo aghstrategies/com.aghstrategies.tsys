@@ -150,7 +150,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     }
   }
   $recurParams = [
-    'contribution_status_id' => "In Progress",
+    'contribution_status_id' => ['IN' => ["In Progress", "Pending"]],
     'payment_processor_id' => ['IN' => $tsysProcessorIDs],
     'return' => [
       'contact_id',
@@ -172,6 +172,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   if (!empty($params['cycle_day'])) {
     $recurParams['cycle_day'] = $params['cycle_day'];
   }
+  // Also filter by Failure Count
+  // if (isset($params['failure_count'])) {
+  //   $recurParams['failure_count'] = ['<=' => 3];
+  // }
   try {
     $recurringDonations = civicrm_api3('ContributionRecur', 'get', $recurParams);
   }
@@ -206,6 +210,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'contribution_recur_id' => $donation['id'],
         'total_amount' => $donation['amount'],
       ]);
+
       $original_contribution_id = $contribution_template['original_contribution_id'];
 
       $contribution = array(
@@ -231,11 +236,34 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
       }
 
-      // If my original has line_items, then I'll add them to the contribution creation array.
-      if (!empty($contribution_template['line_items'])) {
-        $contribution['skipLineItem'] = 1;
-        $contribution['api.line_item.create'] = $contribution_template['line_items'];
+      // if we have a created a pending contribution record due to a future start time, then recycle that CiviCRM contribution record now.
+      // Note that the date and amount both could have changed.
+      // The key is to only match if we find a single pending contribution, with a NULL transaction id, for this recurring schedule.
+      // We'll need to pay attention later that we may or may not already have a contribution id.
+      try {
+        $pending_contribution = civicrm_api3('Contribution', 'get', array(
+          'return' => array('id'),
+          'trxn_id' => array('IS NULL' => 1),
+          'contribution_recur_id' => $contribution_recur_id,
+          'contribution_status_id' => "Pending",
+        ));
+        if (!empty($pending_contribution['id'])) {
+          $contribution['id'] = $pending_contribution['id'];
+        }
       }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+
+      // If my original has line_items, then I'll add them to the contribution creation array.
+      // if (!empty($contribution_template['line_items'])) {
+      //   $contribution['skipLineItem'] = 1;
+      //   $contribution['api.line_item.create'] = $contribution_template['line_items'];
+      // }
 
       $options = [];
       // If our template contribution is a membership payment, make this one also.
@@ -264,29 +292,17 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'id' => $contribution['contribution_recur_id'],
         'next_sched_contribution_date' => $next_collection_date,
       );
-      try {
-        $recurUpdate = civicrm_api3('ContributionRecur', 'create', $contribution_recur_set);
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-          'domain' => 'com.aghstrategies.tsys',
-          1 => $error,
-        )));
-      }
 
-      // So far so, good ... now create the pending contribution, and save its id
-      // and then try to get the money, and do one of:
-      // update the contribution to failed, leave as pending for server failure, complete the transaction,
-      // or update a pending ach/eft with it's transaction id.
       $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
       $output[] = $result;
 
-      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
 
       /* special handling for failures */
       if ($failedStatusId == $contribution['contribution_status_id']) {
+        $contribution_recur_set['contribution_status_id'] = $contribution['contribution_status_id'];
         $contribution_recur_set['failure_count'] = $failure_count + 1;
+        $contribution_recur_set['next_sched_contribution_date'] = $donation['next_sched_contribution_date'];
         ++$error_count;
         /* if it has failed but the failure threshold will not be reached with this failure, leave the next sched contribution date as it was */
         if ($contribution_recur_set['failure_count'] < $failure_threshhold) {
@@ -295,7 +311,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
       }
       try {
-        civicrm_api3('ContributionRecur', 'create', $contribution_recur_set);
+        $recurUpdate = civicrm_api3('ContributionRecur', 'create', $contribution_recur_set);
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();

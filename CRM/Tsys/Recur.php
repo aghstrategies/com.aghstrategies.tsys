@@ -39,10 +39,10 @@ class CRM_Tsys_Recur {
     if (!empty($paymentToken['payment_token_id.token'])) {
       $contribution['payment_token'] = $paymentToken['payment_token_id.token'];
     }
+    else {
+      return ts('no payment token found for recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
+    }
     $result = self::processTransaction($contribution, 'contribute');
-
-    // Initialize the status to pending:
-    $contribution['contribution_status_id'] = "Pending";
 
     // We processed it successflly and I can try to use repeattransaction.
     // Requires the original contribution id.
@@ -57,16 +57,15 @@ class CRM_Tsys_Recur {
       // 1. Always triggers an email and doesn't include trxn.
       // 2. Date is wrong.
       try {
-        // $status = $result['contribution_status_id'] == 1 ? 'Completed' : 'Pending';
         $contributionResult = civicrm_api3('Contribution', 'repeattransaction', array(
           'original_contribution_id' => $original_contribution_id,
           'contribution_status_id' => 'Pending',
           'is_email_receipt' => 0,
-          'invoice_id' => $contribution['invoice_id'],
-          'receive_date' => $contribution['receive_date'],
-          'campaign_id' => $contribution['campaign_id'],
-          'financial_type_id' => $contribution['financial_type_id'],
-          'payment_processor_id' => $contribution['payment_processor'],
+          // 'invoice_id' => $contribution['invoice_id'],
+          // 'receive_date' => $contribution['receive_date'],
+          // 'campaign_id' => $contribution['campaign_id'],
+          // 'financial_type_id' => $contribution['financial_type_id'],
+          // 'payment_processor_id' => $contribution['payment_processor'],
           'contribution_recur_id' => $contribution['contribution_recur_id'],
         ));
         $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
@@ -137,7 +136,10 @@ class CRM_Tsys_Recur {
       // Connect to a membership if requested.
       if (!empty($options['membership_id'])) {
         try {
-          civicrm_api3('MembershipPayment', 'create', array('contribution_id' => $contribution['id'], 'membership_id' => $options['membership_id']));
+          civicrm_api3('MembershipPayment', 'create', array(
+            'contribution_id' => $contribution['id'],
+            'membership_id' => $options['membership_id'],
+          ));
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
@@ -148,7 +150,7 @@ class CRM_Tsys_Recur {
         }
       }
       /* And then I'm done unless it completed */
-      if ($result['contribution_status_id'] == $completedStatusId && !empty($result['status'])) {
+      if ($result['contribution_status_id'] == $completedStatusId) {
         /* success, and the transaction has completed */
         $complete = array(
           'id' => $contribution['id'],
@@ -188,7 +190,7 @@ class CRM_Tsys_Recur {
    * @return array              the contribution
    * Borrowed from _iats_process_transaction https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
    */
-  function processTransaction($contribution, $options) {
+  function processTransaction(&$contribution, $options) {
     // IF no Payment Token throw error.
     if (empty($contribution['payment_token']) || $contribution['payment_token'] == "Authorization token") {
       CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
@@ -224,8 +226,7 @@ class CRM_Tsys_Recur {
       $contribution['contribution_status_id'] = $completedStatusId;
       $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
       $queryParams = array(1 => array($contribution['payment_token'], 'String'));
-      // If transaction is recurring AND there is not an existing vault token
-      // saved.
+      // If transaction is recurring AND there is not an existing vault token create a vault token
       if (CRM_Utils_Array::value('is_recur', $contribution) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($contribution['contribution_recur_id'])) {
         $paymentTokenId = CRM_Tsys_Recur::boardCard(
           $recur_id,
@@ -240,7 +241,7 @@ class CRM_Tsys_Recur {
     // If transaction fails.
     else {
       // Record Failed Transaction
-      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
       $contribution['contribution_status_id'] = $failedStatusId;
       return $contribution;
     }
@@ -266,7 +267,16 @@ class CRM_Tsys_Recur {
       $template['original_contribution_id'] = $contribution_ids[0];
       $template['line_items'] = array();
       $get = array('entity_table' => 'civicrm_contribution', 'entity_id' => $contribution_ids[0]);
-      $result = civicrm_api3('LineItem', 'get', $get);
+      try {
+        $result = civicrm_api3('LineItem', 'get', $get);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
       if (!empty($result['values'])) {
         foreach ($result['values'] as $initial_line_item) {
           $line_item = array();

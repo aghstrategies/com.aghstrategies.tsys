@@ -9,21 +9,17 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
+  // If on a form with a Tsys Payment Processor
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
-    $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
 
-    // The backend credit card registration form does not build the payment form
-    // the same as the other creditcard forms so we need to send this special:
-    if ($formName == 'CRM_Event_Form_Participant') {
-      // Get API Key and provide it to JS:
-      CRM_Core_Resources::singleton()->addVars('tsys', array('pp' => $paymentProcessorId));
-    }
-
-    // Add data-cayan attributes to credit card fields so that the
-    // CayanCheckoutPlus script can find them:
+    // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
+
+    // Send current payment processor to the JS
+    $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
+    CRM_Core_Resources::singleton()->addVars('tsys', array('pp' => $paymentProcessorId));
 
     // get webapi keys for all tsys payment processors and send to the js just
     // in case there are two tsys payment processors and the user toggles between them
@@ -45,6 +41,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
  */
 function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
+  // Ensures credit card number does not get sent to server in edge case
   if (empty($form->_paymentProcessor['payment_processor_type'])) {
     return;
   }
@@ -73,10 +70,9 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
  */
 function tsys_civicrm_check(&$messages) {
   try {
-    $failedContributions = civicrm_api3('Contribution', 'get', [
+    $failedContributions = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
-      'contribution_recur_id' => ['IS NOT NULL' => 1],
-      'contribution_status_id' => "Failed",
+      'contribution_status_id' => ['IN' => ["Failed", "Pending"]],
     ]);
   }
   catch (CiviCRM_API3_Exception $e) {
@@ -87,22 +83,22 @@ function tsys_civicrm_check(&$messages) {
     )));
   }
   if ($failedContributions['count'] > 0) {
-    $warningLevel = 'NOTICE';
+    $warningLevel = \Psr\Log\LogLevel::NOTICE;
     if ($failedContributions['count'] > 3) {
-      $warningLevel = 'WARNING';
+      $warningLevel = \Psr\Log\LogLevel::WARNING;
     }
     if ($failedContributions['count'] > 5) {
-      $warningLevel = 'ERROR';
+      $warningLevel = \Psr\Log\LogLevel::ERROR;
     }
     $tsParams = array(
       1 => $failedContributions['count'],
     );
-    $details = ts('%1 Failed Recurring Contributions Found.', $tsParams);
+    $details = ts('%1 Recurring Contribution Found. Do a Find Contributions Search for Failed ', $tsParams);
     $messages[] = new CRM_Utils_Check_Message(
       'failed_recurring_contributions_found',
       $details,
-      ts('Failed Recurring Tsys Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
-      \Psr\Log\LogLevel::$warningLevel,
+      ts('Failed Recurring Tsys Contributions Found, do a search', array('domain' => 'com.aghstrategies.tsys')),
+      $warningLevel,
       'fa-user-times'
     );
   }
