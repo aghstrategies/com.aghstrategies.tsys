@@ -113,6 +113,7 @@ class CRM_Tsys_Recur {
               'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
               'trxn_id' => $result['payment_token'],
               'receive_date' => $contribution['receive_date'],
+              'contribution_status_id' => $completedStatusId,
             ));
           }
           catch (CiviCRM_API3_Exception $e) {
@@ -157,6 +158,7 @@ class CRM_Tsys_Recur {
           'payment_processor_id' => $contribution['payment_processor'],
           'trxn_id' => $contribution['payment_token'],
           'receive_date' => $contribution['receive_date'],
+          'contribution_status_id' => $completedStatusId,
         );
         $complete['is_email_receipt'] = empty($options['is_email_receipt']) ? 0 : 1;
         try {
