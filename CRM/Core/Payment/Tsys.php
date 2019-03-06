@@ -53,7 +53,6 @@ private $_islive = FALSE;
    * @public
    */
   public function checkConfig() {
-    // $config = CRM_Core_Config::singleton();
     $error = array();
     $credFields = array(
       'user_name' => 'Merchant Name',
@@ -169,27 +168,12 @@ private $_islive = FALSE;
   }
 
   /**
-   * Process payment
-   *
-   * @param array $params
-   *   Assoc array of input parameters for this transaction.
-   *
-   * @param string $component
-   *
-   * @return array
-   *   Result array
-   *
-   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   * Check that the Currency is USD
+   * @param array $params  contribution params
+   * @return boolean       if Currency is USD
    */
-  public function doPayment(&$params, $component = 'contribute') {
-    $params['invoice_number'] = rand(1, 1000000);
-
-    // Get contribution Statuses
-    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-
-    // Make sure using us dollars as the currency
-    $currency = NULL;
-
+  public function checkCurrencyIsUSD(&$params) {
+    $currency = FALSE;
     try {
       $defaultCurrency = civicrm_api3('Setting', 'get', [
         'sequential' => 1,
@@ -206,20 +190,45 @@ private $_islive = FALSE;
     }
     // look up the default currency, if its usd set this transaction to use us dollars
     if (!empty($defaultCurrency['values'][0]['defaultCurrency']) && $defaultCurrency['values'][0]['defaultCurrency'] == 'USD') {
-      $currency = $defaultCurrency['values'][0]['defaultCurrency'];
+      $currency = TRUE;
     }
     // when coming from a contribution form
     if (!empty($params['currencyID'])) {
-      $currency = $params['currencyID'];
+      $currency = TRUE;
     }
 
     // when coming from a contribution.transact api call
     if (!empty($params['currency'])) {
-      $currency = $params['currency'];
+      $currency = TRUE;
     }
+    return $currency;
+  }
 
-    // Check if the contribution uses non us dollars
-    if ($currency != 'USD') {
+  /**
+   * Process payment
+   *
+   * @param array $params
+   *   Assoc array of input parameters for this transaction.
+   *
+   * @param string $component
+   *
+   * @return array
+   *   Result array
+   *
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   */
+  public function doPayment(&$params, $component = 'contribute') {
+    $params['invoice_number'] = rand(1, 1000000);
+
+    // Get failed contribution status id
+    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+
+    // Make sure using us dollars as the currency
+    $currency = self::checkCurrencyIsUSD($params);
+
+    // IF currency is not USD throw error and quit
+    // Tsys does not accept non USD transactions
+    if ($currency == FALSE) {
       CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
       Civi::log()->debug('Tsys Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
@@ -240,6 +249,8 @@ private $_islive = FALSE;
     if (empty($tsysCreds)) {
       CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
       Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      $params['payment_status_id'] = $failedStatusId;
+      return $params;
     }
     // If there is a payment token use it to run the transaction
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
@@ -251,30 +262,36 @@ private $_islive = FALSE;
         $params['invoice_number']
       );
     }
-    // If no token fields throw an error
+    // If no payment token throw an error
     else {
       CRM_Core_Error::statusBounce(ts('Unable to complete payment, no tsys payment token! Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      $params['payment_status_id'] = $failedStatusId;
+      return $params;
     }
     $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
     return $params;
   }
 
   /**
-   * process response from Tsys
+   * After making the Tsys Soap Call, deal with the response
    * @param  object $makeTransaction response from tsys
    * @param  array $params           payment params
-   * @return $param                 payment params with relevant info from Tsys
+   * @param  array $tsysCreds        tsys Credentials
+   * @return array $params           payment params updated to inculde relevant info from Tsys
    */
   public static function processTransaction($makeTransaction, &$params, $tsysCreds) {
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
     && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED"
     && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
-      $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
+      // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
       $params = self::processResponseFromTsys($params, $makeTransaction);
+
+      // Check if the token has been saved to the database
+      $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
       $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
       $queryParams = array(1 => array($previousTransactionToken, 'String'));
       // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
@@ -300,6 +317,12 @@ private $_islive = FALSE;
     }
   }
 
+  /**
+   * Process XML from Tsys and add necessary things to the Contribution Params
+   * @param  array $params           contribution params
+   * @param  string $makeTransaction response from Tsys
+   * @return array $params           updated params
+   */
   public static function processResponseFromTsys(&$params, $makeTransaction) {
     $retrieveFromXML = [
       'trxn_id' => 'Token',
