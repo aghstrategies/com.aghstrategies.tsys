@@ -68,7 +68,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $domemberships = empty($params['ignoremembership']);
   unset($params['ignoremembership']);
 
-  // do my calculations based on yyyymmddhhmmss representation of the time
+  // do calculations based on yyyymmddhhmmss representation of the time
   // not sure about time-zone issues.
   $dtCurrentDay    = date("Ymd", mktime(0, 0, 0, date("m"), date("d"), date("Y")));
   $dtCurrentDayStart = $dtCurrentDay . "000000";
@@ -127,9 +127,8 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     }
   }
 
-  // Now we're ready to trigger payments
-  $tsysProcessorIDs = array();
   // Put together an array of tsys payment processors
+  $tsysProcessorIDs = array();
   try {
     $tsysProcessors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
@@ -149,9 +148,12 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       $tsysProcessorIDs[] = $processor['id'];
     }
   }
+
+  // Search for payments that need to be made
   $recurParams = [
     'contribution_status_id' => ['IN' => ["In Progress", "Pending"]],
     'payment_processor_id' => ['IN' => $tsysProcessorIDs],
+    'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 00:00:00'],
     'return' => [
       'contact_id',
       'amount',
@@ -166,16 +168,15 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       'frequency_interval',
       'frequency_unit',
     ],
-    'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 00:00:00'],
   ];
   // Also filter by cycle day if it exists.
   if (!empty($params['cycle_day'])) {
     $recurParams['cycle_day'] = $params['cycle_day'];
   }
   // Also filter by Failure Count
-  // if (isset($params['failure_count'])) {
-  //   $recurParams['failure_count'] = ['<=' => 3];
-  // }
+  if (isset($params['failure_count'])) {
+    $recurParams['failure_count'] = ['<=' => 3];
+  }
   try {
     $recurringDonations = civicrm_api3('ContributionRecur', 'get', $recurParams);
   }
@@ -186,6 +187,8 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       1 => $error,
     )));
   }
+
+  // get set up to start processing
   $counter = 0;
   $error_count  = 0;
   $output  = array();
@@ -194,6 +197,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $failure_threshhold = 3;
   $failure_report_text = '';
 
+  // Foreach thru recurring contributions that need to be processed
   if(!empty($recurringDonations['values'])) {
     foreach ($recurringDonations['values'] as $key => $donation) {
       $contact_id = $donation['contact_id'];
@@ -282,34 +286,37 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           )));
         }
       }
-      // Before talking to iATS, advance the next collection date now so that in case of partial server failure I don't try to take money again.
+      // Before talking to tsys, advance the next collection date now so that in case of partial server failure I don't try to take money again.
       // Save the current value to restore in some cases of confirmed payment failure
       $saved_next_sched_contribution_date = $donation['next_sched_contribution_date'];
-      /* calculate the next collection date, based on the recieve date (note effect of catchup mode, above)  */
+      // calculate the next collection date, based on the recieve date (note effect of catchup mode, above)
       $next_collection_date = date('Y-m-d H:i:s', strtotime("+{$donation['frequency_interval']} {$donation['frequency_unit']}", $receive_ts));
-      /* advance to the next scheduled date */
+      // advance to the next scheduled date
       $contribution_recur_set = array(
         'id' => $contribution['contribution_recur_id'],
         'next_sched_contribution_date' => $next_collection_date,
       );
 
+      // Process Recurring Contribution Payment
       $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
       $output[] = $result;
 
-      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
+      $pendingStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
 
-      /* special handling for failures */
-      if ($failedStatusId == $contribution['contribution_status_id']) {
+      // IF Contribution Failed
+      if ($pendingStatusId == $contribution['contribution_status_id']) {
         $contribution_recur_set['contribution_status_id'] = $contribution['contribution_status_id'];
         $contribution_recur_set['failure_count'] = $failure_count + 1;
-        $contribution_recur_set['next_sched_contribution_date'] = $donation['next_sched_contribution_date'];
+        $contribution_recur_set['next_sched_contribution_date'] = $saved_next_sched_contribution_date;
         ++$error_count;
-        /* if it has failed but the failure threshold will not be reached with this failure, leave the next sched contribution date as it was */
+        // if it has failed but the failure threshold will not be reached with this failure, leave the next sched contribution date as it was
         if ($contribution_recur_set['failure_count'] < $failure_threshhold) {
           // Should the failure count be reset otherwise? It is not.
           unset($contribution_recur_set['next_sched_contribution_date']);
         }
       }
+
+      // Update recurring Contribution based on response from CRM_Tsys_Recur::processContributionPayment
       try {
         $recurUpdate = civicrm_api3('ContributionRecur', 'create', $contribution_recur_set);
       }
@@ -365,8 +372,20 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     // I'm done with installments.
     if ($dao->installments_done >= $dao->installments) {
       // Set this series complete and the end_date to now.
-      $update = 'UPDATE civicrm_contribution_recur SET contribution_status_id = 1, end_date = NOW() WHERE id = %1';
-      CRM_Core_DAO::executeQuery($update, array(1 => array($dao->id, 'Int')));
+      try {
+        $update = civicrm_api3('ContributionRecur', 'create', [
+          'contribution_status_id' => "Completed",
+          'end_date' => $dtCurrentDay,
+          'id' => $dao->id,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
     }
   }
   $lock->release();
