@@ -274,6 +274,33 @@ private $_islive = FALSE;
   }
 
   /**
+   * Check if the vault token has ben saved to the database already
+   * @param  int    $paymentProcessor payment processor id
+   * @param  string $vaultToken       vault token to check for
+   * @return int                      number of tokens saved to the database
+   */
+  public static function checkForSavedVaultToken($paymentProcessor, $vaultToken) {
+    $paymentTokenCount = 0;
+    try {
+      $paymentToken = civicrm_api3('PaymentToken', 'get', [
+        'payment_processor_id' => $paymentProcessor,
+        'token' => $vaultToken,
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    if (!empty($paymentToken['count'])) {
+      $paymentTokenCount = $paymentToken['count'];
+    }
+    return $paymentTokenCount;
+  }
+
+  /**
    * After making the Tsys Soap Call, deal with the response
    * @param  object $makeTransaction response from tsys
    * @param  array $params           payment params
@@ -292,11 +319,11 @@ private $_islive = FALSE;
 
       // Check if the token has been saved to the database
       $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
-      $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
-      $queryParams = array(1 => array($previousTransactionToken, 'String'));
+      $savedTokens = self::checkForSavedVaultToken($params['payment_processor_id'], $previousTransactionToken);
+
       // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
       if (CRM_Utils_Array::value('is_recur', $params)
-      && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0
+      && $savedTokens == 0
       && !empty($params['contributionRecurID'])) {
         $paymentTokenId = CRM_Tsys_Recur::boardCard(
           $params['contributionRecurID'],

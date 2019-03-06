@@ -11,9 +11,8 @@ class CRM_Tsys_Recur {
    * @param $original_contribution_id if included, use as a template for a recurring contribution.
    *
    *   A high-level utility function for making a contribution payment from an existing recurring schedule
-   *   Used in the Tsysrecurringcontributions.php job and the one-time ('card on file') form.
+   *   Used in the Tsysrecurringcontributions.php job
    *
-   *   Since 4.7.12, we can are using the new repeattransaction api.
    *
    * Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/master/iats.php#L1285 _iats_process_contribution_payment
    */
@@ -23,6 +22,8 @@ class CRM_Tsys_Recur {
     // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1285
     $use_repeattransaction = FALSE;
     $is_recurrence = !empty($original_contribution_id);
+
+    // Get Vault Token
     try {
       $paymentToken = civicrm_api3('ContributionRecur', 'getsingle', [
         'return' => ["payment_token_id.token"],
@@ -36,13 +37,35 @@ class CRM_Tsys_Recur {
         1 => $error,
       )));
     }
+    // Save the payment token to the contribution
     if (!empty($paymentToken['payment_token_id.token'])) {
       $contribution['payment_token'] = $paymentToken['payment_token_id.token'];
     }
+    // IF no payment token throw an error and quit
     else {
+      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
       return ts('no payment token found for recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
-    $result = self::processTransaction($contribution, 'contribute');
+
+    // Get tsys credentials.
+    if (!empty($contribution['payment_processor'])) {
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($contribution['payment_processor'], array(
+        "signature",
+        "subject",
+        "user_name",
+      ));
+    }
+
+    // Throw an error if no credentials found.
+    if (empty($tsysCreds)) {
+      CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
+      Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
+      return ts('no Tsys Credentials found for payment processor id: %1 ', array(1 => $contribution['payment_processor']));
+    }
+
+    // Use the payment token to make the transaction
+    $result = self::processRecurTransaction($contribution, 'contribute', $tsysCreds);
 
     // We processed it successflly and I can try to use repeattransaction.
     // Requires the original contribution id.
@@ -189,30 +212,14 @@ class CRM_Tsys_Recur {
   /**
    * @param  array $contribution the contribution
    * @param  array $options      options selected
-   * @return array              the contribution
-   * Borrowed from _iats_process_transaction https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
+   * @param  array $tsysCreds    payment processor credentials
+   * @return array               the contribution
+   *
+   * Borrowed from _iats_process_transaction
+   * https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
+   *
    */
-  function processTransaction(&$contribution, $options) {
-    // IF no Payment Token throw error.
-    if (empty($contribution['payment_token']) || $contribution['payment_token'] == "Authorization token") {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
-    }
-
-    // Get tsys credentials.
-    if (!empty($contribution['payment_processor'])) {
-      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($contribution['payment_processor'], array(
-        "signature",
-        "subject",
-        "user_name",
-      ));
-    }
-
-    // Throw an error if no credentials found.
-    if (empty($tsysCreds)) {
-      CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
-      Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
-    }
+  function processRecurTransaction(&$contribution, $options, $tsysCreds) {
     // Make transaction
     $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
       $contribution['payment_token'],
@@ -223,28 +230,19 @@ class CRM_Tsys_Recur {
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
+      // add relevant information from the tsys response
       $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction);
+
+      // Update the status to completed
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $contribution['contribution_status_id'] = $completedStatusId;
-      $query = "SELECT COUNT(token) FROM civicrm_payment_token WHERE token = %1";
-      $queryParams = array(1 => array($contribution['payment_token'], 'String'));
-      // If transaction is recurring AND there is not an existing vault token create a vault token
-      if (CRM_Utils_Array::value('is_recur', $contribution) && CRM_Core_DAO::singleValueQuery($query, $queryParams) == 0 && !empty($contribution['contribution_recur_id'])) {
-        $paymentTokenId = CRM_Tsys_Recur::boardCard(
-          $recur_id,
-          $contribution['trxn_id'],
-          $tsysCreds,
-          $contribution['contact_id'],
-          $contribution['payment_processor']
-        );
-      }
       return $contribution;
     }
     // If transaction fails.
     else {
       // Record Failed Transaction
-      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
-      $contribution['contribution_status_id'] = $failedStatusId;
+      $pendingStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
+      $contribution['contribution_status_id'] = $pendingStatusId;
       return $contribution;
     }
   }
