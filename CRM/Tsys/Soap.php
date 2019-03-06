@@ -6,10 +6,11 @@ class CRM_Tsys_Soap {
 
   /**
    * Compose Soap Request using a Tsys Token
-   * @param  string $token     payment token
-   * @param  array $tsysCreds  payment processor credentials
-   * @param  int $amount      transaction amount
-   * @return                 response from tsys
+   * @param  string $token      payment token
+   * @param  array $tsysCreds   payment processor credentials
+   * @param  int $amount        transaction amount
+   * @param  int $invoiceNumber invoice number
+   * @return                    response from tsys
    */
   public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
@@ -37,15 +38,17 @@ class CRM_Tsys_Soap {
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    return $response = self::doSoapRequest($soap_request);
+    $response = self::doSoapRequest($soap_request);
+    return $response;
   }
 
   /**
    * Soap request using credit card (currently only run when testing)
-   * @param  array $cardInfo  credit card number, exp, cardholder etc.
-   * @param  array $tsysCreds payment processor credentials
-   * @param  int   $amount    transaction amount
-   * @return                  response from tsys
+   * @param  array $cardInfo      credit card number, exp, cardholder etc.
+   * @param  array $tsysCreds     payment processor credentials
+   * @param  int   $amount        transaction amount
+   * @param  int   $invoiceNumber invoice number
+   * @return                      response from tsys
    */
   public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
@@ -78,7 +81,8 @@ HEREDOC;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    return $response = self::doSoapRequest($soap_request);
+    $response = self::doSoapRequest($soap_request);
+    return $response;
   }
 
   /**
@@ -106,7 +110,8 @@ HEREDOC;
    </soap:Body>
 </soap:Envelope>
 HEREDOC;
-    return self::doSoapRequest($soap_request);
+    $response = self::doSoapRequest($soap_request);
+    return $response;
   }
 
   /**
