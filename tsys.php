@@ -69,6 +69,7 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
  * Implementation of hook_civicrm_check().
  */
 function tsys_civicrm_check(&$messages) {
+  // This adds a System Status message if their are Recurring Contributions that are not processing as expected.
   try {
     $failedContributions = civicrm_api3('ContributionRecur', 'get', [
       'sequential' => 1,
