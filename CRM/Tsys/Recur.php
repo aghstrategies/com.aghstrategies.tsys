@@ -18,10 +18,6 @@ class CRM_Tsys_Recur {
    */
   function processContributionPayment(&$contribution, $options, $original_contribution_id) {
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-    // By default, don't use repeattransaction:
-    // Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1285
-    $use_repeattransaction = FALSE;
-    $is_recurrence = !empty($original_contribution_id);
 
     // Get Vault Token
     try {
@@ -67,31 +63,39 @@ class CRM_Tsys_Recur {
     // Use the payment token to make the transaction
     $result = self::processRecurTransaction($contribution, 'contribute', $tsysCreds);
 
-    // We processed it successflly and I can try to use repeattransaction.
-    // Requires the original contribution id.
-    // Issues with this api call:
-    // 1. Always triggers an email and doesn't include trxn.
-    // 2. Date is wrong.
-    $use_repeattransaction = $is_recurrence && empty($contribution['id']);
-    if ($use_repeattransaction) {
-      // We processed it successflly and I can try to use repeattransaction.
-      // Requires the original contribution id.
-      // Issues with this api call:
-      // 1. Always triggers an email and doesn't include trxn.
-      // 2. Date is wrong.
+    try {
+      $contributionResult = civicrm_api3('Contribution', 'repeattransaction', array(
+        'original_contribution_id' => $original_contribution_id,
+        'contribution_status_id' => 'Pending',
+        'is_email_receipt' => 0,
+        // 'invoice_id' => $contribution['invoice_id'],
+        // 'receive_date' => $contribution['receive_date'],
+        // 'campaign_id' => $contribution['campaign_id'],
+        // 'financial_type_id' => $contribution['financial_type_id'],
+        // 'payment_processor_id' => $contribution['payment_processor'],
+        'contribution_recur_id' => $contribution['contribution_recur_id'],
+      ));
+      $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    if (!empty($contribution['id'])) {
+      // If repeattransaction succeded.
+      // First restore/add various fields that the repeattransaction api may
+      // overwrite or ignore.
       try {
-        $contributionResult = civicrm_api3('Contribution', 'repeattransaction', array(
-          'original_contribution_id' => $original_contribution_id,
-          'contribution_status_id' => 'Pending',
-          'is_email_receipt' => 0,
-          // 'invoice_id' => $contribution['invoice_id'],
-          // 'receive_date' => $contribution['receive_date'],
-          // 'campaign_id' => $contribution['campaign_id'],
-          // 'financial_type_id' => $contribution['financial_type_id'],
-          // 'payment_processor_id' => $contribution['payment_processor'],
-          'contribution_recur_id' => $contribution['contribution_recur_id'],
+        $updateContrib = civicrm_api3('contribution', 'create', array(
+          'id' => $contribution['id'],
+          'invoice_id' => $contribution['invoice_id'],
+          'source' => $contribution['source'],
+          'receive_date' => $contribution['receive_date'],
+          'payment_instrument_id' => $contribution['payment_instrument_id'],
         ));
-        $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
@@ -100,106 +104,30 @@ class CRM_Tsys_Recur {
           1 => $error,
         )));
       }
-      if (empty($contribution['id'])) {
-        // Assume I failed completely and fall back to doing it the manual way.
-        $use_repeattransaction = FALSE;
-      }
-      else {
-        // If repeattransaction succeded.
-        // First restore/add various fields that the repeattransaction api may
-        // overwrite or ignore.
-        try {
-          civicrm_api3('contribution', 'create', array(
-            'id' => $contribution['id'],
-            'invoice_id' => $contribution['invoice_id'],
-            'source' => $contribution['source'],
-            'receive_date' => $contribution['receive_date'],
-            'payment_instrument_id' => $contribution['payment_instrument_id'],
-          ));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-            'domain' => 'com.aghstrategies.tsys',
-            1 => $error,
-          )));
-        }
-        // Save my status in the contribution array that was passed in.
-        $contribution['contribution_status_id'] = $result['contribution_status_id'];
-        if ($result['contribution_status_id'] == $completedStatusId) {
-          // My transaction completed, so record that fact in CiviCRM,
-          // potentially sending an invoice.
-          try {
-            civicrm_api3('Contribution', 'completetransaction', array(
-              'id' => $contribution['id'],
-              'payment_processor_id' => $contribution['payment_processor'],
-              'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
-              'trxn_id' => $result['payment_token'],
-              'receive_date' => $contribution['receive_date'],
-              'contribution_status_id' => $completedStatusId,
-            ));
-          }
-          catch (CiviCRM_API3_Exception $e) {
-            $error = $e->getMessage();
-            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-              'domain' => 'com.aghstrategies.tsys',
-              1 => $error,
-            )));
-          }
-        }
-      }
-    }
-    if (!$use_repeattransaction) {
-      // If I'm not using repeattransaction for any reason,
-      // I'll create the contribution manually.
-      // This code assumes that the contribution_status_id has been set
-      // properly above, either pending or failed.
-      $contributionResult = civicrm_api3('contribution', 'create', $contribution);
-      // Pass back the created id indirectly since I'm calling by reference.
-      $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
-      // Connect to a membership if requested.
-      if (!empty($options['membership_id'])) {
-        try {
-          civicrm_api3('MembershipPayment', 'create', array(
-            'contribution_id' => $contribution['id'],
-            'membership_id' => $options['membership_id'],
-          ));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-            'domain' => 'com.aghstrategies.tsys',
-            1 => $error,
-          )));
-        }
-      }
-      /* And then I'm done unless it completed */
+      // Save my status in the contribution array that was passed in.
+      $contribution['contribution_status_id'] = $result['contribution_status_id'];
       if ($result['contribution_status_id'] == $completedStatusId) {
-        /* success, and the transaction has completed */
-        $complete = array(
-          'id' => $contribution['id'],
-          'payment_processor_id' => $contribution['payment_processor'],
-          'trxn_id' => $contribution['payment_token'],
-          'receive_date' => $contribution['receive_date'],
-          'contribution_status_id' => $completedStatusId,
-        );
-        $complete['is_email_receipt'] = empty($options['is_email_receipt']) ? 0 : 1;
+        // My transaction completed, so record that fact in CiviCRM,
+        // potentially sending an invoice.
         try {
-          $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
+          civicrm_api3('Contribution', 'completetransaction', array(
+            'id' => $contribution['id'],
+            'payment_processor_id' => $contribution['payment_processor'],
+            'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
+            'trxn_id' => $result['payment_token'],
+            'receive_date' => $contribution['receive_date'],
+            'contribution_status_id' => $completedStatusId,
+          ));
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          $contribution['source'] .= ' [with unexpected api.completetransaction error: ' . $error . ']';
           CRM_Core_Error::debug_log_message(ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
         }
-        $message = $is_recurrence ? ts('Successfully processed contribution in recurring series id %1: ', array(1 => $contribution['contribution_recur_id'])) : ts('Successfully processed one-time contribution: ');
-        return $message . $result['auth_result'];
       }
     }
-
     // Now return the appropriate message.
     if ($result['contribution_status_id'] == $completedStatusId) {
       return ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
@@ -249,6 +177,8 @@ class CRM_Tsys_Recur {
 
   /**
    * For a recurring contribution, find a candidate for a template!
+   * @param  array $contribution   Contribution Details
+   * @return array $template       Template for the recurring contribution
    */
   function getContributionTemplate($contribution) {
     // Get the 1st contribution in the series that matches the total_amount:
@@ -298,6 +228,11 @@ class CRM_Tsys_Recur {
     return $template;
   }
 
+  /**
+   * Database Queries to get how many Installments are done and how many are left
+   * @param  string $type simple or dates -- determines which query to use
+   * @return object $dao  result from database
+   */
   function getInstallmentsDone($type = 'simple') {
     // Restrict this method of recurring contribution processing to only this payment processors.
     $args = array(
@@ -351,10 +286,12 @@ class CRM_Tsys_Recur {
 
   /**
    * This is a recurring donation, save the card for future use
-   * @param  [type] $params    [description]
-   * @param  [type] $token     [description]
-   * @param  [type] $tsysCreds [description]
-   * @return [type]            [description]
+   * @param  int   $recur_id         recurring contribution id
+   * @param  int   $token            previous transaction token from first contribution in the series
+   * @param  array $tsysCreds        Tsys Credentials
+   * @param  int   $contactId        Contact ID of contributor
+   * @param  int   $paymentProcessor Payment Processor id
+   * @return int   $paymentTokenId   ID of the payment token now saved to civicrm_payment_token
    */
   public static function boardCard($recur_id, $token, $tsysCreds, $contactId, $paymentProcessor) {
     $paymentTokenId = NULL;
