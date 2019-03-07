@@ -244,16 +244,28 @@ CRM.$(function ($) {
         // Most forms have payment_processor-section but event
         // registration has credit_card_info-section
         if (($form.find('.crm-section.payment_processor-section').length > 0)
-            || ($form.find('.crm-section.credit_card_info-section').length > 0)) {
+        || ($form.find('.crm-section.credit_card_info-section').length > 0)) {
+          // payment processor field is a select
           if ($form.find('select[name="payment_processor_id"]').length) {
             chosenProcessorId = $form.find('select[name="payment_processor_id"]').val();
           }
 
+          // payment processor field is radios
           if ($form.find('input[name="payment_processor_id"]').length) {
             chosenProcessorId = $form.find('input[name="payment_processor_id"]:checked').val();
           }
+
+          // Only one processor on the form so use that
+          if ($form.find('input[name="payment_processor_id"][type="hidden"]').length) {
+            chosenProcessorId = $form.find(
+              'input[name="payment_processor_id"][type="hidden"]').val();
+          }
         }
       }
+
+      debugging(CRM.vars.tsys.allApiKeys);
+      debugging(chosenProcessorId);
+      console.log(CRM.vars.tsys.allApiKeys[chosenProcessorId]);
 
       // Make sure we are using a tsys processor
       if (CRM.vars.tsys.allApiKeys[chosenProcessorId]) {
