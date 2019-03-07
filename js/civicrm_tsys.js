@@ -258,6 +258,7 @@ CRM.$(function ($) {
       // Make sure we are using a tsys processor
       if (CRM.vars.tsys.allApiKeys[chosenProcessorId]) {
         debugging('tsys is the selected payprocessor');
+        CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.allApiKeys[chosenProcessorId]);
       } else {
         debugging('Not a tsys transaction, or pay-later');
         return true;
