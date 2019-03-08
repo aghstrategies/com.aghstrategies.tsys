@@ -189,16 +189,19 @@ private $_islive = FALSE;
       )));
     }
     // look up the default currency, if its usd set this transaction to use us dollars
-    if (!empty($defaultCurrency['values'][0]['defaultCurrency']) && $defaultCurrency['values'][0]['defaultCurrency'] == 'USD') {
+    if (!empty($defaultCurrency['values'][0]['defaultCurrency'])
+    && $defaultCurrency['values'][0]['defaultCurrency'] == 'USD'
+    && empty($params['currencyID'])
+    && empty($params['currency'])) {
       $currency = TRUE;
     }
     // when coming from a contribution form
-    if (!empty($params['currencyID'])) {
+    if (!empty($params['currencyID']) && $params['currencyID'] == 'USD') {
       $currency = TRUE;
     }
 
     // when coming from a contribution.transact api call
-    if (!empty($params['currency'])) {
+    if (!empty($params['currency']) && $params['currency'] == 'USD') {
       $currency = TRUE;
     }
     return $currency;
