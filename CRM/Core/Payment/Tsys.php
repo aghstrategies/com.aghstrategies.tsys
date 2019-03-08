@@ -337,7 +337,7 @@ private $_islive = FALSE;
     }
     // If transaction fails
     else {
-      CRM_Core_Error::statusBounce(ts("Tsys Contribution Failed"));
+      // CRM_Core_Error::statusBounce(ts("Tsys Contribution Failed"));
       Civi::log()->debug('Credit Card Transaction Failed: ' . print_r($makeTransaction, TRUE) . print_r($contribution, TRUE));
       $params['payment_status_id'] = $failedStatusId;
       return $params;
