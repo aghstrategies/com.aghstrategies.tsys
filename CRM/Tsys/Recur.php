@@ -62,19 +62,32 @@ class CRM_Tsys_Recur {
 
     // Use the payment token to make the transaction
     $result = self::processRecurTransaction($contribution, 'contribute', $tsysCreds);
+    $repeatParamsForSure = [
+      'contribution_status_id'    =>  'Pending',
+      'is_email_receipt'          =>  0,
+      'original_contribution_id'  =>  $original_contribution_id,
+    ];
+    $repeatParamsIfNotEmpty = [
+      'net_amount'                => $contribution['total_amount'],
+      'total_amount'              => $contribution['total_amount'],
+      'tax_amount'                => $contribution['tax_amount'],
+      'invoice_id'                => $contribution['invoice_id'],
+      'receive_date'              => $contribution['receive_date'],
+      'campaign_id'               => $contribution['campaign_id'],
+      'financial_type_id'         => $contribution['financial_type_id'],
+      'payment_processor_id'      => $contribution['payment_processor'],
+      'source'                    => $contribution['source'],
+      'payment_instrument_id'     => $contribution['payment_instrument_id'],
+      'contribution_recur_id'     => $contribution['contribution_recur_id'],
+    ];
 
+    foreach ($repeatParamsIfNotEmpty as $field => $value) {
+      if (!empty($value)) {
+        $repeatParamsForSure[$field] = $value;
+      }
+    }
     try {
-      $contributionResult = civicrm_api3('Contribution', 'repeattransaction', array(
-        'original_contribution_id' => $original_contribution_id,
-        'contribution_status_id' => 'Pending',
-        'is_email_receipt' => 0,
-        // 'invoice_id' => $contribution['invoice_id'],
-        // 'receive_date' => $contribution['receive_date'],
-        // 'campaign_id' => $contribution['campaign_id'],
-        // 'financial_type_id' => $contribution['financial_type_id'],
-        // 'payment_processor_id' => $contribution['payment_processor'],
-        'contribution_recur_id' => $contribution['contribution_recur_id'],
-      ));
+      $contributionResult = civicrm_api3('Contribution', 'repeattransaction', $repeatParamsForSure);
       $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
     }
     catch (CiviCRM_API3_Exception $e) {
@@ -88,35 +101,37 @@ class CRM_Tsys_Recur {
       // If repeattransaction succeded.
       // First restore/add various fields that the repeattransaction api may
       // overwrite or ignore.
-      try {
-        $updateContrib = civicrm_api3('contribution', 'create', array(
-          'id' => $contribution['id'],
-          'invoice_id' => $contribution['invoice_id'],
-          'source' => $contribution['source'],
-          'receive_date' => $contribution['receive_date'],
-          'payment_instrument_id' => $contribution['payment_instrument_id'],
-        ));
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-          'domain' => 'com.aghstrategies.tsys',
-          1 => $error,
-        )));
-      }
+      // try {
+      //   $updateContrib = civicrm_api3('contribution', 'create', array(
+      //     'id' => $contribution['id'],
+      //     'invoice_id' => $contribution['invoice_id'],
+      //     'source' => $contribution['source'],
+      //     'receive_date' => $contribution['receive_date'],
+      //     'payment_instrument_id' => $contribution['payment_instrument_id'],
+      //   ));
+      // }
+      // catch (CiviCRM_API3_Exception $e) {
+      //   $error = $e->getMessage();
+      //   CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      //     'domain' => 'com.aghstrategies.tsys',
+      //     1 => $error,
+      //   )));
+      // }
       // Save my status in the contribution array that was passed in.
       $contribution['contribution_status_id'] = $result['contribution_status_id'];
       if ($result['contribution_status_id'] == $completedStatusId) {
         // My transaction completed, so record that fact in CiviCRM,
         // potentially sending an invoice.
         try {
-          civicrm_api3('Contribution', 'completetransaction', array(
+          $completeTransaction = civicrm_api3('Contribution', 'completetransaction', array(
             'id' => $contribution['id'],
-            'payment_processor_id' => $contribution['payment_processor'],
-            'is_email_receipt' => (empty($options['is_email_receipt']) ? 0 : 1),
-            'trxn_id' => $result['payment_token'],
-            'receive_date' => $contribution['receive_date'],
-            'contribution_status_id' => $completedStatusId,
+            'payment_processor_id'      => $contribution['payment_processor'],
+            'is_email_receipt'          => (empty($options['is_email_receipt']) ? 0 : 1),
+            'trxn_id'                   => $result['payment_token'],
+            'receive_date'              => $contribution['receive_date'],
+            'contribution_status_id'    => $completedStatusId,
+            'total_amount'              => $contribution['total_amount'],
+            'tax_amount'                => $contribution['tax_amount'],
           ));
         }
         catch (CiviCRM_API3_Exception $e) {
@@ -129,7 +144,7 @@ class CRM_Tsys_Recur {
       }
     }
     // Now return the appropriate message.
-    if ($result['contribution_status_id'] == $completedStatusId) {
+    if ($result['contribution_status_id'] == $completedStatusId && $completeTransaction['is_error'] == 0) {
       return ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
     else {
@@ -186,15 +201,28 @@ class CRM_Tsys_Recur {
     $get = array(
       'contribution_recur_id' => $contribution['contribution_recur_id'],
       'options' => array('sort' => ' id', 'limit' => 1),
+      'return' => ['tax_amount', 'contribution_recur_id', 'total_amount', 'id', 'campaign_id', 'amount_level'],
     );
     if (!empty($contribution['total_amount'])) {
       $get['total_amount'] = $contribution['total_amount'];
     }
-    $result = civicrm_api3('contribution', 'get', $get);
+    try {
+      $result = civicrm_api3('contribution', 'get', $get);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
     if (!empty($result['values'])) {
       $contribution_ids = array_keys($result['values']);
       $template = $result['values'][$contribution_ids[0]];
       $template['original_contribution_id'] = $contribution_ids[0];
+      if ($result['values'][$contribution_ids[0]]['tax_amount']) {
+        $template['tax_amount'] = $result['values'][$contribution_ids[0]]['tax_amount'];
+      }
       $template['line_items'] = array();
       $get = array('entity_table' => 'civicrm_contribution', 'entity_id' => $contribution_ids[0]);
       try {

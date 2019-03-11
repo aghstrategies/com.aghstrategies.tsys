@@ -221,6 +221,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'contact_id'             => $contact_id,
         'receive_date'           => $receive_date,
         'total_amount'           => $total_amount,
+        'net_amount'             => $total_amount,
         'payment_instrument_id'  => $donation['payment_instrument_id'],
         'contribution_recur_id'  => $contribution_recur_id,
         'invoice_id'             => $hash,
@@ -233,7 +234,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'financial_type_id'      => $donation['financial_type_id'],
       );
 
-      $get_from_template = array('contribution_campaign_id', 'amount_level');
+      $get_from_template = array('campaign_id', 'amount_level', 'tax_amount');
       foreach ($get_from_template as $field) {
         if (isset($contribution_template[$field])) {
           $contribution[$field] = is_array($contribution_template[$field]) ? implode(', ', $contribution_template[$field]) : $contribution_template[$field];
@@ -273,7 +274,9 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // If our template contribution is a membership payment, make this one also.
       if ($domemberships && !empty($contribution_template['contribution_id'])) {
         try {
-          $membership_payment = civicrm_api3('MembershipPayment', 'getsingle', array('version' => 3, 'contribution_id' => $contribution_template['contribution_id']));
+          $membership_payment = civicrm_api3('MembershipPayment', 'getsingle', [
+            'contribution_id' => $contribution_template['id'],
+          ]);
           if (!empty($membership_payment['membership_id'])) {
             $options['membership_id'] = $membership_payment['membership_id'];
           }
