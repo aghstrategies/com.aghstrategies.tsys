@@ -360,7 +360,8 @@ private $_islive = FALSE;
       'trxn_id' => 'Token',
       'pan_truncation' => 'CardNumber',
       'card_type_id' => 'CardType',
-      // TODO this is not being saved to core
+      // The trxn_result_code is not being saved to the civicrm_finacial_trxn table
+      // not does it show up in the ui. For now I am tacking it on to the trxn_id so we can see it
       'trxn_result_code' => 'AuthorizationCode',
     ];
 
@@ -407,9 +408,10 @@ private $_islive = FALSE;
             break;
         }
       } else {
-        CRM_Core_Error::statusBounce(ts("Error saving $fieldInXML to database"));
+        CRM_Core_Error::statusBounce(ts("Error retrieving $fieldInXML"));
       }
     }
+    $params['trxn_id'] .= " {$params['trxn_result_code']}";
     return $params;
   }
 }

@@ -115,9 +115,6 @@ class CRM_Tsys_Recur {
           1 => $error,
         )));
       }
-      // Restore my source field that ipn code irritatingly overwrites, and make sure that the trxn_id is set also.
-      // civicrm_api3('contribution', 'setvalue', array('id' => $contribution['id'], 'value' => $contribution['source'], 'field' => 'source'));
-      // civicrm_api3('contribution', 'setvalue', array('id' => $contribution['id'], 'value' => $trxn_id, 'field' => 'trxn_id'));
     }
     // Now return the appropriate message.
     if ($contribution['contribution_status_id'] == $completedStatusId && $contributionResult['is_error'] == 0) {
