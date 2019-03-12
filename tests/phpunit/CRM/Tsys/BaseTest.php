@@ -184,6 +184,18 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     return $ret;
   }
 
+  public function createRecurringContribution() {
+    $recurring = civicrm_api3('ContributionRecur', 'create', [
+      'contact_id' => $this->contact->id,
+      'amount' => 10.00,
+      'frequency_interval' => 1,
+      'frequency_unit' => 'day',
+      'currency' => 'USD',
+      'payment_processor_id' =>  $this->_paymentProcessorID,
+    ]);
+    return $recurring;
+  }
+
   public function generateTokenFromCreditCard($params, $tsysCreds) {
     if (!empty($params['credit_card_number']) &&
     !empty($params['cvv2']) &&
@@ -278,7 +290,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'amount' => 'Amount',
       'credit_card_number' => 'Credit Card',
       'approval_status' => 'Approval Status',
-      'tsys_token' => 'Token',
+      'tsys_token' => 'Previous Trxn Token',
+      'vault_token' => 'Vault Token'
     ];
     foreach ($thingsToPrint as $key => $pretty) {
       if (!empty($results[$key])) {

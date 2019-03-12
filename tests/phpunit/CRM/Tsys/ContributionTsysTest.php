@@ -31,7 +31,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
   * Genius Checkout 1.00 C
    */
-  public function testCayanCertificationScript1C() {
+  public function testCayanCertificationScriptGeniusCheckout1C() {
     $this->setupTransaction();
     $params = [
       'amount' => 1.01,
@@ -46,7 +46,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 7.00 C
    */
-  public function testCayanCertificationScript7C() {
+  public function testCayanCertificationScriptGeniusCheckout7C() {
     $this->setupTransaction();
     $params = [
       'amount' => 3.01,
@@ -62,7 +62,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 8.00 C
    */
-  public function testCayanCertificationScript8C() {
+  public function testCayanCertificationScriptGeniusCheckout8C() {
     $this->setupTransaction();
     $params = [
       'amount' => 3.20,
@@ -78,7 +78,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 12.00 C
    */
-  public function testCayanCertificationScript12C() {
+  public function testCayanCertificationScriptGeniusCheckout12C() {
     $this->setupTransaction();
     $params = [
       'amount' => 3.05,
@@ -94,7 +94,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 13.00 C
    */
-  public function testCayanCertificationScript13C() {
+  public function testCayanCertificationScriptGeniusCheckout13C() {
     $this->setupTransaction();
     $params = [
       'amount' => 1.01,
@@ -114,7 +114,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 14.00 C
    */
-  public function testCayanCertificationScript14C() {
+  public function testCayanCertificationScriptGeniusCheckout14C() {
     $this->setupTransaction();
     $params = [
       'amount' => 3.10,
@@ -131,7 +131,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 15.00 C
    */
-  public function testCayanCertificationScript15C() {
+  public function testCayanCertificationScriptGeniusCheckout15C() {
     $this->setupTransaction();
     $params = [
       'amount' => 3.41,
@@ -146,7 +146,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 16.00 C
    */
-  public function testCayanCertificationScript16C() {
+  public function testCayanCertificationScriptGeniusCheckout16C() {
     $this->setupTransaction();
     $params = [
       'amount' => 3.61,
@@ -162,7 +162,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
    * Genius Checkout 17.00 C
    */
-  public function testCayanCertificationScript17C() {
+  public function testCayanCertificationScriptGeniusCheckout17C() {
     $this->setupTransaction();
     $params = [
       'amount' => 7.65,

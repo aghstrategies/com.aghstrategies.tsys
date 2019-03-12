@@ -336,6 +336,7 @@ private $_islive = FALSE;
           $params['contactID'],
           $params['payment_processor_id']
         );
+        $params['payment_token_id'] = $paymentTokenId;
       }
       return $params;
     }
