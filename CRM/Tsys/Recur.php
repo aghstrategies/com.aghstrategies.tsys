@@ -143,10 +143,12 @@ class CRM_Tsys_Recur {
       $contribution['total_amount'],
       rand(1, 1000000)
     );
+
+    // add relevant information from the tsys response
+    $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction);
+
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
-      // add relevant information from the tsys response
-      $contribution = CRM_Core_Payment_Tsys::processSuccessResponseFromTsys($contribution, $makeTransaction);
 
       // Update the status to completed
       $contribution['contribution_status_id'] = $completedStatusId;
@@ -154,8 +156,11 @@ class CRM_Tsys_Recur {
     }
     // If transaction fails.
     else {
-      if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ErrorMessage)) {
-        $contribution['is_error'] = $makeTransaction->Body->SaleResponse->SaleResult->ErrorMessage;
+      if (!empty($contribution['approval_status'])) {
+        Civi::log()->debug('Credit Card not processed - Tsys Approval Status: ' . print_r($contribution['approval_status'], TRUE));
+      }
+      if (!empty($contribution['error_message'])) {
+        Civi::log()->debug('Credit Card not processed - Tsys Error Message: ' . print_r($contribution['error_message'], TRUE));
       }
       // Record Failed Transaction
       $contribution['contribution_status_id'] = $failedStatusId;

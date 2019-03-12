@@ -145,7 +145,7 @@ HEREDOC;
       $err = 'Curl error: ' . curl_error($soap_do);
       curl_close($soap_do);
       // print $err;
-      $xml = simplexml_load_string($err);
+      $xml = $err;
     }
     else {
       curl_close($soap_do);
