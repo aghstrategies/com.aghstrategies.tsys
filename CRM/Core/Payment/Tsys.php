@@ -318,7 +318,7 @@ private $_islive = FALSE;
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
-      $params = self::processResponseFromTsys($params, $makeTransaction);
+      $params = self::processSuccessResponseFromTsys($params, $makeTransaction);
 
       // Check if the token has been saved to the database
       $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
@@ -343,6 +343,8 @@ private $_islive = FALSE;
       // CRM_Core_Error::statusBounce(ts("Tsys Contribution Failed"));
       Civi::log()->debug('Credit Card Transaction Failed: ' . print_r($makeTransaction, TRUE) . print_r($contribution, TRUE));
       $params['payment_status_id'] = $failedStatusId;
+      // TODO Process Failed response from Tsys
+      $params = self::processSuccessResponseFromTsys($params, $makeTransaction);
       return $params;
     }
   }
@@ -353,12 +355,13 @@ private $_islive = FALSE;
    * @param  string $makeTransaction response from Tsys
    * @return array $params           updated params
    */
-  public static function processResponseFromTsys(&$params, $makeTransaction) {
+  public static function processSuccessResponseFromTsys(&$params, $makeTransaction) {
     $retrieveFromXML = [
       'trxn_id' => 'Token',
-      'trxn_result_code' => 'AuthorizationCode',
       'pan_truncation' => 'CardNumber',
       'card_type_id' => 'CardType',
+      // TODO this is not being saved to core
+      'trxn_result_code' => 'AuthorizationCode',
     ];
 
     // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale
