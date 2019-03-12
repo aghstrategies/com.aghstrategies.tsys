@@ -63,10 +63,10 @@ class CRM_Tsys_Recur {
     }
 
     // Use the payment token to make the transaction
-    $result = self::processRecurTransaction($contribution, $token, 'contribute', $tsysCreds, $completedStatusId, $failedStatusId);
-    // if (empty($contribution['contribution_status_id'])) {
-    //
-    // }
+    self::processRecurTransaction($contribution, $token, 'contribute', $tsysCreds, $completedStatusId, $failedStatusId);
+    if (empty($contribution['contribution_status_id'])) {
+      $contribution['contribution_status_id'] = $failedStatusId;
+    }
     // This code assumes that the contribution_status_id has been set properly above, either completed or failed.
     try {
       $contributionResult = civicrm_api3('contribution', 'create', $contribution);
@@ -97,7 +97,7 @@ class CRM_Tsys_Recur {
       }
     }
     // if contribution needs to be completed
-    if ($result['contribution_status_id'] == $completedStatusId) {
+    if ($contribution['contribution_status_id'] == $completedStatusId) {
       $complete = array(
        'id' => $contribution['id'],
        'payment_processor_id' => $contribution['payment_processor'],
@@ -120,7 +120,7 @@ class CRM_Tsys_Recur {
       // civicrm_api3('contribution', 'setvalue', array('id' => $contribution['id'], 'value' => $trxn_id, 'field' => 'trxn_id'));
     }
     // Now return the appropriate message.
-    if ($result['contribution_status_id'] == $completedStatusId && $contributionResult['is_error'] == 0) {
+    if ($contribution['contribution_status_id'] == $completedStatusId && $contributionResult['is_error'] == 0) {
       return ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
     else {
@@ -141,12 +141,11 @@ class CRM_Tsys_Recur {
   function processRecurTransaction(&$contribution, $token, $options, $tsysCreds, $completedStatusId, $failedStatusId) {
     // Make transaction
     $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
-      $contribution['payment_token'],
+      $token,
       $tsysCreds,
       $contribution['total_amount'],
       rand(1, 1000000)
     );
-
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
       // add relevant information from the tsys response
@@ -154,13 +153,16 @@ class CRM_Tsys_Recur {
 
       // Update the status to completed
       $contribution['contribution_status_id'] = $completedStatusId;
-      return $contribution;
+      return;
     }
     // If transaction fails.
     else {
+      if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ErrorMessage)) {
+        $contribution['is_error'] = $makeTransaction->Body->SaleResponse->SaleResult->ErrorMessage;
+      }
       // Record Failed Transaction
       $contribution['contribution_status_id'] = $failedStatusId;
-      return $contribution;
+      return;
     }
   }
 
@@ -181,7 +183,7 @@ class CRM_Tsys_Recur {
       $get['total_amount'] = $contribution['total_amount'];
     }
     try {
-      $result = civicrm_api3('contribution', 'get', $get);
+      $ogContribution = civicrm_api3('contribution', 'get', $get);
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
@@ -190,17 +192,17 @@ class CRM_Tsys_Recur {
         1 => $error,
       )));
     }
-    if (!empty($result['values'])) {
-      $contribution_ids = array_keys($result['values']);
-      $template = $result['values'][$contribution_ids[0]];
+    if (!empty($ogContribution['values'])) {
+      $contribution_ids = array_keys($ogContribution['values']);
+      $template = $ogContribution['values'][$contribution_ids[0]];
       $template['original_contribution_id'] = $contribution_ids[0];
-      if ($result['values'][$contribution_ids[0]]['tax_amount']) {
-        $template['tax_amount'] = $result['values'][$contribution_ids[0]]['tax_amount'];
+      if ($ogContribution['values'][$contribution_ids[0]]['tax_amount']) {
+        $template['tax_amount'] = $ogContribution['values'][$contribution_ids[0]]['tax_amount'];
       }
       $template['line_items'] = array();
       $get = array('entity_table' => 'civicrm_contribution', 'entity_id' => $contribution_ids[0]);
       try {
-        $result = civicrm_api3('LineItem', 'get', $get);
+        $lineItem = civicrm_api3('LineItem', 'get', $get);
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
@@ -209,8 +211,8 @@ class CRM_Tsys_Recur {
           1 => $error,
         )));
       }
-      if (!empty($result['values'])) {
-        foreach ($result['values'] as $initial_line_item) {
+      if (!empty($lineItem['values'])) {
+        foreach ($lineItem['values'] as $initial_line_item) {
           $line_item = array();
           foreach (array(
             'price_field_id',
@@ -322,7 +324,7 @@ class CRM_Tsys_Recur {
       }
       if (!empty($paymentToken['id'])) {
         try {
-          $result = civicrm_api3('ContributionRecur', 'create', [
+          $addPaymentToken = civicrm_api3('ContributionRecur', 'create', [
             'id' => $recur_id,
             'payment_token_id' => $paymentToken['id'],
             'processor_id' => $paymentProcessor,
