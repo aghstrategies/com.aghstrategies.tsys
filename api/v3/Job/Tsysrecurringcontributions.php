@@ -153,7 +153,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $recurParams = [
     'contribution_status_id' => ['IN' => ["In Progress", "Pending"]],
     'payment_processor_id' => ['IN' => $tsysProcessorIDs],
-    'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 00:00:00'],
+    'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 23:59:59'],
     'return' => [
       'contact_id',
       'amount',
@@ -221,6 +221,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'contact_id'             => $contact_id,
         'receive_date'           => $receive_date,
         'total_amount'           => $total_amount,
+        'net_amount'             => $total_amount,
         'payment_instrument_id'  => $donation['payment_instrument_id'],
         'contribution_recur_id'  => $contribution_recur_id,
         'invoice_id'             => $hash,
@@ -232,8 +233,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'is_test'                => $donation['is_test'],
         'financial_type_id'      => $donation['financial_type_id'],
       );
-
-      $get_from_template = array('contribution_campaign_id', 'amount_level');
+      $get_from_template = array('campaign_id', 'amount_level', 'tax_amount');
       foreach ($get_from_template as $field) {
         if (isset($contribution_template[$field])) {
           $contribution[$field] = is_array($contribution_template[$field]) ? implode(', ', $contribution_template[$field]) : $contribution_template[$field];
@@ -244,24 +244,24 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // Note that the date and amount both could have changed.
       // The key is to only match if we find a single pending contribution, with a NULL transaction id, for this recurring schedule.
       // We'll need to pay attention later that we may or may not already have a contribution id.
-      try {
-        $pending_contribution = civicrm_api3('Contribution', 'get', array(
-          'return' => array('id'),
-          'trxn_id' => array('IS NULL' => 1),
-          'contribution_recur_id' => $contribution_recur_id,
-          'contribution_status_id' => "Pending",
-        ));
-        if (!empty($pending_contribution['id'])) {
-          $contribution['id'] = $pending_contribution['id'];
-        }
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-          'domain' => 'com.aghstrategies.tsys',
-          1 => $error,
-        )));
-      }
+      // try {
+      //   $pending_contribution = civicrm_api3('Contribution', 'get', array(
+      //     'return' => array('id'),
+      //     'trxn_id' => array('IS NULL' => 1),
+      //     'contribution_recur_id' => $contribution_recur_id,
+      //     'contribution_status_id' => "Pending",
+      //   ));
+      //   if (!empty($pending_contribution['id'])) {
+      //     $contribution['id'] = $pending_contribution['id'];
+      //   }
+      // }
+      // catch (CiviCRM_API3_Exception $e) {
+      //   $error = $e->getMessage();
+      //   CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      //     'domain' => 'com.aghstrategies.tsys',
+      //     1 => $error,
+      //   )));
+      // }
 
       // If my original has line_items, then I'll add them to the contribution creation array.
       // if (!empty($contribution_template['line_items'])) {
@@ -273,7 +273,9 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // If our template contribution is a membership payment, make this one also.
       if ($domemberships && !empty($contribution_template['contribution_id'])) {
         try {
-          $membership_payment = civicrm_api3('MembershipPayment', 'getsingle', array('version' => 3, 'contribution_id' => $contribution_template['contribution_id']));
+          $membership_payment = civicrm_api3('MembershipPayment', 'getsingle', [
+            'contribution_id' => $contribution_template['id'],
+          ]);
           if (!empty($membership_payment['membership_id'])) {
             $options['membership_id'] = $membership_payment['membership_id'];
           }

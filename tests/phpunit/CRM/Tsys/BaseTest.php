@@ -24,6 +24,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   protected $_created_ts;
   protected $_subscriptionID;
   protected $_membershipTypeID;
+  protected $_completedStatusID;
+  protected $_failedStatusID;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -39,6 +41,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $this->createContact();
     $this->createContributionPage();
     $this->_created_ts = time();
+    $this->_completedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+    $this->_failedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
   }
 
   public function tearDown() {
@@ -171,14 +175,25 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'description' => 'Test from tsys Test Code',
       'currencyID' => 'USD',
       'invoiceID' => $this->_invoiceID,
-      'invoice_number' => 'x',
+      'invoice_number' => rand(1, 1000000),
     ), $params);
 
     $tsysCreds = $tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
     $makeTransaction = $this->generateTokenFromCreditCard($params, $tsysCreds);
-    $ret = $tsys->processTransaction($makeTransaction, $params);
-    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-    $this->assertEquals($ret['payment_status_id'], $completedStatusId);
+    $ret = $tsys->processTransaction($makeTransaction, $params, $tsysCreds);
+    return $ret;
+  }
+
+  public function createRecurringContribution() {
+    $recurring = civicrm_api3('ContributionRecur', 'create', [
+      'contact_id' => $this->contact->id,
+      'amount' => 10.00,
+      'frequency_interval' => 1,
+      'frequency_unit' => 'day',
+      'currency' => 'USD',
+      'payment_processor_id' =>  $this->_paymentProcessorID,
+    ]);
+    return $recurring;
   }
 
   public function generateTokenFromCreditCard($params, $tsysCreds) {
@@ -269,4 +284,19 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     CRM_Utils_Cache::singleton()->flush();
   }
 
+  public function spitOutResults($question, $results) {
+    echo "\r\n\r\n$question \r\n";
+    $thingsToPrint = [
+      'amount' => 'Amount',
+      'credit_card_number' => 'Credit Card',
+      'approval_status' => 'Approval Status',
+      'tsys_token' => 'Previous Trxn Token',
+      'vault_token' => 'Vault Token'
+    ];
+    foreach ($thingsToPrint as $key => $pretty) {
+      if (!empty($results[$key])) {
+        echo "$pretty: $results[$key] \r\n";
+      }
+    }
+  }
 }
