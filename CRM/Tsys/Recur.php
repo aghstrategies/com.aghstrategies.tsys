@@ -17,7 +17,9 @@ class CRM_Tsys_Recur {
    * Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/master/iats.php#L1285 _iats_process_contribution_payment
    */
   function processContributionPayment(&$contribution, $options, $original_contribution_id) {
+    // Get Contribution Statuses
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
 
     // Get Vault Token
     try {
@@ -35,7 +37,7 @@ class CRM_Tsys_Recur {
     }
     // Save the payment token to the contribution
     if (!empty($paymentToken['payment_token_id.token'])) {
-      $contribution['payment_token'] = $paymentToken['payment_token_id.token'];
+      $token = $paymentToken['payment_token_id.token'];
     }
     // IF no payment token throw an error and quit
     else {
@@ -61,34 +63,13 @@ class CRM_Tsys_Recur {
     }
 
     // Use the payment token to make the transaction
-    $result = self::processRecurTransaction($contribution, 'contribute', $tsysCreds);
-    $repeatParamsForSure = [
-      'contribution_status_id'    =>  'Pending',
-      'is_email_receipt'          =>  0,
-      'original_contribution_id'  =>  $original_contribution_id,
-    ];
-    $repeatParamsIfNotEmpty = [
-      'net_amount'                => $contribution['total_amount'],
-      'total_amount'              => $contribution['total_amount'],
-      'tax_amount'                => $contribution['tax_amount'],
-      'invoice_id'                => $contribution['invoice_id'],
-      'receive_date'              => $contribution['receive_date'],
-      'campaign_id'               => $contribution['campaign_id'],
-      'financial_type_id'         => $contribution['financial_type_id'],
-      'payment_processor_id'      => $contribution['payment_processor'],
-      'source'                    => $contribution['source'],
-      'payment_instrument_id'     => $contribution['payment_instrument_id'],
-      'contribution_recur_id'     => $contribution['contribution_recur_id'],
-    ];
-
-    foreach ($repeatParamsIfNotEmpty as $field => $value) {
-      if (!empty($value)) {
-        $repeatParamsForSure[$field] = $value;
-      }
-    }
+    $result = self::processRecurTransaction($contribution, $token, 'contribute', $tsysCreds, $completedStatusId, $failedStatusId);
+    // if (empty($contribution['contribution_status_id'])) {
+    //
+    // }
+    // This code assumes that the contribution_status_id has been set properly above, either completed or failed.
     try {
-      $contributionResult = civicrm_api3('Contribution', 'repeattransaction', $repeatParamsForSure);
-      $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
+      $contributionResult = civicrm_api3('contribution', 'create', $contribution);
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
@@ -97,54 +78,49 @@ class CRM_Tsys_Recur {
         1 => $error,
       )));
     }
-    if (!empty($contribution['id'])) {
-      // If repeattransaction succeded.
-      // First restore/add various fields that the repeattransaction api may
-      // overwrite or ignore.
-      // try {
-      //   $updateContrib = civicrm_api3('contribution', 'create', array(
-      //     'id' => $contribution['id'],
-      //     'invoice_id' => $contribution['invoice_id'],
-      //     'source' => $contribution['source'],
-      //     'receive_date' => $contribution['receive_date'],
-      //     'payment_instrument_id' => $contribution['payment_instrument_id'],
-      //   ));
-      // }
-      // catch (CiviCRM_API3_Exception $e) {
-      //   $error = $e->getMessage();
-      //   CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-      //     'domain' => 'com.aghstrategies.tsys',
-      //     1 => $error,
-      //   )));
-      // }
-      // Save my status in the contribution array that was passed in.
-      $contribution['contribution_status_id'] = $result['contribution_status_id'];
-      if ($result['contribution_status_id'] == $completedStatusId) {
-        // My transaction completed, so record that fact in CiviCRM,
-        // potentially sending an invoice.
-        try {
-          $completeTransaction = civicrm_api3('Contribution', 'completetransaction', array(
-            'id' => $contribution['id'],
-            'payment_processor_id'      => $contribution['payment_processor'],
-            'is_email_receipt'          => (empty($options['is_email_receipt']) ? 0 : 1),
-            'trxn_id'                   => $result['payment_token'],
-            'receive_date'              => $contribution['receive_date'],
-            'contribution_status_id'    => $completedStatusId,
-            'total_amount'              => $contribution['total_amount'],
-            'tax_amount'                => $contribution['tax_amount'],
-          ));
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-            'domain' => 'com.aghstrategies.tsys',
-            1 => $error,
-          )));
-        }
+    // Pass back the created id indirectly since I'm calling by reference.
+    $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
+    // Connect to a membership if requested.
+    if (!empty($options['membership_id'])) {
+      try {
+       $membershipPayment = civicrm_api3('MembershipPayment', 'create', array(
+         'contribution_id' => $contribution['id'],
+         'membership_id' => $options['membership_id']
+       ));
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
       }
     }
+    // if contribution needs to be completed
+    if ($result['contribution_status_id'] == $completedStatusId) {
+      $complete = array(
+       'id' => $contribution['id'],
+       'payment_processor_id' => $contribution['payment_processor'],
+       'trxn_id' => $contribution['trxn_id'],
+       'receive_date' => $contribution['receive_date'],
+      );
+      $complete['is_email_receipt'] = empty($options['is_email_receipt']) ? 0 : 1;
+      try {
+       $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      // Restore my source field that ipn code irritatingly overwrites, and make sure that the trxn_id is set also.
+      // civicrm_api3('contribution', 'setvalue', array('id' => $contribution['id'], 'value' => $contribution['source'], 'field' => 'source'));
+      // civicrm_api3('contribution', 'setvalue', array('id' => $contribution['id'], 'value' => $trxn_id, 'field' => 'trxn_id'));
+    }
     // Now return the appropriate message.
-    if ($result['contribution_status_id'] == $completedStatusId && $completeTransaction['is_error'] == 0) {
+    if ($result['contribution_status_id'] == $completedStatusId && $contributionResult['is_error'] == 0) {
       return ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
     else {
@@ -162,7 +138,7 @@ class CRM_Tsys_Recur {
    * https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
    *
    */
-  function processRecurTransaction(&$contribution, $options, $tsysCreds) {
+  function processRecurTransaction(&$contribution, $token, $options, $tsysCreds, $completedStatusId, $failedStatusId) {
     // Make transaction
     $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
       $contribution['payment_token'],
@@ -177,15 +153,13 @@ class CRM_Tsys_Recur {
       $contribution = CRM_Core_Payment_Tsys::processSuccessResponseFromTsys($contribution, $makeTransaction);
 
       // Update the status to completed
-      $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $contribution['contribution_status_id'] = $completedStatusId;
       return $contribution;
     }
     // If transaction fails.
     else {
       // Record Failed Transaction
-      $pendingStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
-      $contribution['contribution_status_id'] = $pendingStatusId;
+      $contribution['contribution_status_id'] = $failedStatusId;
       return $contribution;
     }
   }

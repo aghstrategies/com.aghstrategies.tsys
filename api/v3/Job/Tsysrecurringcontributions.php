@@ -233,7 +233,6 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'is_test'                => $donation['is_test'],
         'financial_type_id'      => $donation['financial_type_id'],
       );
-
       $get_from_template = array('campaign_id', 'amount_level', 'tax_amount');
       foreach ($get_from_template as $field) {
         if (isset($contribution_template[$field])) {
@@ -245,24 +244,24 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // Note that the date and amount both could have changed.
       // The key is to only match if we find a single pending contribution, with a NULL transaction id, for this recurring schedule.
       // We'll need to pay attention later that we may or may not already have a contribution id.
-      try {
-        $pending_contribution = civicrm_api3('Contribution', 'get', array(
-          'return' => array('id'),
-          'trxn_id' => array('IS NULL' => 1),
-          'contribution_recur_id' => $contribution_recur_id,
-          'contribution_status_id' => "Pending",
-        ));
-        if (!empty($pending_contribution['id'])) {
-          $contribution['id'] = $pending_contribution['id'];
-        }
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-          'domain' => 'com.aghstrategies.tsys',
-          1 => $error,
-        )));
-      }
+      // try {
+      //   $pending_contribution = civicrm_api3('Contribution', 'get', array(
+      //     'return' => array('id'),
+      //     'trxn_id' => array('IS NULL' => 1),
+      //     'contribution_recur_id' => $contribution_recur_id,
+      //     'contribution_status_id' => "Pending",
+      //   ));
+      //   if (!empty($pending_contribution['id'])) {
+      //     $contribution['id'] = $pending_contribution['id'];
+      //   }
+      // }
+      // catch (CiviCRM_API3_Exception $e) {
+      //   $error = $e->getMessage();
+      //   CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      //     'domain' => 'com.aghstrategies.tsys',
+      //     1 => $error,
+      //   )));
+      // }
 
       // If my original has line_items, then I'll add them to the contribution creation array.
       // if (!empty($contribution_template['line_items'])) {
