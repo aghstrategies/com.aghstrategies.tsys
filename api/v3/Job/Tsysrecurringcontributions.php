@@ -153,7 +153,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $recurParams = [
     'contribution_status_id' => ['IN' => ["In Progress", "Pending"]],
     'payment_processor_id' => ['IN' => $tsysProcessorIDs],
-    'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 00:00:00'],
+    'next_sched_contribution_date' => ['<=' => date("Y-m-d") . ' 23:59:59'],
     'return' => [
       'contact_id',
       'amount',
