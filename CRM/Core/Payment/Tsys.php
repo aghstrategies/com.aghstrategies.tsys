@@ -221,7 +221,9 @@ private $_islive = FALSE;
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
-    $params['invoice_number'] = rand(1, 1000000);
+    if (empty($params['invoice_number'])) {
+      $params['invoice_number'] = rand(1, 1000000);
+    }
 
     // Get failed contribution status id
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');

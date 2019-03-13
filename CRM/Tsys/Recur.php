@@ -41,7 +41,7 @@ class CRM_Tsys_Recur {
     }
     // IF no payment token throw an error and quit
     else {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+      // CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Tsys token was not passed!  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
       return ts('no payment token found for recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
@@ -347,7 +347,7 @@ class CRM_Tsys_Recur {
     }
     // If no vault token record Error
     else {
-      CRM_Core_Error::statusBounce(ts('Card not saved for future use'));
+      // CRM_Core_Error::statusBounce(ts('Card not saved for future use'));
       Civi::log()->debug('Credit Card not boarded to Tsys Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
     }
     return $paymentTokenId;

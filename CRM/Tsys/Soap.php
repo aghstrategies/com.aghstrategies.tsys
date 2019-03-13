@@ -115,6 +115,37 @@ HEREDOC;
   }
 
   /**
+   * Un Board Card to Tsys -> Delete Card from Tsys so
+   * @param  string $token    token generated from first transaction
+   * @param  array $tsysCreds payment processor credentials
+   * @return                  response from tsys
+   */
+  public static function composeUnBoardCardSoapRequest($token, $tsysCreds) {
+    $soap_request = <<<HEREDOC
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+   <soap:Header/>
+   <soap:Body>
+      <UnboardCard xmlns="http://schemas.merchantwarehouse.com/merchantware/v45/">
+         <Credentials>
+           <MerchantName>{$tsysCreds['user_name']}</MerchantName>
+           <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
+           <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
+         </Credentials>
+         <Request>
+            <VaultToken>{$token}</VaultToken>
+         </Request>
+      </UnboardCard>
+   </soap:Body>
+</soap:Envelope>
+HEREDOC;
+    $response = self::doSoapRequest($soap_request);
+    return $response;
+  }
+
+
+
+  /**
    * Execute SOAP Request and Parse Response
    * @param  string $soap_request SOAP Request
    * @return                response from tsys

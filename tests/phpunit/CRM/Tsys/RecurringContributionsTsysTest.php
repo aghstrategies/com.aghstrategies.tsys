@@ -125,7 +125,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
     $results['payment_processor'] =  $results['payment_processor_id'];
     $results['receive_date'] = "2009-07-01 11:53:50";
     CRM_Tsys_Recur::processContributionPayment($results, array(), $firstContribution['id']);
-    $this->spitOutResults('MerchantWARE 4.5 38.00 M', $results);
+    $this->spitOutResults('MerchantWARE 4.5 37.00 M', $results);
   }
 
  /**
@@ -149,6 +149,59 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
    ]);
    $this->assertEquals($contribution['values'][$contribution['id']]['contribution_status_id'], $this->_completedStatusID);
    $this->spitOutResults('MerchantWARE 4.5 42.00', $contribution['values'][$contribution['id']]);
+  }
+
+  /**
+  * MerchantWARE 4.5 43.00 M
+  */
+  public function testCayanCertificationScriptMerchantWare43M() {
+    $this->setupTransaction();
+    $recurringContribution = $this->createRecurringContribution();
+    $params = [
+      'amount' => 1.01,
+      'credit_card_number' => '4012000033330026',
+      'is_recur' => 1,
+      'contributionRecurID' => $recurringContribution['id'],
+    ];
+    $results = $this->doPayment($params);
+    $results['financial_type_id'] = $this->_financialTypeID;
+    $results['total_amount'] = $results['amount'];
+    $results['contact_id'] = $results['contactID'];
+
+    $firstContribution = civicrm_api3('Contribution', 'create', $results);
+
+    $this->assertEquals($results['trxn_result_code'], 'SAL101');
+    $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
+    $this->assertGreaterThan(0, $results['payment_token_id']);
+
+    $paymentToken = civicrm_api3('PaymentToken', 'getsingle', [
+      'id' => $results['payment_token_id'],
+    ]);
+    $unBoard = CRM_Tsys_Soap::composeUnBoardCardSoapRequest($paymentToken['token'], $this->_tsysCreds);
+    $results['contribution_recur_id'] = $recurringContribution['id'];
+    $results['payment_processor'] =  $results['payment_processor_id'];
+    $results['receive_date'] = "2009-07-01 11:53:50";
+    $results['payment_token'] = $paymentToken['token'];
+    $response = CRM_Tsys_Recur::processContributionPayment($results, array(), $firstContribution['id']);
+    $this->spitOutResults('MerchantWARE 4.5 43.00 M', $results);
+  }
+
+  /**
+  * MerchantWARE 4.5 44.00 M
+  */
+  public function testCayanCertificationScriptMerchantWare44M() {
+    $this->setupTransaction();
+    $recurringContribution = $this->createRecurringContribution();
+    $params = [
+      'amount' => 10.00,
+      'credit_card_number' => '4012000033330026',
+      'is_recur' => 1,
+      'contributionRecurID' => $recurringContribution['id'],
+      'invoice_number' => 1,
+    ];
+    $results = $this->doPayment($params);
+    $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
+    $this->spitOutResults('MerchantWARE 4.5 44.00 M', $results);
   }
 
   /**
