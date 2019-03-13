@@ -26,6 +26,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   protected $_membershipTypeID;
   protected $_completedStatusID;
   protected $_failedStatusID;
+  protected $_paymentInstruments;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -246,6 +247,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     ), $params));
     $this->assertEquals(0, $contribution['is_error']);
     $this->_contributionID = $contribution['id'];
+    $instruments = civicrm_api3('contribution', 'getoptions', array('field' => 'payment_instrument_id'));
+    $this->_paymentInstruments = $instruments['values'];
   }
 
   public function createOrganization() {
