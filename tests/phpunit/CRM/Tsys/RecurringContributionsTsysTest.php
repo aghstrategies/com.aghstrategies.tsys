@@ -97,7 +97,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   /**
   * MerchantWARE 4.5 37.00 M
   */
-  public function testCayanCertificationScriptMerchantWare38M() {
+  public function testCayanCertificationScriptMerchantWare37M() {
     $this->setupTransaction();
     $recurringContribution = $this->createRecurringContribution();
     $params = [
@@ -126,6 +126,29 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
     $results['receive_date'] = "2009-07-01 11:53:50";
     CRM_Tsys_Recur::processContributionPayment($results, array(), $firstContribution['id']);
     $this->spitOutResults('MerchantWARE 4.5 38.00 M', $results);
+  }
+
+ /**
+  * MerchantWARE 4.5 42.00
+  */
+ public function testCayanCertificationScriptMerchantWare42() {
+   $this->setupTransaction();
+   $recurringContribution = $this->createRecurringContribution();
+   CRM_Tsys_Recur::boardCard($recurringContribution['id'], '987654321', $this->_tsysCreds, $this->_contactID, $this->_paymentProcessorID);
+
+   $contribution = civicrm_api3('Contribution', 'transact', [
+     'financial_type_id' => $this->_financialTypeID,
+     'total_amount' => 11.00,
+     'contact_id' => $this->_contactID,
+     'payment_token' => '987654321',
+     'payment_processor' => $this->_paymentProcessorID,
+     'payment_processor_id' => $this->_paymentProcessorID,
+     'currency' => 'USD',
+     'is_recur' => 1,
+     'contributionRecurID' => $recurringContribution['id'],
+   ]);
+   $this->assertEquals($contribution['values'][$contribution['id']]['contribution_status_id'], $this->_completedStatusID);
+   $this->spitOutResults('MerchantWARE 4.5 42.00', $contribution['values'][$contribution['id']]);
   }
 
   /**

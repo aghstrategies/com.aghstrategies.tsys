@@ -27,6 +27,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   protected $_completedStatusID;
   protected $_failedStatusID;
   protected $_paymentInstruments;
+  protected $_tsysCreds;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -44,6 +45,11 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $this->_created_ts = time();
     $this->_completedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
     $this->_failedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+    $mode = 'test';
+    $pp = $this->_paymentProcessor;
+    $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
+    $this->_tsysCreds = $tsys::getPaymentProcessorSettings($this->_paymentProcessorID, array("signature", "subject", "user_name"));
+
   }
 
   public function tearDown() {
@@ -179,9 +185,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'invoice_number' => rand(1, 1000000),
     ), $params);
 
-    $tsysCreds = $tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
-    $makeTransaction = $this->generateTokenFromCreditCard($params, $tsysCreds);
-    $ret = $tsys->processTransaction($makeTransaction, $params, $tsysCreds);
+    $makeTransaction = $this->generateTokenFromCreditCard($params, $this->_tsysCreds);
+    $ret = $tsys->processTransaction($makeTransaction, $params, $this->_tsysCreds);
     return $ret;
   }
 
