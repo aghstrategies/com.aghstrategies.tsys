@@ -270,6 +270,7 @@ private $_islive = FALSE;
       CRM_Core_Error::statusBounce(ts('Unable to complete payment, no tsys payment token! Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
+      Civi::log()->debug('Contribution Failed No Token:' . print_r($params, TRUE));
       return $params;
     }
     $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
@@ -338,6 +339,10 @@ private $_islive = FALSE;
         );
         $params['payment_token_id'] = $paymentTokenId;
       }
+      Civi::log()->debug('Contribution Succeded:' . print_r(array(
+        'payment_token' => $params['payment_token'],
+        'approval_status' => $params['approval_status'],
+      ), TRUE));
       return $params;
     }
     // If transaction fails
