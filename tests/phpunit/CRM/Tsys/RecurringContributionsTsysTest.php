@@ -95,13 +95,13 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-  * MerchantWARE 4.5 38.00 M
+  * MerchantWARE 4.5 37.00 M
   */
   public function testCayanCertificationScriptMerchantWare38M() {
     $this->setupTransaction();
     $recurringContribution = $this->createRecurringContribution();
     $params = [
-      'amount' => 10.00,
+      'amount' => 1.01,
       'credit_card_number' => '4012000033330026',
       'is_recur' => 1,
       'contributionRecurID' => $recurringContribution['id'],
@@ -113,7 +113,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
     $firstContribution = civicrm_api3('Contribution', 'create', $results);
 
-    $this->assertEquals($results['trxn_result_code'], 'NC1000');
+    $this->assertEquals($results['trxn_result_code'], 'SAL101');
     $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
     $this->assertGreaterThan(0, $results['payment_token_id']);
 
