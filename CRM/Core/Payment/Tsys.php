@@ -339,19 +339,13 @@ private $_islive = FALSE;
         );
         $params['payment_token_id'] = $paymentTokenId;
       }
-      Civi::log()->debug('Contribution Succeded:' . print_r(array(
-        'payment_token' => $params['payment_token'],
-        'approval_status' => $params['approval_status'],
-      ), TRUE));
+      Civi::log()->debug('Contribution Succeded:' . print_r($params, TRUE));
       return $params;
     }
     // If transaction fails
     else {
       $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-      Civi::log()->debug('Contribution Failed:' . print_r(array(
-        'payment_token' => $params['payment_token'],
-        'approval_status' => $params['approval_status'],
-      ), TRUE));
+      Civi::log()->debug('Contribution Failed:' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
       // TODO Process Failed response from Tsys
       return $params;
