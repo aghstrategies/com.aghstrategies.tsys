@@ -343,8 +343,10 @@ private $_islive = FALSE;
     // If transaction fails
     else {
       $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-      // CRM_Core_Error::statusBounce(ts("Tsys Contribution Failed"));
-      Civi::log()->debug('Credit Card Transaction Failed: ' . print_r($makeTransaction, TRUE));
+      Civi::log()->debug('Contribution Failed:' . print_r(array(
+        'payment_token' => $params['payment_token'],
+        'approval_status' => $params['approval_status'],
+      ), TRUE));
       $params['payment_status_id'] = $failedStatusId;
       // TODO Process Failed response from Tsys
       return $params;
