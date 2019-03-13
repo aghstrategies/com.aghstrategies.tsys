@@ -291,7 +291,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'credit_card_number' => 'Credit Card',
       'approval_status' => 'Approval Status',
       'tsys_token' => 'Previous Trxn Token',
-      'vault_token' => 'Vault Token'
+      'vault_token' => 'Vault Token',
+      'trxn_id' => 'Transaction ID',
     ];
     foreach ($thingsToPrint as $key => $pretty) {
       if (!empty($results[$key])) {

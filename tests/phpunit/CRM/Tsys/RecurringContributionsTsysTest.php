@@ -29,6 +29,49 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
+  * Contribute.Transact API
+  */
+  public function testCayanContributeTransact() {
+    $this->setupTransaction();
+    $recurringContribution = $this->createRecurringContribution();
+    $params = [
+      'amount' => 10.00,
+      'credit_card_number' => '4012000033330026',
+      'is_recur' => 1,
+      'contributionRecurID' => $recurringContribution['id'],
+    ];
+    $results = $this->doPayment($params);
+    $results['financial_type_id'] = 1;
+    $results['total_amount'] = $results['amount'];
+    $results['contact_id'] = $results['contactID'];
+
+    $firstContribution = civicrm_api3('Contribution', 'create', $results);
+
+    $this->assertEquals($results['trxn_result_code'], 'NC1000');
+    $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
+    $this->assertGreaterThan(0, $results['payment_token_id']);
+
+    $paymentToken = civicrm_api3('PaymentToken', 'getsingle', [
+      'id' => $results['payment_token_id'],
+    ]);
+    $results['contribution_recur_id'] = $recurringContribution['id'];
+    $results['vault_token'] = $paymentToken['token'];
+    $results['payment_processor'] =  $results['payment_processor_id'];
+    $results['receive_date'] = "2009-07-01 11:53:50";
+    $contribution = civicrm_api3('Contribution', 'transact', [
+      'financial_type_id' => 1,
+      'total_amount' => 11.00,
+      'contact_id' => $results['contact_id'],
+      'payment_token' => $results['vault_token'],
+      'payment_processor' => $results['payment_processor_id'],
+      'payment_processor_id' => $results['payment_processor_id'],
+      'currency' => 'USD',
+    ]);
+    $this->assertEquals($contribution['values'][$contribution['id']]['contribution_status_id'], $this->_completedStatusID);
+    $this->spitOutResults('Contribute Transact API', $contribution['values'][$contribution['id']]);
+  }
+
+  /**
   * MerchantWARE 4.5 34.00 M
   */
   public function testCayanCertificationScriptMerchantWare34M() {
