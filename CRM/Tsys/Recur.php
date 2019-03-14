@@ -173,7 +173,7 @@ class CRM_Tsys_Recur {
    * @param  array $contribution   Contribution Details
    * @return array $template       Template for the recurring contribution
    */
-  function getContributionTemplate($contribution) {
+  public static function getContributionTemplate($contribution) {
     // Get the 1st contribution in the series that matches the total_amount:
     $template = array();
     $get = array(
@@ -239,7 +239,7 @@ class CRM_Tsys_Recur {
    * @param  string $type simple or dates -- determines which query to use
    * @return object $dao  result from database
    */
-  function getInstallmentsDone($type = 'simple') {
+  public static function getInstallmentsDone($type = 'simple') {
     // Restrict this method of recurring contribution processing to only this payment processors.
     $args = array(
       1 => array('Payment_Tsys', 'String'),
