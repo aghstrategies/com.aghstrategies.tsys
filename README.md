@@ -32,5 +32,5 @@ This processor works with the Contribution Transact API but one needs to pass th
 ## Testing
 [Credit Card Numbers to test with](https://docs.cayan.com/knowledge-base/testing-certification-tools/test-processor)
 
-### To Run Unit tests:
+### To Run phpunit tests:
 `$ env CIVICRM_UF=UnitTests user_name='name' password="webApiKey" signature="Key" subject="siteId" phpunit4 ./tests/phpunit/CRM/Tsys/OneTimeContributionTsysTest.php`

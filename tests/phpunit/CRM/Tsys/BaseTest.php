@@ -83,7 +83,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
 
   /**
    * Create a tsys payment processor.
-   *
    */
   function createPaymentProcessor($params = array()) {
     // Get the payment processor type id
@@ -138,7 +137,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
 
   /**
    * Create a tsys contribution page.
-   *
    */
   function createContributionPage($params = array()) {
     $params = array_merge(array(
@@ -190,6 +188,9 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     return $ret;
   }
 
+  /**
+   * Create a recurring contribution
+   */
   public function createRecurringContribution($extraParams = array()) {
     $params = [
       'contact_id' => $this->contact->id,
@@ -206,6 +207,10 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     return $recurring;
   }
 
+  /**
+   * Generate a tsys token using a credit card number
+   * NOTE: Usually the tokens are created thru js, this is a workaround for testing purposes
+   */
   public function generateTokenFromCreditCard($params, $tsysCreds) {
     if (!empty($params['credit_card_number']) &&
     !empty($params['cvv2']) &&
@@ -260,6 +265,9 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $this->_paymentInstruments = $instruments['values'];
   }
 
+  /**
+   * Create Organization
+   */
   public function createOrganization() {
     if (!empty($this->_orgID)) {
       return;
@@ -271,6 +279,9 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $this->_orgID = $results['id'];
   }
 
+  /**
+   * Create Membership Type
+   */
   public function createMembershipType() {
     CRM_Member_PseudoConstant::flush('membershipType');
     CRM_Core_Config::clearDBCache();
@@ -295,7 +306,10 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     CRM_Member_PseudoConstant::flush('membershipType');
     CRM_Utils_Cache::singleton()->flush();
   }
-
+  
+  /**
+   * Print the results of the tests to the command line to use to populate the Cayan Certification Script
+   */
   public function spitOutResults($question, $results) {
     echo "\r\n\r\n$question \r\n";
     $thingsToPrint = [
