@@ -40,7 +40,7 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
       'is_recur' => 1,
       'contributionRecurID' => $recurringContribution['id'],
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $results['financial_type_id'] = $this->_financialTypeID;
     $results['total_amount'] = $results['amount'];
     $results['contact_id'] = $results['contactID'];
@@ -84,7 +84,7 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
       'is_recur' => 1,
       'contributionRecurID' => $recurringContribution['id'],
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $this->assertEquals($results['trxn_result_code'], 'NC1000');
     $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
     $this->assertGreaterThan(0, $results['payment_token_id']);
@@ -108,7 +108,7 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
       'is_recur' => 1,
       'contributionRecurID' => $recurringContribution['id'],
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $results['financial_type_id'] = $this->_financialTypeID;
     $results['total_amount'] = $results['amount'];
     $results['contact_id'] = $results['contactID'];
@@ -167,7 +167,7 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
       'is_recur' => 1,
       'contributionRecurID' => $recurringContribution['id'],
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $results['financial_type_id'] = $this->_financialTypeID;
     $results['total_amount'] = $results['amount'];
     $results['contact_id'] = $results['contactID'];
@@ -204,8 +204,8 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
       'contributionRecurID' => $recurringContribution['id'],
       'invoice_number' => 1,
     ];
-    $contrib1 = $this->doPayment($params);
-    $contrib2 = $this->doPayment($params);
+    $contrib1 = $this->doPayment($params, 'live');
+    $contrib2 = $this->doPayment($params, 'live');
     $this->assertEquals($contrib2['payment_status_id'], $this->_failedStatusID);
     $this->spitOutResults('MerchantWARE 4.5 44.00 M', $contrib2);
   }
@@ -295,7 +295,7 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
       'payment_instrument_id' => array_search('Credit Card', $this->_paymentInstruments),
       'financial_type_id' => $this->_financialTypeID,
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $contribution = civicrm_api3('Contribution', 'create', $results);
     $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', array(
       'id' => $recurringContribution['id'],

@@ -50,7 +50,7 @@ HEREDOC;
    * @param  int   $invoiceNumber invoice number
    * @return                      response from tsys
    */
-  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0) {
+  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0, $endpoint = 'live') {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -81,7 +81,7 @@ HEREDOC;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request);
+    $response = self::doSoapRequest($soap_request, $endpoint);
     return $response;
   }
 
@@ -143,14 +143,18 @@ HEREDOC;
     return $response;
   }
 
-
-
   /**
    * Execute SOAP Request and Parse Response
    * @param  string $soap_request SOAP Request
    * @return                response from tsys
    */
-  public static function doSoapRequest($soap_request) {
+  public static function doSoapRequest($soap_request, $endpoint = 'live') {
+    if ($endpoint == 'live') {
+      $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
+    }
+    if ($endpoint == 'sandbox') {
+      $endpointURL = "http://certeng-test.getsandbox.com/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
+    }
     $response = "NO RESPONSE";
     $header = array(
       "Content-type: text/xml;charset=\"utf-8\"",
@@ -161,7 +165,7 @@ HEREDOC;
     );
 
     $soap_do = curl_init();
-    curl_setopt($soap_do, CURLOPT_URL, "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx" );
+    curl_setopt($soap_do, CURLOPT_URL, $endpointURL);
     curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 20);
     curl_setopt($soap_do, CURLOPT_TIMEOUT,        20);
     curl_setopt($soap_do, CURLOPT_RETURNTRANSFER, true );

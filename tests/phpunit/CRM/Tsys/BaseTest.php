@@ -157,7 +157,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   /**
    * Submit to tsys
    */
-  public function doPayment($params = array()) {
+  public function doPayment($params = array(), $endpoint = 'live') {
     $mode = 'test';
     $pp = $this->_paymentProcessor;
     $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
@@ -182,8 +182,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'invoiceID' => $this->_invoiceID,
       'invoice_number' => rand(1, 1000000),
     ), $params);
-
-    $makeTransaction = $this->generateTokenFromCreditCard($params, $this->_tsysCreds);
+    $makeTransaction = $this->generateTokenFromCreditCard($params, $this->_tsysCreds, $endpoint);
     $ret = $tsys->processTransaction($makeTransaction, $params, $this->_tsysCreds);
     return $ret;
   }
@@ -211,7 +210,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
    * Generate a tsys token using a credit card number
    * NOTE: Usually the tokens are created thru js, this is a workaround for testing purposes
    */
-  public function generateTokenFromCreditCard($params, $tsysCreds) {
+  public function generateTokenFromCreditCard($params, $tsysCreds, $endpoint = 'live') {
     if (!empty($params['credit_card_number']) &&
     !empty($params['cvv2']) &&
     !empty($params['credit_card_exp_date']['M']) &&
@@ -234,7 +233,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
         $creditCardInfo,
         $tsysCreds,
         $params['amount'],
-        $params['invoice_number']
+        $params['invoice_number'],
+        $endpoint
       );
     }
     return $makeTransaction;
@@ -306,7 +306,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     CRM_Member_PseudoConstant::flush('membershipType');
     CRM_Utils_Cache::singleton()->flush();
   }
-  
+
   /**
    * Print the results of the tests to the command line to use to populate the Cayan Certification Script
    */

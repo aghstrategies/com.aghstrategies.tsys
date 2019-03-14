@@ -39,7 +39,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 1.01,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $this->assertEquals($results['trxn_result_code'], 'SAL101');
     $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
     $this->spitOutResults('Genius Checkout 1.00 C', $results);
@@ -55,7 +55,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 3.01,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
     $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
     $this->assertEquals($results['approval_status'], 'DECLINED;1012;decline');
@@ -72,7 +72,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 3.20,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
     $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
     $this->assertEquals($results['approval_status'], 'REFERRAL;1013');
@@ -89,7 +89,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 3.05,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
     $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
     $this->assertEquals($results['approval_status'], 'DECLINED,DUPLICATE;1110;duplicate transaction');
@@ -110,7 +110,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
         'Y' => '2000',
       ),
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
     $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
     $this->assertEquals($results['approval_status'], 'DECLINED;1024;invalid exp date');
@@ -128,7 +128,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'credit_card_number' => '4012000033330026',
       'cvv2' => '1234',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
     $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
     $this->assertEquals($results['approval_status'], 'DECLINED;1007;field format error');
@@ -145,7 +145,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 3.41,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
     $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
     $this->spitOutResults('Genius Checkout 15.00 C', $results);
@@ -161,7 +161,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 3.61,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
 
 
     $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
@@ -178,8 +178,24 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       'amount' => 7.65,
       'credit_card_number' => '4012000033330026',
     ];
-    $results = $this->doPayment($params);
+    $results = $this->doPayment($params, 'live');
     $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
     $this->spitOutResults('Genius Checkout 17.00 C', $results);
+  }
+
+  /**
+   * Sandbox Tests 7.00 SB
+   * MerchantWare 4.5 Sale Random Field
+   */
+  public function testCayanCertificationScriptSandbox7SB() {
+    $this->setupTransaction();
+    $params = [
+      'amount' => 1.01,
+      'credit_card_number' => '4012000033330026',
+    ];
+    $results = $this->doPayment($params, 'sandbox');
+    $this->assertEquals($results['trxn_result_code'], 'MW45SL');
+    $this->assertEquals($results['payment_status_id'], $this->_completedStatusID);
+    $this->spitOutResults('Sandbox Tests 7.00 SB', $results);
   }
 }
