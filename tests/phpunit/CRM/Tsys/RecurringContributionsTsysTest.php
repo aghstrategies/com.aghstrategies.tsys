@@ -6,7 +6,7 @@ use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 
 require ('BaseTest.php');
-class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
+class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
   // Tests of recurring tsys transactions (vault tokens)
 
   protected $_contributionRecurID;
