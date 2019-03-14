@@ -28,13 +28,10 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
     parent::tearDown();
   }
 
-
   /**
-   * Run a series of cron jobs and make an assertion about email deliveries.
-   *
-   * @param array $cronRuns
-   *   array specifying when to run cron and what messages to expect; each item is an array with keys:
-   *   - time: string, e.g. '2012-06-15 21:00:01'
+   * Run the Tsysrecurringcontributions cron job
+   * @param  string $time time to run the job as
+   * @return array        results from the job
    */
   public function assertCronRuns($time) {
     CRM_Utils_Time::setTime($time);
@@ -44,6 +41,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Tsys Recurring Job Schedule
+   * Run the 'tsysrecurringcontributions' job test that transaction gets processed
    */
   public function testTsysRecurringJobSchedule() {
     $this->setupTransaction();
@@ -77,7 +75,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
       'return' => ["payment_token_id", 'next_sched_contribution_date', 'amount', 'id'],
     ));
     $recurJob = $this->assertCronRuns("2019-01-02 11:46:27");
-    print_r($recurJob);
+    $this->assertEquals($recurJob['count'], 1);
+    $this->assertEquals($recurJob['is_error'], 0);
   }
-
 }

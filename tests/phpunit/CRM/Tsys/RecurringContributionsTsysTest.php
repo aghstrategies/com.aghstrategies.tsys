@@ -72,8 +72,9 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-  * MerchantWARE 4.5 34.00 M
-  */
+   * MerchantWARE 4.5 34.00 M
+   * Vault Board Credit by Reference
+   */
   public function testCayanCertificationScriptMerchantWare34M() {
     $this->setupTransaction();
     $recurringContribution = $this->createRecurringContribution();
@@ -95,8 +96,9 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-  * MerchantWARE 4.5 37.00 M
-  */
+   * MerchantWARE 4.5 37.00 M
+   * Sale Vault
+   */
   public function testCayanCertificationScriptMerchantWare37M() {
     $this->setupTransaction();
     $recurringContribution = $this->createRecurringContribution();
@@ -130,6 +132,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
  /**
   * MerchantWARE 4.5 42.00
+  * Vault Sale on Invalid Token
   */
  public function testCayanCertificationScriptMerchantWare42() {
    $this->setupTransaction();
@@ -152,8 +155,9 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-  * MerchantWARE 4.5 43.00 M
-  */
+   * MerchantWARE 4.5 43.00 M
+   * Vault Sale on Deleted Token
+   */
   public function testCayanCertificationScriptMerchantWare43M() {
     $this->setupTransaction();
     $recurringContribution = $this->createRecurringContribution();
@@ -187,8 +191,9 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-  * MerchantWARE 4.5 44.00 M
-  */
+   * MerchantWARE 4.5 44.00 M
+   * Vault Sale Decline Duplicate
+   */
   public function testCayanCertificationScriptMerchantWare44M() {
     $this->setupTransaction();
     $recurringContribution = $this->createRecurringContribution();

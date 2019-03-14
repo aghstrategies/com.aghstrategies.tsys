@@ -29,7 +29,8 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-  * Genius Checkout 1.00 C
+   * Genius Checkout 1.00 C
+   * Sale Vault: Process a Sale transaction using the single-use token received.
    */
   public function testCayanCertificationScriptGeniusCheckout1C() {
     $this->setupTransaction();
@@ -45,6 +46,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 7.00 C
+   * Sale Vault Decline Response
    */
   public function testCayanCertificationScriptGeniusCheckout7C() {
     $this->setupTransaction();
@@ -61,6 +63,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 8.00 C
+   * Sale Vault Referral Response
    */
   public function testCayanCertificationScriptGeniusCheckout8C() {
     $this->setupTransaction();
@@ -77,6 +80,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 12.00 C
+   * Decline Duplicate Failure Test
    */
   public function testCayanCertificationScriptGeniusCheckout12C() {
     $this->setupTransaction();
@@ -93,6 +97,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 13.00 C
+   * Invalid Expiration Date Failure Test
    */
   public function testCayanCertificationScriptGeniusCheckout13C() {
     $this->setupTransaction();
@@ -113,6 +118,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 14.00 C
+   * Field Format Error Failure Test
    */
   public function testCayanCertificationScriptGeniusCheckout14C() {
     $this->setupTransaction();
@@ -130,6 +136,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 15.00 C
+   * Approval with AVS Failure
    */
   public function testCayanCertificationScriptGeniusCheckout15C() {
     $this->setupTransaction();
@@ -145,6 +152,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 16.00 C
+   * Approval with CVV Failure
    */
   public function testCayanCertificationScriptGeniusCheckout16C() {
     $this->setupTransaction();
@@ -161,6 +169,7 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
 
   /**
    * Genius Checkout 17.00 C
+   * Response Failure Test
    */
   public function testCayanCertificationScriptGeniusCheckout17C() {
     $this->setupTransaction();
