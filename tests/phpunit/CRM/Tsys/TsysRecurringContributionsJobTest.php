@@ -53,21 +53,28 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
       'create_date'                   => "2019-01-01 11:46:27",
       'next_sched_contribution_date'  => "2019-01-02 00:00:00",
       'contribution_status_id'        => 'In Progress',
+      'payment_instrument_id' => array_search('Credit Card', $this->_paymentInstruments),
+      'financial_type_id' => $this->_financialTypeID,
     ];
     $recurringContribution = $this->createRecurringContribution($dates);
 
     $params = [
       'amount' => 10.00,
+      'total_amount' => 10.00,
+      'contact_id' => $this->contact->id,
       'credit_card_number' => '4012000033330026',
       'is_recur' => 1,
+      'contribution_recur_id'=> $recurringContribution['id'],
       'contributionRecurID' => $recurringContribution['id'],
       'receive_date' => "2019-01-01 11:46:27",
+      'payment_instrument_id' => array_search('Credit Card', $this->_paymentInstruments),
+      'financial_type_id' => $this->_financialTypeID,
     ];
     $results = $this->doPayment($params);
-
+    $contribution = civicrm_api3('Contribution', 'create', $results);
     $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', array(
       'id' => $recurringContribution['id'],
-      'return' => ["payment_token_id", 'next_sched_contribution_date'],
+      'return' => ["payment_token_id", 'next_sched_contribution_date', 'amount', 'id'],
     ));
     $recurJob = $this->assertCronRuns("2019-01-02 11:46:27");
     print_r($recurJob);

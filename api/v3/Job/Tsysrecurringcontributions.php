@@ -215,8 +215,6 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'total_amount' => $donation['amount'],
       ]);
 
-      $original_contribution_id = $contribution_template['original_contribution_id'];
-
       $contribution = array(
         'contact_id'             => $contact_id,
         'receive_date'           => $receive_date,
@@ -300,7 +298,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       );
 
       // Process Recurring Contribution Payment
-      $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $original_contribution_id);
+      $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $contribution_template['original_contribution_id']);
       $output[] = $result;
 
       $pendingStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');

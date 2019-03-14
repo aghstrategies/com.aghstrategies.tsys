@@ -16,7 +16,7 @@ class CRM_Tsys_Recur {
    *
    * Borrowed from https://github.com/iATSPayments/com.iatspayments.civicrm/blob/master/iats.php#L1285 _iats_process_contribution_payment
    */
-  function processContributionPayment(&$contribution, $options, $original_contribution_id) {
+  public static function processContributionPayment(&$contribution, $options, $original_contribution_id) {
     // Get Contribution Statuses
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
@@ -135,7 +135,7 @@ class CRM_Tsys_Recur {
    * https://github.com/iATSPayments/com.iatspayments.civicrm/blob/2bf9dcdb1537fb75649aa6304cdab991a8a9d1eb/iats.php#L1446
    *
    */
-  function processRecurTransaction(&$contribution, $token, $options, $tsysCreds, $completedStatusId, $failedStatusId) {
+  public static function processRecurTransaction(&$contribution, $token, $options, $tsysCreds, $completedStatusId, $failedStatusId) {
     // Make transaction
     $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
       $token,
