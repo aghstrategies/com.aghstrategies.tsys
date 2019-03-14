@@ -190,15 +190,19 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     return $ret;
   }
 
-  public function createRecurringContribution() {
-    $recurring = civicrm_api3('ContributionRecur', 'create', [
+  public function createRecurringContribution($extraParams = array()) {
+    $params = [
       'contact_id' => $this->contact->id,
       'amount' => 10.00,
       'frequency_interval' => 1,
       'frequency_unit' => 'day',
       'currency' => 'USD',
       'payment_processor_id' =>  $this->_paymentProcessorID,
-    ]);
+    ];
+    if (!empty($extraParams)) {
+      $params = array_merge($params, $extraParams);
+    }
+    $recurring = civicrm_api3('ContributionRecur', 'create', $params);
     return $recurring;
   }
 

@@ -199,9 +199,10 @@ class CRM_Tsys_ContributionTsysTest extends CRM_Tsys_BaseTest {
       'contributionRecurID' => $recurringContribution['id'],
       'invoice_number' => 1,
     ];
-    $results = $this->doPayment($params);
-    $this->assertEquals($results['payment_status_id'], $this->_failedStatusID);
-    $this->spitOutResults('MerchantWARE 4.5 44.00 M', $results);
+    $contrib1 = $this->doPayment($params);
+    $contrib2 = $this->doPayment($params);
+    $this->assertEquals($contrib2['payment_status_id'], $this->_failedStatusID);
+    $this->spitOutResults('MerchantWARE 4.5 44.00 M', $contrib2);
   }
 
   /**
