@@ -180,7 +180,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'description' => 'Test from tsys Test Code',
       'currencyID' => 'USD',
       'invoiceID' => $this->_invoiceID,
-      'invoice_number' => rand(1, 1000000),
+      'invoice_number' => rand(1, 9999999),
     ), $params);
     $doPayment = $tsys->doPayment($params);
     return $doPayment;

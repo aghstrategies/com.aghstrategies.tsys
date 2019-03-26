@@ -137,7 +137,7 @@ class CRM_Tsys_Recur {
       $token,
       $tsysCreds,
       $contribution['total_amount'],
-      rand(1, 1000000)
+      rand(1, 9999999)
     );
 
     // add relevant information from the tsys response

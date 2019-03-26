@@ -221,7 +221,7 @@ private $_islive = FALSE;
    */
   public function doPayment(&$params, $component = 'contribute') {
     if (empty($params['invoice_number'])) {
-      $params['invoice_number'] = rand(1, 1000000);
+      $params['invoice_number'] = rand(1, 9999999);
     }
 
     // Get failed contribution status id
