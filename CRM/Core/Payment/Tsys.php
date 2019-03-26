@@ -266,7 +266,7 @@ private $_islive = FALSE;
         $params['invoice_number']
       );
     }
-    // If no payment token use the credit card
+    // DO NOT USE THIS This is for supporting testing with test card numbers
     elseif (!empty($params['credit_card_number']) &&
     !empty($params['cvv2']) &&
     !empty($params['credit_card_exp_date']['M']) &&
