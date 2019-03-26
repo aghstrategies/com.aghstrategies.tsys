@@ -48,11 +48,7 @@ class CRM_Tsys_Recur {
 
     // Get tsys credentials.
     if (!empty($contribution['payment_processor'])) {
-      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($contribution['payment_processor'], array(
-        "signature",
-        "subject",
-        "user_name",
-      ));
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($contribution['payment_processor']);
     }
 
     // Throw an error if no credentials found.

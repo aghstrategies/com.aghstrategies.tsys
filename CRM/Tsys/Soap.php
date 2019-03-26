@@ -10,10 +10,9 @@ class CRM_Tsys_Soap {
    * @param  array  $tsysCreds     payment processor credentials
    * @param  int    $amount        transaction amount
    * @param  int    $invoiceNumber invoice number
-   * @param  string $test          is this a test? 'live' or 'test'
    * @return                       response from tsys
    */
-  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $invoiceNumber = 0, $test = 'live') {
+  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -39,7 +38,7 @@ class CRM_Tsys_Soap {
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request, $test);
+    $response = self::doSoapRequest($soap_request, $tsysCreds['is_test']);
     return $response;
   }
 
@@ -49,10 +48,9 @@ HEREDOC;
    * @param  array  $tsysCreds     payment processor credentials
    * @param  int    $amount        transaction amount
    * @param  int    $invoiceNumber invoice number
-   * @param  string $test          is this a test? 'live' or 'test'
    * @return                       response from tsys
    */
-  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0, $test = 'live') {
+  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -83,7 +81,7 @@ HEREDOC;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request, $test);
+    $response = self::doSoapRequest($soap_request, $tsysCreds['is_test']);
     return $response;
   }
 
@@ -150,11 +148,11 @@ HEREDOC;
    * @param  string $soap_request SOAP Request
    * @return                response from tsys
    */
-  public static function doSoapRequest($soap_request, $endpoint = 'live') {
-    if ($endpoint == 'live') {
+  public static function doSoapRequest($soap_request, $test = 0) {
+    if ($test == 0) {
       $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
     }
-    if ($endpoint == 'test') {
+    if ($test == 1) {
       $endpointURL = "http://certeng-test.getsandbox.com/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
     }
     $response = "NO RESPONSE";

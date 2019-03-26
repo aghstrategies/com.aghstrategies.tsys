@@ -48,7 +48,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $mode = 'test';
     $pp = $this->_paymentProcessor;
     $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
-    $this->_tsysCreds = $tsys::getPaymentProcessorSettings($this->_paymentProcessorID, array("signature", "subject", "user_name"));
+    $this->_tsysCreds = $tsys::getPaymentProcessorSettings($this->_paymentProcessorID);
 
   }
 

@@ -105,7 +105,8 @@ private $_islive = FALSE;
    * @param array $fields
    * @return array
    */
-  public static function getPaymentProcessorSettings($paymentProcessorId, $fields) {
+  public static function getPaymentProcessorSettings($paymentProcessorId) {
+  $fields = ["signature", "subject", "user_name", "is_test"];
    try {
      $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
        'return' => $fields,
@@ -234,10 +235,6 @@ private $_islive = FALSE;
     if (empty($params['invoice_number'])) {
       $params['invoice_number'] = rand(1, 1000000);
     }
-    $test = 'live';
-    if (!empty($params['is_test']) && $params['is_test'] == 1) {
-      $test = 'test';
-    }
 
     // Get failed contribution status id
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
@@ -256,12 +253,12 @@ private $_islive = FALSE;
 
     // Get tsys credentials ($params come from a form)
     if (!empty($params['payment_processor_id'])) {
-      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id'], array("signature", "subject", "user_name"));
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id']);
     }
 
     // Get tsys credentials ($params come from a Contribution.transact api call)
     if (!empty($params['payment_processor'])) {
-      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor'], array("signature", "subject", "user_name"));
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor']);
     }
 
     // Throw an error if no credentials found
@@ -278,8 +275,7 @@ private $_islive = FALSE;
         $params['payment_token'],
         $tsysCreds,
         $params['amount'],
-        $params['invoice_number'],
-        $test
+        $params['invoice_number']
       );
     }
     // If no payment token use the credit card
