@@ -14,7 +14,10 @@ function tsys_civicrm_buildForm($formName, &$form) {
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
 
     $res = CRM_Core_Resources::singleton();
-    CRM_Core_Payment_Tsys::sendTsysInfoToJs($res, $form->_paymentProcessor);
+    $res->addVars('tsys', [
+      'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
+      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+    ]);
 
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
