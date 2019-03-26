@@ -128,26 +128,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   }
 
   // Put together an array of tsys payment processors
-  $tsysProcessorIDs = array();
-  try {
-    $tsysProcessors = civicrm_api3('PaymentProcessor', 'get', [
-      'sequential' => 1,
-      'return' => ["id"],
-      'payment_processor_type_id' => "TSYS",
-    ]);
-  }
-  catch (CiviCRM_API3_Exception $e) {
-    $error = $e->getMessage();
-    CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-      'domain' => 'com.aghstrategies.tsys',
-      1 => $error,
-    )));
-  }
-  if (!empty($tsysProcessors['values'])) {
-    foreach ($tsysProcessors['values'] as $key => $processor) {
-      $tsysProcessorIDs[] = $processor['id'];
-    }
-  }
+  $tsysProcessorIDs = array_keys(CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors());
 
   // Search for payments that need to be made
   $recurParams = [
