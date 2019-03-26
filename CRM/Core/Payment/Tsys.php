@@ -182,6 +182,16 @@ private $_islive = FALSE;
    * @return boolean       if Currency is USD
    */
   public function checkCurrencyIsUSD(&$params) {
+    // when coming from a contribution form
+    if (!empty($params['currencyID']) && $params['currencyID'] == 'USD') {
+      return TRUE;
+    }
+
+    // when coming from a contribution.transact api call
+    if (!empty($params['currency']) && $params['currency'] == 'USD') {
+      return TRUE;
+    }
+    
     $currency = FALSE;
     try {
       $defaultCurrency = civicrm_api3('Setting', 'get', [
@@ -202,15 +212,6 @@ private $_islive = FALSE;
     && $defaultCurrency['values'][0]['defaultCurrency'] == 'USD'
     && empty($params['currencyID'])
     && empty($params['currency'])) {
-      $currency = TRUE;
-    }
-    // when coming from a contribution form
-    if (!empty($params['currencyID']) && $params['currencyID'] == 'USD') {
-      $currency = TRUE;
-    }
-
-    // when coming from a contribution.transact api call
-    if (!empty($params['currency']) && $params['currency'] == 'USD') {
       $currency = TRUE;
     }
     return $currency;
