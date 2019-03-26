@@ -465,9 +465,6 @@ private $_islive = FALSE;
         )));
       }
     }
-    if (!empty($params['trxn_result_code'])) {
-      $params['trxn_id'] .= " {$params['trxn_result_code']}";
-    }
     return $params;
   }
 }
