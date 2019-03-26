@@ -384,7 +384,7 @@ CRM.$(function ($) {
 
   function debugging(errorCode) {
     // Uncomment the following to debug unexpected returns.
-    console.log(new Date().toISOString() + ' civicrm_tsys.js: ' + errorCode);
+    // console.log(new Date().toISOString() + ' civicrm_tsys.js: ' + errorCode);
   }
 
 });
