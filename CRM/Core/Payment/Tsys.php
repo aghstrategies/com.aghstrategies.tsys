@@ -41,7 +41,7 @@ private $_islive = FALSE;
     $this->_mode = $mode;
     $this->_islive = ($mode == 'live') ? 1 : 0;
     $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName = ts('Tsys');
+    $this->_processorName = ts('TSYS');
   }
 
   /**
@@ -62,7 +62,7 @@ private $_islive = FALSE;
     );
     foreach ($credFields as $name => $label) {
       if (empty($this->_paymentProcessor[$name])) {
-        $error[] = ts("The '%1' is not set in the Tsys Payment Processor settings.", array(1 => $label));
+        $error[] = ts("The '%1' is not set in the TSYS Payment Processor settings.", array(1 => $label));
       }
     }
     if (!empty($error)) {
@@ -123,8 +123,8 @@ private $_islive = FALSE;
    // Throw an error if credential not found
    foreach ($fields as $key => $field) {
      if (empty($paymentProcessorDetails[$field])) {
-       CRM_Core_Error::statusBounce(ts('Could not find valid Tsys Payment Processor credentials'));
-       Civi::log()->debug("Tsys Credential $field not found.");
+       CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
+       Civi::log()->debug("TSYS Credential $field not found.");
      }
    }
    return $paymentProcessorDetails;
@@ -138,7 +138,7 @@ private $_islive = FALSE;
     $allTsysPaymentProcessors = array();
     try {
       $tsysPaymentProcessors = civicrm_api3('PaymentProcessorType', 'getsingle', [
-        'title' => "Tsys",
+        'title' => "TSYS",
         'api.PaymentProcessor.get' => [
           'payment_processor_type_id' => '$value.id',
           'return' => ['id', 'password'],
@@ -247,8 +247,8 @@ private $_islive = FALSE;
     // IF currency is not USD throw error and quit
     // Tsys does not accept non USD transactions
     if ($currency == FALSE) {
-      CRM_Core_Error::statusBounce(ts('Tsys only works with USD, Contribution not processed'));
-      Civi::log()->debug('Tsys Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      CRM_Core_Error::statusBounce(ts('TSYS only works with USD, Contribution not processed'));
+      Civi::log()->debug('TSYS Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
       return $params;
     }
@@ -266,7 +266,7 @@ private $_islive = FALSE;
     // Throw an error if no credentials found
     if (empty($tsysCreds)) {
       CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
-      Civi::log()->debug('No valid Tsys credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      Civi::log()->debug('No valid TSYS credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
       return $params;
     }
@@ -311,7 +311,7 @@ private $_islive = FALSE;
     // If no payment token throw an error
     else {
       CRM_Core_Error::statusBounce(ts('Unable to complete payment, Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
+      Civi::log()->debug('TSYS unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
       Civi::log()->debug('Contribution Failed No Token:' . print_r($params, TRUE));
       return $params;

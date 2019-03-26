@@ -11,7 +11,7 @@ use CRM_Tsys_ExtensionUtil as E;
 function tsys_civicrm_buildForm($formName, &$form) {
   // If on a form with a Tsys Payment Processor
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
-    && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
+    && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
 
     $res = CRM_Core_Resources::singleton();
     CRM_Core_Payment_Tsys::sendTsysInfoToJs($res, $form->_paymentProcessor);
@@ -98,7 +98,7 @@ function tsys_civicrm_check(&$messages) {
     $messages[] = new CRM_Utils_Check_Message(
       'failed_recurring_contributions_found',
       $details,
-      ts('Uncompleted Recurring Tsys Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+      ts('Uncompleted Recurring TSYS Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
       $warningLevel,
       'fa-user-times'
     );
@@ -117,13 +117,13 @@ function tsys_civicrm_managed(&$entities) {
   // Creates the payment processor entity for the Tsys Payment Processor
   $entities[] = array(
     'module' => 'com.aghstrategies.tsys',
-    'name' => 'Tsys',
+    'name' => 'TSYS',
     'entity' => 'PaymentProcessorType',
     'params' => array(
       'version' => 3,
-      'name' => 'Tsys',
-      'title' => 'Tsys',
-      'description' => 'Tsys Payment Processor',
+      'name' => 'TSYS',
+      'title' => 'TSYS',
+      'description' => 'TSYS Payment Processor',
       'class_name' => 'Payment_Tsys',
       'billing_mode' => 'form',
       'user_name_label' => 'Merchant Name',

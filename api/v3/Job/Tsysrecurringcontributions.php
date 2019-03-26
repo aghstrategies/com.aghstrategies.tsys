@@ -133,7 +133,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     $tsysProcessors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
       'return' => ["id"],
-      'payment_processor_type_id' => "Tsys",
+      'payment_processor_type_id' => "TSYS",
     ]);
   }
   catch (CiviCRM_API3_Exception $e) {
@@ -205,7 +205,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       $hash = md5(uniqid(rand(), TRUE));
       $contribution_recur_id = $donation['id'];
       $failure_count = $donation['failure_count'];
-      $source = "Tsys Payments Recurring Contribution (id=$contribution_recur_id)";
+      $source = "TSYS Payments Recurring Contribution (id=$contribution_recur_id)";
       $receive_ts = $catchup ? strtotime($donation['next_sched_contribution_date']) : time();
       $receive_date = date("YmdHis", $receive_ts);
       $errors = array();
@@ -334,7 +334,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
             'source_contact_id'   => $contact_id,
             'source_record_id'    => $contribution['id'],
             'assignee_contact_id' => $contact_id,
-            'subject'             => "Attempted Tsys Payments Recurring Contribution for " . $total_amount,
+            'subject'             => "Attempted TSYS Payments Recurring Contribution for " . $total_amount,
             'status_id'           => "Completed",
             'activity_date_time'  => date("YmdHis"),
           ]
