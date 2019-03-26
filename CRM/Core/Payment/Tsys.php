@@ -106,30 +106,30 @@ private $_islive = FALSE;
    * @return array
    */
   public static function getPaymentProcessorSettings($paymentProcessorId) {
-  $fields = ["signature", "subject", "user_name", "is_test"];
-   try {
-     $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
-       'return' => $fields,
-       'id' => $paymentProcessorId,
-     ));
-   }
-   catch (CiviCRM_API3_Exception $e) {
-     $error = $e->getMessage();
-     CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-       'domain' => 'com.aghstrategies.tsys',
-       1 => $error,
-     )));
-     return [];
-   }
-
-   // Throw an error if credential not found
-   foreach ($fields as $key => $field) {
-     if (!isset($paymentProcessorDetails[$field])) {
-       CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
-       Civi::log()->debug("TSYS Credential $field not found.");
+    $fields = ["signature", "subject", "user_name", "is_test"];
+     try {
+       $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
+         'return' => $fields,
+         'id' => $paymentProcessorId,
+       ));
      }
-   }
-   return $paymentProcessorDetails;
+     catch (CiviCRM_API3_Exception $e) {
+       $error = $e->getMessage();
+       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+         'domain' => 'com.aghstrategies.tsys',
+         1 => $error,
+       )));
+       return [];
+     }
+
+     // Throw an error if credential not found
+     foreach ($fields as $key => $field) {
+       if (!isset($paymentProcessorDetails[$field])) {
+         CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
+         Civi::log()->debug("TSYS Credential $field not found.");
+       }
+     }
+     return $paymentProcessorDetails;
   }
 
   /**
