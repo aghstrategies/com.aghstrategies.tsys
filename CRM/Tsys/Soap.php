@@ -6,13 +6,14 @@ class CRM_Tsys_Soap {
 
   /**
    * Compose Soap Request using a Tsys Token
-   * @param  string $token      payment token
-   * @param  array $tsysCreds   payment processor credentials
-   * @param  int $amount        transaction amount
-   * @param  int $invoiceNumber invoice number
-   * @return                    response from tsys
+   * @param  string $token         payment token
+   * @param  array  $tsysCreds     payment processor credentials
+   * @param  int    $amount        transaction amount
+   * @param  int    $invoiceNumber invoice number
+   * @param  string $test          is this a test? 'live' or 'test'
+   * @return                       response from tsys
    */
-  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $invoiceNumber = 0) {
+  public static function composeSaleSoapRequestToken($token, $tsysCreds, $amount, $invoiceNumber = 0, $test = 'live') {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -38,19 +39,20 @@ class CRM_Tsys_Soap {
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request);
+    $response = self::doSoapRequest($soap_request, $test);
     return $response;
   }
 
   /**
    * Soap request using credit card (currently only run when testing)
-   * @param  array $cardInfo      credit card number, exp, cardholder etc.
-   * @param  array $tsysCreds     payment processor credentials
-   * @param  int   $amount        transaction amount
-   * @param  int   $invoiceNumber invoice number
-   * @return                      response from tsys
+   * @param  array  $cardInfo      credit card number, exp, cardholder etc.
+   * @param  array  $tsysCreds     payment processor credentials
+   * @param  int    $amount        transaction amount
+   * @param  int    $invoiceNumber invoice number
+   * @param  string $test          is this a test? 'live' or 'test'
+   * @return                       response from tsys
    */
-  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0, $endpoint = 'live') {
+  public static function composeSaleSoapRequestCC($cardInfo, $tsysCreds, $amount, $invoiceNumber = 0, $test = 'live') {
     $soap_request = <<<HEREDOC
 <?xml version="1.0"?>
     <soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'>
@@ -81,7 +83,7 @@ HEREDOC;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request, $endpoint);
+    $response = self::doSoapRequest($soap_request, $test);
     return $response;
   }
 
@@ -152,7 +154,7 @@ HEREDOC;
     if ($endpoint == 'live') {
       $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
     }
-    if ($endpoint == 'sandbox') {
+    if ($endpoint == 'test') {
       $endpointURL = "http://certeng-test.getsandbox.com/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
     }
     $response = "NO RESPONSE";

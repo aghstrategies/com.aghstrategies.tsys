@@ -182,9 +182,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'invoiceID' => $this->_invoiceID,
       'invoice_number' => rand(1, 1000000),
     ), $params);
-    $makeTransaction = $this->generateTokenFromCreditCard($params, $this->_tsysCreds, $endpoint);
-    $ret = $tsys->processTransaction($makeTransaction, $params, $this->_tsysCreds);
-    return $ret;
+    $doPayment = $tsys->doPayment($params);
+    return $doPayment;
   }
 
   /**
@@ -204,40 +203,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     }
     $recurring = civicrm_api3('ContributionRecur', 'create', $params);
     return $recurring;
-  }
-
-  /**
-   * Generate a tsys token using a credit card number
-   * NOTE: Usually the tokens are created thru js, this is a workaround for testing purposes
-   */
-  public function generateTokenFromCreditCard($params, $tsysCreds, $endpoint = 'live') {
-    if (!empty($params['credit_card_number']) &&
-    !empty($params['cvv2']) &&
-    !empty($params['credit_card_exp_date']['M']) &&
-    !empty($params['credit_card_exp_date']['Y'])) {
-    $creditCardInfo = array(
-        'credit_card' => $params['credit_card_number'],
-        'cvv' => $params['cvv2'],
-        'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
-        'AvsStreetAddress' => '',
-        'AvsZipCode' => '',
-        'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
-      );
-      if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
-        $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
-      }
-      if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
-        $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
-      }
-      $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestCC(
-        $creditCardInfo,
-        $tsysCreds,
-        $params['amount'],
-        $params['invoice_number'],
-        $endpoint
-      );
-    }
-    return $makeTransaction;
   }
 
   /**

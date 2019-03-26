@@ -233,6 +233,10 @@ private $_islive = FALSE;
     if (empty($params['invoice_number'])) {
       $params['invoice_number'] = rand(1, 1000000);
     }
+    $test = 'live';
+    if (!empty($params['is_test']) && $params['is_test'] == 1) {
+      $test = 'test';
+    }
 
     // Get failed contribution status id
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
@@ -273,12 +277,40 @@ private $_islive = FALSE;
         $params['payment_token'],
         $tsysCreds,
         $params['amount'],
-        $params['invoice_number']
+        $params['invoice_number'],
+        $test
+      );
+    }
+    // If no payment token use the credit card
+    elseif (!empty($params['credit_card_number']) &&
+    !empty($params['cvv2']) &&
+    !empty($params['credit_card_exp_date']['M']) &&
+    !empty($params['credit_card_exp_date']['Y'])) {
+      $creditCardInfo = array(
+        'credit_card' => $params['credit_card_number'],
+        'cvv' => $params['cvv2'],
+        'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
+        'AvsStreetAddress' => '',
+        'AvsZipCode' => '',
+        'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
+      );
+      if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
+        $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
+      }
+      if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
+        $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
+      }
+      $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestCC(
+        $creditCardInfo,
+        $tsysCreds,
+        $params['amount'],
+        $params['invoice_number'],
+        $test
       );
     }
     // If no payment token throw an error
     else {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment, no tsys payment token! Please this to the site administrator with a description of what you were trying to do.'));
+      CRM_Core_Error::statusBounce(ts('Unable to complete payment, Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Tsys unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
       Civi::log()->debug('Contribution Failed No Token:' . print_r($params, TRUE));

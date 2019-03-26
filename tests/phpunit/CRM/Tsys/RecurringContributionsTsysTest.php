@@ -211,51 +211,6 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
   }
 
   /**
-   * CRM-20745: Test the submit function correctly sets the
-   * receive date for recurring contribution.
-   */
-  public function testSubmitCreditCardWithRecur() {
-    $mode = 'test';
-    $pp = $this->_paymentProcessor;
-    $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
-    $this->setupTransaction();
-    $receiveDate = date('Y-m-d H:i:s', strtotime('+1 month'));
-    $contributionParams = array(
-      'total_amount' => 1.01,
-      'financial_type_id' => 1,
-      'is_recur' => 1,
-      'frequency_interval' => 2,
-      'frequency_unit' => 'month',
-      'installments' => 2,
-      'receive_date' => $receiveDate,
-      'contact_id' => $this->_contactID,
-      'payment_instrument_id' => array_search('Credit Card', $this->_paymentInstruments),
-      'payment_processor_id' => $this->_paymentProcessorID,
-      'credit_card_exp_date' => array(
-        'M' => '09',
-        'Y' => '2022',
-      ),
-      'credit_card_number' => '4012000033330026',
-      'cvv2' => 123,
-      'billing_city-5' => 'Vancouver',
-      'billing_first_name' => 'Jane',
-      'billing_last_name' => 'Doe',
-      'location_type_id' => 5,
-      'amount' => 1.01,
-      'invoice_number' => rand(1, 1000000),
-      'source' => 'source',
-    );
-    $tsysCreds = $tsys::getPaymentProcessorSettings($this->_paymentProcessorID, array("signature", "subject", "user_name"));
-    $makeTransaction = $this->generateTokenFromCreditCard($contributionParams, $tsysCreds);
-    $ret = $tsys->processTransaction($makeTransaction, $contributionParams, $tsysCreds);
-    $ret['payment_token'] = $ret['tsys_token'];
-    $form = new CRM_Contribute_Form_Contribution();
-    $form->testSubmit($ret, CRM_Core_Action::ADD, 'live');
-    $contribution = civicrm_api3('Contribution', 'getsingle', array('return' => 'receive_date'));
-    $this->assertEquals($contribution['receive_date'], $receiveDate);
-  }
-
-  /**
    * Run the Tsysrecurringcontributions cron job
    * @param  string $time time to run the job as
    * @return array        results from the job
