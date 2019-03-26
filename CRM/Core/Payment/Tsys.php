@@ -191,7 +191,7 @@ private $_islive = FALSE;
     if (!empty($params['currency']) && $params['currency'] == 'USD') {
       return TRUE;
     }
-    
+
     $currency = FALSE;
     try {
       $defaultCurrency = civicrm_api3('Setting', 'get', [
@@ -383,7 +383,6 @@ private $_islive = FALSE;
         );
         $params['payment_token_id'] = $paymentTokenId;
       }
-      Civi::log()->debug('Contribution Succeded:' . print_r($params, TRUE));
       return $params;
     }
     // If transaction fails
