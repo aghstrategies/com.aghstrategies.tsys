@@ -108,14 +108,14 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
 
       // To test one must send the following environment variables
       $credentials = array(
-        'user_name',
-    		'password',
-        'subject',
-        'signature',
+        'TSYS_user_name',
+        'TSYS_password',
+        'TSYS_subject',
+        'TSYS_signature',
       );
       foreach ($credentials as $key => $credential) {
         if (getenv($credential)) {
-          $params[$credential] = getenv($credential);
+          $params[substr($credential, 5)] = getenv($credential);
         }
         else {
           $this->fail("no {$credential} environment variable passed.");
