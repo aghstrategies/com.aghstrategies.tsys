@@ -13,24 +13,18 @@ function tsys_civicrm_buildForm($formName, &$form) {
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'Tsys') {
 
+    $res = CRM_Core_Resources::singleton();
+    CRM_Core_Payment_Tsys::sendTsysInfoToJs($res, $form->_paymentProcessor);
+
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
 
-    // Send current payment processor to the JS
-    $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
-    CRM_Core_Resources::singleton()->addVars('tsys', array('pp' => $paymentProcessorId));
-
-    // get webapi keys for all tsys payment processors and send to the js just
-    // in case there are two tsys payment processors and the user toggles between them
-    $allTsysWebApiKeys = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
-    CRM_Core_Resources::singleton()->addVars('tsys', array('allApiKeys' => $allTsysWebApiKeys));
-
     // Add tsys js to create payment tokens:
-    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
+    $res->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
 
     // adding Cayan script
-    CRM_Core_Resources::singleton()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
+    $res->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
   }
 }
 

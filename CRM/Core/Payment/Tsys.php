@@ -79,14 +79,23 @@ private $_islive = FALSE;
    * @param \CRM_Core_Form $form
    */
   public function buildForm(&$form) {
+    $res = CRM_Core_Resources::singleton();
+    self::sendTsysInfoToJs($res, $form->_paymentProcessor);
+  }
 
+  /**
+   * Send Payment processors and their webapi keys to the js
+   * @param  object $res               CRM_Core_Resources
+   * @param  object $paymentProcessor  Payment processor from form
+   */
+  public static function sendTsysInfoToJs($res, $paymentProcessor) {
     // Get all tsys payment processor ids keyed to their webapikeys
     $allTsysWebApiKeys = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
-    CRM_Core_Resources::singleton()->addVars('tsys', array('allApiKeys' => $allTsysWebApiKeys));
+    $res->addVars('tsys', array('allApiKeys' => $allTsysWebApiKeys));
 
     // send current payment processor
-    $paymentProcessorId = CRM_Utils_Array::value('id', $form->_paymentProcessor);
-    CRM_Core_Resources::singleton()->addVars('tsys', array('pp' => $paymentProcessorId));
+    $paymentProcessorId = CRM_Utils_Array::value('id', $paymentProcessor);
+    $res->addVars('tsys', array('pp' => $paymentProcessorId));
   }
 
   /**
