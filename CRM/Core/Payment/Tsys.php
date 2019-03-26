@@ -121,9 +121,10 @@ private $_islive = FALSE;
      )));
      return [];
    }
+
    // Throw an error if credential not found
    foreach ($fields as $key => $field) {
-     if (empty($paymentProcessorDetails[$field])) {
+     if (!isset($paymentProcessorDetails[$field])) {
        CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
        Civi::log()->debug("TSYS Credential $field not found.");
      }
