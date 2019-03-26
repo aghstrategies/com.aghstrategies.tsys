@@ -390,7 +390,6 @@ private $_islive = FALSE;
       $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
       Civi::log()->debug('Contribution Failed:' . print_r($params, TRUE));
       $params['payment_status_id'] = $failedStatusId;
-      // TODO Process Failed response from Tsys
       return $params;
     }
   }
