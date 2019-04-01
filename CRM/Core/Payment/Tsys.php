@@ -224,19 +224,14 @@ private $_islive = FALSE;
       $params['invoice_number'] = rand(1, 9999999);
     }
 
-    // Get failed contribution status id
-    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-
     // Make sure using us dollars as the currency
     $currency = self::checkCurrencyIsUSD($params);
 
     // IF currency is not USD throw error and quit
     // Tsys does not accept non USD transactions
     if ($currency == FALSE) {
-      CRM_Core_Error::statusBounce(ts('TSYS only works with USD, Contribution not processed'));
-      Civi::log()->debug('TSYS Contribution attempted using currency besides USD.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-      $params['payment_status_id'] = $failedStatusId;
-      return $params;
+      $errorMessage = self::handleErrorNotification('TSYS only works with USD, Contribution not processed');
+      throw new \Civi\Payment\Exception\PaymentProcessorException(' Failed to create TSYS Charge ' . $errorMessage);
     }
 
     // Get tsys credentials ($params come from a form)
@@ -251,10 +246,8 @@ private $_islive = FALSE;
 
     // Throw an error if no credentials found
     if (empty($tsysCreds)) {
-      CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
-      Civi::log()->debug('No valid TSYS credentials found.  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-      $params['payment_status_id'] = $failedStatusId;
-      return $params;
+      $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found');
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
     // If there is a payment token use it to run the transaction
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
@@ -289,17 +282,13 @@ private $_islive = FALSE;
         $creditCardInfo,
         $tsysCreds,
         $params['amount'],
-        $params['invoice_number'],
-        $test
+        $params['invoice_number']
       );
     }
     // If no payment token throw an error
     else {
-      CRM_Core_Error::statusBounce(ts('Unable to complete payment, Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('TSYS unable to complete this transaction!  Report this message to the site administrator. $params: ' . print_r($params, TRUE));
-      $params['payment_status_id'] = $failedStatusId;
-      Civi::log()->debug('Contribution Failed No Token:' . print_r($params, TRUE));
-      return $params;
+      $errorMessage = self::handleErrorNotification('No Payment Token');
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
     $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
     return $params;
@@ -371,10 +360,8 @@ private $_islive = FALSE;
     }
     // If transaction fails
     else {
-      $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
-      Civi::log()->debug('Contribution Failed:' . print_r($params, TRUE));
-      $params['payment_status_id'] = $failedStatusId;
-      return $params;
+      $errorMessage = self::handleErrorNotification('TSYS rejected card');
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
   }
 
@@ -390,7 +377,7 @@ private $_islive = FALSE;
       'pan_truncation' => 'CardNumber',
       'card_type_id' => 'CardType',
       'tsys_token'  => 'Token',
-      // NOTE the trxn_result coe is not saved 
+      // NOTE the trxn_result coe is not saved
       // TODO fix core so that the trxn_result_code can be saved to the civicrm_finacial_trxn table using the api
       'trxn_result_code' => 'AuthorizationCode',
 
@@ -451,4 +438,21 @@ private $_islive = FALSE;
     }
     return $params;
   }
+
+  /**
+  * Handle an error and notify the user
+  *
+  * @param string $errrorMessage
+  * @param string $bounceURL
+  *
+  * @return string errorMessage (or statusbounce if URL is specified)
+  */
+ public static function handleErrorNotification($errorMessage, $bounceURL = NULL) {
+   Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
+   if ($bounceURL) {
+     CRM_Core_Error::statusBounce($errorMessage, $bounceURL, 'Payment Error');
+   }
+   return $errorMessage;
+ }
+
 }
