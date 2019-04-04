@@ -157,13 +157,11 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   /**
    * Submit to tsys
    */
-  public function doPayment($params = array(), $endpoint = 'live') {
-    $mode = 'test';
-    $pp = $this->_paymentProcessor;
-    $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
+  public function preparePayment($params = array()) {
     $params = array_merge(array(
       'payment_processor_id' => $this->_paymentProcessorID,
-      'amount' => 1.01,
+      'payment_processor' => $this->_paymentProcessorID,
+      'total_amount' => 1.01,
       'cvv2' => '123',
       'credit_card_exp_date' => array(
         'M' => '09',
@@ -176,14 +174,18 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'billing_last_name' => 'last',
       'credit_card_number' => '4012000033330026',
       'email' => $this->contact->email,
-      'contactID' => $this->contact->id,
+      'contact_id' => $this->contact->id,
       'description' => 'Test from tsys Test Code',
       'currencyID' => 'USD',
       'invoiceID' => $this->_invoiceID,
       'invoice_number' => rand(1, 9999999),
+      'financial_type_id' => $this->_financialTypeID,
+      'currency' => 'USD',
+      'sequential' => 1,
+      'is_test' => 0,
+      'version' => 3,
     ), $params);
-    $doPayment = $tsys->doPayment($params);
-    return $doPayment;
+    return $params;
   }
 
   /**
@@ -278,7 +280,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   public function spitOutResults($question, $results) {
     echo "\r\n\r\n$question \r\n";
     $thingsToPrint = [
-      'amount' => 'Amount',
+      'total_amount' => 'Amount',
       'credit_card_number' => 'Credit Card',
       'approval_status' => 'Approval Status',
       'tsys_token' => 'Previous Trxn Token',

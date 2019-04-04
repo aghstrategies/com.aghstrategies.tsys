@@ -330,7 +330,7 @@ private $_islive = FALSE;
    */
   public static function processTransaction($makeTransaction, &$params, $tsysCreds) {
     $params = self::processResponseFromTsys($params, $makeTransaction);
-
+    $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
     && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED"
@@ -360,8 +360,10 @@ private $_islive = FALSE;
     }
     // If transaction fails
     else {
-      $errorMessage = self::handleErrorNotification('TSYS rejected card');
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      $params['contribution_status_id'] = $failedStatusId;
+      return $params;
+      // $errorMessage = self::handleErrorNotification('TSYS rejected card');
+      // throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
   }
 

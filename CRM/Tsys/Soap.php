@@ -81,7 +81,7 @@ HEREDOC;
        </soap:Body>
     </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request, $tsysCreds['is_test']);
+    $response = self::doSoapRequest($soap_request, 0);
     return $response;
   }
 
