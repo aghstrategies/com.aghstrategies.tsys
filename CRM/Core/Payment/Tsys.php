@@ -360,7 +360,11 @@ private $_islive = FALSE;
     }
     // If transaction fails
     else {
-      $errorMessage = self::handleErrorNotification('TSYS rejected card');
+      $errorMessage = 'TSYS rejected card ';
+      if (!empty($params['error_message'])) {
+        $errorMessage .= $params['error_message'];
+      }
+      $errorMessage = self::handleErrorNotification($errorMessage);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
   }

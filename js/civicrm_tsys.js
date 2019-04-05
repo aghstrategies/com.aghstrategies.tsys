@@ -122,6 +122,8 @@ CRM.$(function ($) {
       debugging('No payment processor id found');
     } else if (typeof CRM.vars.tsys.allApiKeys === 'undefined') {
       debugging('No payment processors array found');
+    } else if (CayanCheckoutPlus === 'undefined') {
+      debugging('No CayanCheckoutPlus');
     } else {
       if (CRM.vars.tsys.allApiKeys[CRM.vars.tsys.pp]) {
         // Setup tsys.Js

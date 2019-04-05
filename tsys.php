@@ -24,10 +24,13 @@ function tsys_civicrm_buildForm($formName, &$form) {
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
 
     // Add tsys js to create payment tokens:
-    $res->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 'html-header');
+    $res->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 10, 'page-header');
 
-    // adding Cayan script
-    $res->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
+    // TODO it would be best to link to the Cayan script instead of including a copy of it
+    // BUT doing so breaks adding a contribution on the backend from a popup
+    // $res->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js', 11, 'page-header');
+    $res->addScriptFile('com.aghstrategies.tsys', 'js/cayan.js', 10, 'page-header');
+
   }
 }
 
