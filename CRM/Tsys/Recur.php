@@ -74,42 +74,44 @@ class CRM_Tsys_Recur {
         1 => $error,
       )));
     }
-    // Pass back the created id indirectly since I'm calling by reference.
-    $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
-    // Connect to a membership if requested.
-    if (!empty($options['membership_id'])) {
-      try {
-       $membershipPayment = civicrm_api3('MembershipPayment', 'create', array(
-         'contribution_id' => $contribution['id'],
-         'membership_id' => $options['membership_id']
-       ));
+    if (!empty($contributionResult)) {
+      // Pass back the created id indirectly since I'm calling by reference.
+      $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
+      // Connect to a membership if requested.
+      if (!empty($options['membership_id'])) {
+        try {
+         $membershipPayment = civicrm_api3('MembershipPayment', 'create', array(
+           'contribution_id' => $contribution['id'],
+           'membership_id' => $options['membership_id']
+         ));
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
       }
-      catch (CiviCRM_API3_Exception $e) {
-        $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-          'domain' => 'com.aghstrategies.tsys',
-          1 => $error,
-        )));
-      }
-    }
-    // if contribution needs to be completed
-    if ($contribution['contribution_status_id'] == $completedStatusId) {
-      $complete = array(
-       'id' => $contribution['id'],
-       'payment_processor_id' => $contribution['payment_processor'],
-       'trxn_id' => $contribution['trxn_id'],
-       'receive_date' => $contribution['receive_date'],
-      );
-      $complete['is_email_receipt'] = empty($options['is_email_receipt']) ? 0 : 1;
-      try {
-       $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-          'domain' => 'com.aghstrategies.tsys',
-          1 => $error,
-        )));
+      // if contribution needs to be completed
+      if ($contribution['contribution_status_id'] == $completedStatusId) {
+        $complete = array(
+         'id' => $contribution['id'],
+         'payment_processor_id' => $contribution['payment_processor'],
+         'trxn_id' => $contribution['trxn_id'],
+         'receive_date' => $contribution['receive_date'],
+        );
+        $complete['is_email_receipt'] = empty($options['is_email_receipt']) ? 0 : 1;
+        try {
+         $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
       }
     }
     // Now return the appropriate message.

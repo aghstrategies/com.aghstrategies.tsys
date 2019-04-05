@@ -20,6 +20,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   protected $_contributionPageID;
   protected $_paymentProcessorID;
   protected $_paymentProcessor;
+  protected $_testPaymentProcessor;
+  protected $_testPaymentProcessorID;
   protected $_trxn_id;
   protected $_created_ts;
   protected $_subscriptionID;
@@ -57,6 +59,24 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   }
 
   /**
+   * Run the Tsysrecurringcontributions cron job
+   * @param  string $time time to run the job as
+   * @return array        results from the job
+   */
+  public function assertCronRuns($time) {
+    CRM_Utils_Time::setTime($time);
+    try {
+      $recurJob = civicrm_api3('job', 'tsysrecurringcontributions');
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+    }
+    if (!empty($recurJob)) {
+      return $recurJob;
+    }
+  }
+
+  /**
    * Create contact.
    */
   function createContact() {
@@ -88,7 +108,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     // Get the payment processor type id
     $pptId = civicrm_api3('PaymentProcessorType', 'getsingle', [
       'return' => ["id"],
-      'name' => "Tsys",
+      'name' => "TSYS",
     ]);
 
     if (!empty($pptId['id'])) {
@@ -98,7 +118,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     		'payment_processor_type_id' => $pptId['id'],
     		'is_active' => 1,
     		'is_default' => 0,
-    		'is_test' => 1,
+    		'is_test' => 0,
     		'is_recur' => 1,
     		'url_site' => 'https://cayan.accessaccountdetails.com/',
     		'url_recur' => 'https://cayan.accessaccountdetails.com/',
@@ -132,6 +152,18 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       $processor = array_pop($tsysPaymentProcessor['values']);
       $this->_paymentProcessor = $processor;
       $this->_paymentProcessorID = $tsysPaymentProcessor['id'];
+
+      // check for test processor
+      $params['is_test'] = 1;
+      $tsysTestPaymentProcessor = civicrm_api3('PaymentProcessor', 'get', $params);
+      if ($tsysTestPaymentProcessor['count'] != 1) {
+        // Nope, create it.
+        $tsysTestPaymentProcessor = civicrm_api3('PaymentProcessor', 'create', $params);
+      }
+      // return civicrm_api3_create_success($tsysPaymentProcessor['values']);
+      $testProcessor = array_pop($tsysTestPaymentProcessor['values']);
+      $this->_testPaymentProcessor = $testProcessor;
+      $this->_testPaymentProcessorID = $tsysTestPaymentProcessor['id'];
     }
   }
 
@@ -157,13 +189,11 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   /**
    * Submit to tsys
    */
-  public function doPayment($params = array(), $endpoint = 'live') {
-    $mode = 'test';
-    $pp = $this->_paymentProcessor;
-    $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
+  public function preparePayment($params = array(), $mode = 'live') {
     $params = array_merge(array(
       'payment_processor_id' => $this->_paymentProcessorID,
-      'amount' => 1.01,
+      'payment_processor' => $this->_paymentProcessorID,
+      'total_amount' => 1.01,
       'cvv2' => '123',
       'credit_card_exp_date' => array(
         'M' => '09',
@@ -176,14 +206,20 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'billing_last_name' => 'last',
       'credit_card_number' => '4012000033330026',
       'email' => $this->contact->email,
+      'contact_id' => $this->contact->id,
       'contactID' => $this->contact->id,
       'description' => 'Test from tsys Test Code',
       'currencyID' => 'USD',
       'invoiceID' => $this->_invoiceID,
       'invoice_number' => rand(1, 9999999),
+      'financial_type_id' => $this->_financialTypeID,
+      'currency' => 'USD',
+      'sequential' => 1,
+      'is_test' => 0,
+      'version' => 3,
+      'unit_test' => 1,
     ), $params);
-    $doPayment = $tsys->doPayment($params);
-    return $doPayment;
+    return $params;
   }
 
   /**
@@ -205,6 +241,54 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     return $recurring;
   }
 
+  public function processRecurringContribution($params, $recurringParams = array()) {
+    // Create a recurring transaction so you have a recur id to use
+    if (empty($params['contributionRecurID'])) {
+      if (empty($recurringParams)) {
+        $recurringParams = ['amount' => $params['total_amount']];
+      }
+      $recurringContribution = $this->createRecurringContribution($recurringParams);
+      $params['contributionRecurID'] = $params['contribution_recur_id'] = $recurringContribution['id'];
+    }
+    $params = $this->preparePayment($params);
+    // create a payment against the recurring contribution
+    try {
+      $contribution = civicrm_api3('Contribution', 'transact', $params);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    $contribution = $contribution['values'][0];
+    return $contribution;
+  }
+
+
+  public function processRecurringContributionResponse(&$contribution, $expectedStatus) {
+    // if expcted to complete
+    if ($expectedStatus == $this->_completedStatusID) {
+      $this->assertEquals($contribution['contribution_status_id'], $this->_completedStatusID);
+      $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
+        'id' => $contribution['contribution_recur_id'],
+      ]);
+      // Make sure the card was boarded
+      $this->assertGreaterThan(0, $recurringContribution['payment_token_id']);
+      $paymentToken = civicrm_api3('PaymentToken', 'getsingle', [
+        'id' => $recurringContribution['payment_token_id'],
+      ]);
+      $this->assertGreaterThan(0, $paymentToken['token']);
+      $contribution['vault_token'] = $paymentToken['token'];
+      $contribution['payment_processor'] = $paymentToken['payment_processor_id'];
+    }
+    if ($expectedStatus == $this->_failedStatusID) {
+      $this->assertEquals($contribution['contribution_status_id'], $this->_failedStatusID);
+    }
+    return $contribution;
+  }
+
   /**
    * Create contribition
    */
@@ -222,7 +306,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
       'contact_id' => $this->_contactID,
       'contribution_page_id' => $this->_contributionPageID,
       'payment_processor_id' => $this->_paymentProcessorID,
-      'is_test' => 1,
+      'is_test' => 0,
     ), $params));
     $this->assertEquals(0, $contribution['is_error']);
     $this->_contributionID = $contribution['id'];
@@ -278,7 +362,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
   public function spitOutResults($question, $results) {
     echo "\r\n\r\n$question \r\n";
     $thingsToPrint = [
-      'amount' => 'Amount',
+      'total_amount' => 'Amount',
       'credit_card_number' => 'Credit Card',
       'approval_status' => 'Approval Status',
       'tsys_token' => 'Previous Trxn Token',
