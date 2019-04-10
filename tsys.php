@@ -28,7 +28,8 @@ function tsys_civicrm_buildForm($formName, &$form) {
 
     // TODO it would be best to link to the Cayan script instead of including a copy of it
     // BUT doing so breaks adding a contribution on the backend from a popup
-    // $res->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js', 11, 'page-header');
+    $url = \Civi::service('asset_builder')->getUrl('cayan.js');
+    // $res->addScriptUrl($url);
     $res->addScriptFile('com.aghstrategies.tsys', 'js/cayan.js', 10, 'page-header');
 
   }
@@ -63,6 +64,16 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
   else {
     return;
   }
+}
+
+/**
+ * Implements hook_civicrm_buildAsset().
+ */
+function tsys_civicrm_buildAsset($asset, $params, &$mimetype, &$content) {
+  // Check for the asset of interest
+  if ($asset !== 'cayan.js') return;
+  $content = file_get_contents('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
+  $mimetype = 'text/javascript';
 }
 
 /**
