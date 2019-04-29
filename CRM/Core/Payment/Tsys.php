@@ -368,7 +368,7 @@ private $_islive = FALSE;
       }
 
       // If its a unit test return the params
-      if ($params['unit_test'] == 1) {
+      if (isset($params['unit_test']) && $params['unit_test'] == 1) {
         return $params;
       }
 
