@@ -272,11 +272,13 @@ private $_islive = FALSE;
         'AvsZipCode' => '',
         'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
       );
-      if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
-        $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
-      }
-      if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
-        $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
+      if (!empty($params['location_type_id'])) {
+        if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
+          $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
+        }
+        if (!empty($params['billing_postal_code-' . $params['location_type_id']])) {
+          $creditCardInfo['AvsZipCode'] = $params['billing_postal_code-' . $params['location_type_id']];
+        }
       }
       $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestCC(
         $creditCardInfo,
