@@ -249,11 +249,26 @@ private $_islive = FALSE;
       $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found');
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
-    // If there is a payment token use it to run the transaction
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
+      // If there is a payment token AND there is not a tsys_token use the payment token to run the transaction
+      $token = $params['payment_token'];
+
+      // If there is a previous transaction token ($params['tsys_token'])
+      // board that card and use the vault token instead of the One Time
+      // Transaction token ($params['payment_token']) which will no longer work
+      // because it has already been used the one time
+      if (!empty($params['tsys_token'])) {
+        $boardCard = CRM_Tsys_Soap::composeBoardCardSoapRequest(
+          $params['tsys_token'],
+          $tsysCreds
+        );
+        if (!empty($boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken)) {
+          $token = (string) $boardCard->Body->BoardCardResponse->BoardCardResult->VaultToken;
+        }
+      }
       // Make transaction
       $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
-        $params['payment_token'],
+        $token,
         $tsysCreds,
         $params['amount'],
         $params['invoice_number']
