@@ -484,4 +484,13 @@ private $_islive = FALSE;
    return $errorMessage;
  }
 
+ /**
+  * support corresponding CiviCRM method
+  */
+  public function cancelSubscription(&$message = '', $params = array()) {
+    $userAlert = ts('You have cancelled this recurring contribution.');
+    CRM_Core_Session::setStatus($userAlert, ts('Warning'), 'alert');
+    return TRUE;
+  }
+
 }
