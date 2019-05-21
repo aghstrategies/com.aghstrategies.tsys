@@ -13,7 +13,7 @@ You will need to enter the following credentials which will be provided on creat
 
 See screenshot below.  
 
-![Screenshot of Settings - Payment Processor for Tsys](./images/tsysSettings.png)
+![Screenshot of Settings - Payment Processor for Tsys](images/tsysSettings.png)
 
 ## Installation
 There are no special installation requirements.
