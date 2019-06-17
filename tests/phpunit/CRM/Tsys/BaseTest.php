@@ -113,18 +113,18 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
 
     if (!empty($pptId['id'])) {
       $params = array(
-    		'name' => 'Tsys Payment Processor',
-    		'domain_id' => CRM_Core_Config::domainID(),
-    		'payment_processor_type_id' => $pptId['id'],
-    		'is_active' => 1,
-    		'is_default' => 0,
-    		'is_test' => 0,
-    		'is_recur' => 1,
-    		'url_site' => 'https://cayan.accessaccountdetails.com/',
-    		'url_recur' => 'https://cayan.accessaccountdetails.com/',
-    		'class_name' => 'Payment_Tsys',
-    		'billing_mode' => 1
-    	);
+        'name' => 'Tsys Payment Processor',
+        'domain_id' => CRM_Core_Config::domainID(),
+        'payment_processor_type_id' => $pptId['id'],
+        'is_active' => 1,
+        'is_default' => 0,
+        'is_test' => 0,
+        'is_recur' => 1,
+        'url_site' => 'https://cayan.accessaccountdetails.com/',
+        'url_recur' => 'https://cayan.accessaccountdetails.com/',
+        'class_name' => 'Payment_Tsys',
+        'billing_mode' => 1,
+      );
 
       // To test one must send the following environment variables
       $credentials = array(
@@ -139,7 +139,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
         }
         else {
           $this->fail("no {$credential} environment variable passed.");
-         }
+        }
       }
 
       // First see if it already exists.

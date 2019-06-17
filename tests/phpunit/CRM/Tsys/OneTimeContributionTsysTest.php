@@ -8,8 +8,6 @@ use Civi\Test\TransactionalInterface;
 require ('BaseTest.php');
 class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
   // Tests of one time tsys transactions
-
-
   protected $_contributionRecurID;
   protected $_total = '200';
 
@@ -83,7 +81,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
           // 'approval_status' => 'DECLINED;1024;invalid exp date',
           'contribution_status_id' => $this->_failedStatusID,
         ],
-        'params' =>  [
+        'params' => [
           'total_amount' => 1.01,
           'credit_card_number' => '4012000033330026',
           'credit_card_exp_date' => array(
@@ -98,7 +96,7 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
           // 'approval_status' => 'DECLINED;1007;field format error',
           'contribution_status_id' => $this->_failedStatusID,
         ],
-        'params' =>  [
+        'params' => [
           'total_amount' => 3.10,
           'credit_card_number' => '4012000033330026',
           'cvv2' => '1234',
@@ -134,20 +132,20 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
           'credit_card_number' => '4012000033330026',
         ],
       ],
-      // Sandbox Tests 7.00 SB - MerchantWare 4.5 Sale Random Field
-      'Sandbox Tests 7.00 SB' => [
-        'assertions' => [
-          'contribution_status_id' => $this->_completedStatusID,
-          // 'trxn_result_code' => 'SAL101',
-        ],
-        'params' => [
-          'total_amount' => 1.01,
-          'credit_card_number' => '4012000033330026',
-          'is_test' => 1,
-          'payment_processor_id' => $this->_testPaymentProcessorID,
-          'payment_processor' => $this->_testPaymentProcessorID,
-        ],
-      ],
+      // // Sandbox Tests 7.00 SB - MerchantWare 4.5 Sale Random Field
+      // 'Sandbox Tests 7.00 SB' => [
+      //   'assertions' => [
+      //     'contribution_status_id' => $this->_completedStatusID,
+      //     // 'trxn_result_code' => 'SAL101',
+      //   ],
+      //   'params' => [
+      //     'total_amount' => 1.01,
+      //     'credit_card_number' => '4012000033330026',
+      //     'is_test' => 1,
+      //     'payment_processor_id' => $this->_testPaymentProcessorID,
+      //     'payment_processor' => $this->_testPaymentProcessorID,
+      //   ],
+      // ],
     ];
 
     foreach ($testCases as $testTitle => $testDetails) {
@@ -170,4 +168,5 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       }
     }
   }
+
 }
