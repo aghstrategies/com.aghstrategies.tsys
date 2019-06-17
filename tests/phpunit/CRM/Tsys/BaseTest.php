@@ -51,7 +51,8 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     $pp = $this->_paymentProcessor;
     $tsys = new CRM_Core_Payment_Tsys($mode, $pp);
     $this->_tsysCreds = $tsys::getPaymentProcessorSettings($this->_paymentProcessorID);
-
+    $instruments = civicrm_api3('contribution', 'getoptions', array('field' => 'payment_instrument_id'));
+    $this->_paymentInstruments = $instruments['values'];
   }
 
   public function tearDown() {
@@ -310,8 +311,6 @@ class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessI
     ), $params));
     $this->assertEquals(0, $contribution['is_error']);
     $this->_contributionID = $contribution['id'];
-    $instruments = civicrm_api3('contribution', 'getoptions', array('field' => 'payment_instrument_id'));
-    $this->_paymentInstruments = $instruments['values'];
   }
 
   /**
