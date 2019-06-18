@@ -169,4 +169,141 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
     }
   }
 
+  /**
+   * Test the submit function on the contribution page.
+   *
+   * Borrowed from CRM_Contribute_Form_ContributionTest::testSubmitCreditCard()
+   */
+  public function testSubmitCreditCardTsys() {
+    $mut = new CiviMailUtils($this, TRUE);
+    $mut->clearMessages();
+    $form = new CRM_Contribute_Form_Contribution();
+    $form->_mode = 'Live';
+    $error = FALSE;
+    try {
+      $form->testSubmit(array(
+        'total_amount' => 1.01,
+        'financial_type_id' => 1,
+        'contact_id' => $this->_contactID,
+        'contribution_status_id' => 2,
+        'credit_card_number' => 4012000033330026,
+        'cvv2' => 123,
+        'credit_card_exp_date' => array(
+          'M' => 10,
+          'Y' => 2025,
+        ),
+        'credit_card_type' => 'Visa',
+        'billing_first_name' => 'Junko',
+        'billing_middle_name' => '',
+        'billing_last_name' => 'Adams',
+        'billing_street_address-5' => '790L Lincoln St S',
+        'billing_city-5' => 'Maryknoll',
+        'billing_state_province_id-5' => 1031,
+        'billing_postal_code-5' => 10545,
+        'billing_country_id-5' => 1228,
+        // 'frequency_interval' => 1,
+        // 'frequency_unit' => 'month',
+        // 'installments' => '',
+        'hidden_AdditionalDetail' => 1,
+        'hidden_Premium' => 1,
+        'from_email_address' => '"civi45" <civi45@civicrm.com>',
+        'is_email_receipt' => TRUE,
+        'receipt_date' => '',
+        'receipt_date_time' => '',
+        'payment_processor_id' => $this->_paymentProcessorID,
+        'currency' => 'USD',
+        'source' => 'bob sled race',
+        'unit_test' => 1,
+      ), CRM_Core_Action::ADD, 'live');
+    }
+    catch (Civi\Payment\Exception\PaymentProcessorException $e) {
+      $error = TRUE;
+    }
+
+    $contribution = civicrm_api3('Contribution', 'get', array(
+      'contact_id' => $this->_contactID,
+      // 'contribution_status_id' => 'Completed',
+    ));
+    // print_r($contribution); die();
+    $this->assertEquals(1, $contribution["count"], "Contribution count should be one.");
+    $this->assertTrue(!empty($contribution["values"][$contribution["id"]]["receipt_date"]), "Receipt date should not be blank.");
+
+    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->_contactID));
+    $this->assertTrue(empty($contact['source']));
+    if (!$error) {
+      $msgs = $mut->getAllMessages();
+      $this->assertEquals(1, count($msgs));
+    }
+    $mut->clearMessages();
+    $mut->stop();
+  }
+
+  /**
+   * Test the submit function on the contribution page.
+   *
+   * Borrowed from CRM_Contribute_Form_ContributionTest::testSubmitCreditCard()
+   */
+  public function testSubmitCreditCardTsysFail() {
+    $mut = new CiviMailUtils($this, TRUE);
+    $mut->clearMessages();
+    $form = new CRM_Contribute_Form_Contribution();
+    $form->_mode = 'Live';
+    $error = FALSE;
+    try {
+      $form->testSubmit(array(
+        'total_amount' => 50,
+        'financial_type_id' => 1,
+        'contact_id' => $this->_contactID,
+        'contribution_status_id' => 1,
+        'credit_card_number' => 4444333322221111,
+        'cvv2' => 123,
+        'credit_card_exp_date' => array(
+          'M' => 9,
+          'Y' => 2012,
+        ),
+        'credit_card_type' => 'Visa',
+        'billing_first_name' => 'Junko',
+        'billing_middle_name' => '',
+        'billing_last_name' => 'Adams',
+        'billing_street_address-5' => '790L Lincoln St S',
+        'billing_city-5' => 'Maryknoll',
+        'billing_state_province_id-5' => 1031,
+        'billing_postal_code-5' => 10545,
+        'billing_country_id-5' => 1228,
+        'frequency_interval' => 1,
+        'frequency_unit' => 'month',
+        'installments' => '',
+        'hidden_AdditionalDetail' => 1,
+        'hidden_Premium' => 1,
+        'from_email_address' => '"civi45" <civi45@civicrm.com>',
+        'is_email_receipt' => TRUE,
+        'receipt_date' => '',
+        'receipt_date_time' => '',
+        'payment_processor_id' => $this->_paymentProcessorID,
+        'currency' => 'USD',
+        'source' => 'bob sled race',
+      ), CRM_Core_Action::ADD);
+    }
+    catch (Civi\Payment\Exception\PaymentProcessorException $e) {
+      $error = TRUE;
+    }
+
+    $contribution = civicrm_api3('Contribution', 'get', array(
+      'contact_id' => $this->_contactID,
+      'contribution_status_id' => 'Failed',
+    ));
+
+    $this->assertEquals(1, $contribution["count"], "Contribution count should be one.");
+    $this->assertTrue(!empty($contribution["values"][$contribution["id"]]["receipt_date"]), "Receipt date should not be blank.");
+
+    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->_contactID));
+    $this->assertTrue(empty($contact['source']));
+    if (!$error) {
+      $msgs = $mut->getAllMessages();
+      $this->assertEquals(1, count($msgs));
+    }
+    $mut->clearMessages();
+    $mut->stop();
+  }
+
 }
