@@ -1,6 +1,10 @@
 # CiviCRM Tsys Payment Processor
 
-Integrates the [Tsys](https://www.tsys.com/) payment processor (for Credit/Debit cards) into CiviCRM so it can be used it to accept Credit / Debit card payments on your site.
+Integrates the [TSYS®](https://www.tsys.com/) payment processor (for Credit/Debit cards) into CiviCRM so it can be used it to accept Credit / Debit card payments on your site.
+
+With TSYS® you get a Top 100 Global Technology Leader, as named by Thomson Reuters, and more than 35 years of payment experience helping businesses like yours. TSYS provides seamless, secure and innovative solutions across the payments spectrum. They succeed because they put people, and their needs, at the heart of every decision. It’s an approach they call ‘People-Centered Payments®’. TSYS is a member of [The Civic 50](https://www.pointsoflight.org/) and only payments company to achieve [World's Most Ethical Companies®](https://www.worldsmostethicalcompanies.com/honorees/) by Ethisphere Institute in 2018. Whether you only take payments online, by mobile app or by phone – or need a solution that integrates in-person payments with your online payments – TSYS has convenient options for people to pay you that help you manage your business.  Gain peace of mind knowing the payments you receive are encrypted and tokenized for greater security. Receive payments faster and increase the frequency you receive payments with automated options for scheduled and recurring payments.
+
+For more information visit: https://docs.civicrm.org/tsys/en/latest/
 
 ## Configuration
 All configuration is in the standard Payment Processors settings area in CiviCRM admin
@@ -10,10 +14,6 @@ You will need to enter the following credentials which will be provided on creat
 + Web API Key
 + Merchant Key
 + Merchant Site
-
-See screenshot below.  
-
-![Screenshot of Settings - Payment Processor for Tsys](images/tsysSettings.png)
 
 ## Installation
 There are no special installation requirements.
