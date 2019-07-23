@@ -69,11 +69,12 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
  * Implementation of hook_civicrm_check().
  */
 function tsys_civicrm_check(&$messages) {
-  // This adds a System Status message if their are Recurring Contributions that are not processing as expected.
+  // First get the TSYS Processors on this site
   try {
-    $failedContributions = civicrm_api3('ContributionRecur', 'get', [
+    $tsysProcesors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
-      'contribution_status_id' => ['IN' => ["Failed", "Pending"]],
+      'payment_processor_type_id' => "TSYS",
+      'is_test' => 0,
     ]);
   }
   catch (CiviCRM_API3_Exception $e) {
@@ -83,31 +84,55 @@ function tsys_civicrm_check(&$messages) {
       1 => $error,
     )));
   }
-  if (!empty($failedContributions['values']) && $failedContributions['count'] > 0) {
-    $recurContributionToLookInto = [];
-    foreach ($failedContributions['values'] as $key => $value) {
-      $recurContributionToLookInto[] = $value['id'];
+  // If one or more TSYS payment processors are set up
+  if (!empty($tsysProcesors['values'])) {
+    $processors = [];
+    foreach ($tsysProcesors['values'] as $key => $processorDets) {
+      $processors[] = $processorDets['id'];
     }
-    $recurContributionToLookInto = implode(', ', $recurContributionToLookInto);
-    $warningLevel = \Psr\Log\LogLevel::NOTICE;
-    if ($failedContributions['count'] > 3) {
-      $warningLevel = \Psr\Log\LogLevel::WARNING;
+    if (!empty($processors)) {
+      // This adds a System Status message if their are Recurring Contributions that are not processing as expected.
+      try {
+        $failedContributions = civicrm_api3('ContributionRecur', 'get', [
+          'sequential' => 1,
+          'contribution_status_id' => ['IN' => ["Failed", "Pending"]],
+          'payment_processor_id' => ['IN' => $processors],
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      if (!empty($failedContributions['values']) && $failedContributions['count'] > 0) {
+        $recurContributionToLookInto = [];
+        foreach ($failedContributions['values'] as $key => $value) {
+          $recurContributionToLookInto[] = $value['id'];
+        }
+        $recurContributionToLookInto = implode(', ', $recurContributionToLookInto);
+        $warningLevel = \Psr\Log\LogLevel::NOTICE;
+        if ($failedContributions['count'] > 3) {
+          $warningLevel = \Psr\Log\LogLevel::WARNING;
+        }
+        if ($failedContributions['count'] > 5) {
+          $warningLevel = \Psr\Log\LogLevel::ERROR;
+        }
+        $tsParams = array(
+          1 => $failedContributions['count'],
+          2 => $recurContributionToLookInto,
+        );
+        $details = ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
+        $messages[] = new CRM_Utils_Check_Message(
+          'failed_recurring_contributions_found',
+          $details,
+          ts('Uncompleted Recurring TSYS Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+          $warningLevel,
+          'fa-user-times'
+        );
+      }
     }
-    if ($failedContributions['count'] > 5) {
-      $warningLevel = \Psr\Log\LogLevel::ERROR;
-    }
-    $tsParams = array(
-      1 => $failedContributions['count'],
-      2 => $recurContributionToLookInto,
-    );
-    $details = ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
-    $messages[] = new CRM_Utils_Check_Message(
-      'failed_recurring_contributions_found',
-      $details,
-      ts('Uncompleted Recurring TSYS Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
-      $warningLevel,
-      'fa-user-times'
-    );
   }
 }
 
