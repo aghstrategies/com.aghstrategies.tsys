@@ -217,6 +217,7 @@ CRM.$(function ($) {
     function submit(event) {
       event.preventDefault();
       debugging('submit handler');
+      $form = getBillingForm();
 
       if ($form.data('submitted') === true) {
         debugging('form already submitted');
