@@ -249,7 +249,7 @@ private $_islive = FALSE;
       $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found');
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
-    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token")  {
+    if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
       // If there is a payment token AND there is not a tsys_token use the payment token to run the transaction
       $token = $params['payment_token'];
 
@@ -458,7 +458,8 @@ private $_islive = FALSE;
             $params[$fieldInCivi] = $XMLvalueAsString;
             break;
         }
-      } else {
+      }
+      else {
         CRM_Core_Error::debug_log_message(ts('Error retrieving %1 from XML', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $fieldInXML,
@@ -469,24 +470,22 @@ private $_islive = FALSE;
   }
 
   /**
-  * Handle an error and notify the user
-  *
-  * @param string $errrorMessage
-  * @param string $bounceURL
-  *
-  * @return string errorMessage (or statusbounce if URL is specified)
-  */
- public static function handleErrorNotification($errorMessage, $bounceURL = NULL) {
-   Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
-   if ($bounceURL) {
-     CRM_Core_Error::statusBounce($errorMessage, $bounceURL, 'Payment Error');
-   }
-   return $errorMessage;
- }
+   * Handle an error and notify the user
+   * @param  string $errorMessage Error Message to be displayed to user
+   * @param  string $bounceURL    Bounce URL
+   * @return string               Error Message (or statusbounce if URL is specified)
+   */
+  public static function handleErrorNotification($errorMessage, $bounceURL = NULL) {
+    Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
+    if ($bounceURL) {
+      CRM_Core_Error::statusBounce($errorMessage, $bounceURL, 'Payment Error');
+    }
+    return $errorMessage;
+  }
 
- /**
-  * support corresponding CiviCRM method
-  */
+  /**
+   * support corresponding CiviCRM method
+   */
   public function cancelSubscription(&$message = '', $params = array()) {
     $userAlert = ts('You have cancelled this recurring contribution.');
     CRM_Core_Session::setStatus($userAlert, ts('Warning'), 'alert');
