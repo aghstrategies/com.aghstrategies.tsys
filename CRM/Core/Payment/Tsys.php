@@ -227,10 +227,24 @@ private $_islive = FALSE;
     // Make sure using us dollars as the currency
     $currency = self::checkCurrencyIsUSD($params);
 
+    // Get proper entry URL for returning on error.
+    if (!(array_key_exists('qfKey', $params))) {
+      // Probably not called from a civicrm form (e.g. webform) -
+      // will return error object to original api caller.
+      $params['stripe_error_url'] = NULL;
+    }
+    else {
+      $qfKey = $params['qfKey'];
+      $parsed_url = parse_url($params['entryURL']);
+      $url_path = substr($parsed_url['path'], 1);
+      $params['tsys_error_url'] = CRM_Utils_System::url($url_path,
+      $parsed_url['query'] . "&_qf_Main_display=1&qfKey={$qfKey}", FALSE, NULL, FALSE);
+    }
+
     // IF currency is not USD throw error and quit
     // Tsys does not accept non USD transactions
     if ($currency == FALSE) {
-      $errorMessage = self::handleErrorNotification('TSYS only works with USD, Contribution not processed');
+      $errorMessage = self::handleErrorNotification('TSYS only works with USD, Contribution not processed', $params['tsys_error_url']);
       throw new \Civi\Payment\Exception\PaymentProcessorException(' Failed to create TSYS Charge ' . $errorMessage);
     }
 
@@ -246,7 +260,7 @@ private $_islive = FALSE;
 
     // Throw an error if no credentials found
     if (empty($tsysCreds)) {
-      $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found');
+      $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found', $params['tsys_error_url']);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
@@ -304,7 +318,7 @@ private $_islive = FALSE;
     }
     // If no payment token throw an error
     else {
-      $errorMessage = self::handleErrorNotification('No Payment Token');
+      $errorMessage = self::handleErrorNotification('No Payment Token', $params['tsys_error_url']);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
     $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
@@ -389,7 +403,7 @@ private $_islive = FALSE;
         return $params;
       }
 
-      $errorMessage = self::handleErrorNotification($errorMessage);
+      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url']);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
   }
