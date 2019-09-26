@@ -4,7 +4,14 @@ Integrates the [TSYS®](https://www.tsys.com/) payment processor (for Credit/Deb
 
 With TSYS® you get a Top 100 Global Technology Leader, as named by Thomson Reuters, and more than 35 years of payment experience helping businesses like yours. TSYS provides seamless, secure and innovative solutions across the payments spectrum. They succeed because they put people, and their needs, at the heart of every decision. It’s an approach they call ‘People-Centered Payments®’. TSYS is a member of [The Civic 50](https://www.pointsoflight.org/) and only payments company to achieve [World's Most Ethical Companies®](https://www.worldsmostethicalcompanies.com/honorees/) by Ethisphere Institute in 2018. Whether you only take payments online, by mobile app or by phone – or need a solution that integrates in-person payments with your online payments – TSYS has convenient options for people to pay you that help you manage your business.  Gain peace of mind knowing the payments you receive are encrypted and tokenized for greater security. Receive payments faster and increase the frequency you receive payments with automated options for scheduled and recurring payments.
 
+Currently one-off and recurring payments by Credit/Debit card are supported for USD only.  In the future it is hoped to support additional payment methods.
+
+For bug reports / feature requests for this extension please use the issue queue: https://github.com/aghstrategies/com.aghstrategies.tsys/issues
+
 For more information visit: https://docs.civicrm.org/tsys/en/latest/
+
+## Sign Up
+To open an account with TSYS, [click here to fill out the referral form](https://asnp.secure.force.com/appref?partnerId=a0F0y00000yu14J). TSYS has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
 
 ## Configuration
 All configuration is in the standard Payment Processors settings area in CiviCRM admin
