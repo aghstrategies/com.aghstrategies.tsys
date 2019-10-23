@@ -1,19 +1,31 @@
 
 {htxt id='TSYS-live-user-name'}
-{ts}Enter the Merchant Account Email Address linked to your LIVE PayPal Merchant Account.{/ts}</p>
+{ts}Enter the Merchant Account Name provided by your TSYS representative.{/ts}</p>
+{/htxt}
+{htxt id='TSYS-live-password'}
+{ts}Typically the Web API Key is a 16-character string provided by your TSYS representative.{/ts}</p>
+{/htxt}
+{htxt id='TSYS-live-signature'}
+{ts}The Site Key has 25 characters in five, 5-character blocks like KXA30-HQGOE-J18Z2-PX8TT-KXFBS{/ts}
 {/htxt}
 {htxt id='TSYS-live-url-site'}
-{ts}The URL for PayPal's LIVE Payment server. Use the default value unless otherwise indicated by PayPal.{/ts}
+{ts}For the TSYS processor the Site URL will be https://cayan.accessaccountdetails.com/{/ts}
 {/htxt}
 {htxt id='TSYS-live-url-recur'}
-{ts}The URL for PayPal Standard recurring payments. Use the default value unless otherwise indicated by PayPal.{/ts}
+{ts}For the TSYS processor the Recurring Payments URL will be https://cayan.accessaccountdetails.com/{/ts}
 {/htxt}
 {htxt id='TSYS-test-user-name'}
-{ts}Enter the Merchant Account Email Address linked to your PayPal Sandbox merchant account (NOT your Developer Central login - unless it's the same).{/ts}</p>
+{ts}Enter the Merchant Account Name provided by your TSYS representative.{/ts}</p>
+{/htxt}
+{htxt id='TSYS-test-password'}
+{ts}Typically the Web API Key is a 16-character string provided by your TSYS representative.{/ts}</p>
+{/htxt}
+{htxt id='TSYS-test-signature'}
+{ts}The Site Key has 25 characters in five, 5-character blocks like KXA30-HQGOE-J18Z2-PX8TT-KXFBS{/ts}
 {/htxt}
 {htxt id='TSYS-test-url-site'}
-{ts}The URL for PayPal's TEST Payment server. Use the default value unless otherwise indicated by PayPal.{/ts}
+{ts}For the TSYS processor the Site URL will be https://cayan.accessaccountdetails.com/{/ts}
 {/htxt}
 {htxt id='TSYS-test-url-recur'}
-{ts}The URL for PayPal Standard recurring payments. Use the default value unless otherwise indicated by PayPal.{/ts}
+{ts}For the TSYS processor the Recurring Payments URL will be https://cayan.accessaccountdetails.com/{/ts}
 {/htxt}
