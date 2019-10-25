@@ -32,6 +32,15 @@ function tsys_civicrm_buildForm($formName, &$form) {
     $res->addScriptFile('com.aghstrategies.tsys', 'js/cayan.js', 10, 'page-header');
 
   }
+
+  // Add help text
+  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+    $templatePath = realpath(dirname(__FILE__) . "/templates");
+    CRM_Core_Region::instance('form-buttons')->add(array(
+      'template' => "{$templatePath}/tsys.tpl",
+    ));
+  }
+
 }
 
 /**
@@ -166,12 +175,12 @@ function tsys_civicrm_managed(&$entities) {
       'url_site_test_default' => 'https://cayan.accessaccountdetails.com/',
       'url_recur_test_default' => 'https://cayan.accessaccountdetails.com/',
       'is_recur' => 1,
-      'payment_type' => 1
+      'payment_type' => 1,
     ),
     'metadata' => array(
-     'suppress_submit_button' => 1,
-     'payment_fields' => ['payment_token'],
-   ),
+      'suppress_submit_button' => 1,
+      'payment_fields' => ['payment_token'],
+    ),
   );
   return _tsys_civix_civicrm_managed($entities);
 }
