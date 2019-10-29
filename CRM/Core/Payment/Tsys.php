@@ -359,13 +359,13 @@ private $_islive = FALSE;
    * @return array $params           payment params updated to inculde relevant info from Tsys
    */
   public static function processTransaction($makeTransaction, &$params, $tsysCreds) {
-    $params = self::processResponseFromTsys($params, $makeTransaction);
     $failedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
 
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
     && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED"
     && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
+      $params = self::processResponseFromTsys($params, $makeTransaction);
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
@@ -401,8 +401,7 @@ private $_islive = FALSE;
       if (isset($params['unit_test']) && $params['unit_test'] == 1) {
         return $params;
       }
-
-      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url']);
+      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url'], $makeTransaction);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
   }
@@ -486,10 +485,15 @@ private $_islive = FALSE;
    * Handle an error and notify the user
    * @param  string $errorMessage Error Message to be displayed to user
    * @param  string $bounceURL    Bounce URL
+   * @param  string $makeTransaction response from TSYS
    * @return string               Error Message (or statusbounce if URL is specified)
    */
-  public static function handleErrorNotification($errorMessage, $bounceURL = NULL) {
+  public static function handleErrorNotification($errorMessage, $bounceURL = NULL, $makeTransaction = []) {
     Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
+    if (!empty($makeTransaction)) {
+      CRM_Core_Error::debug_var('makeTransaction', $makeTransaction);
+    }
+
     if ($bounceURL) {
       CRM_Core_Error::statusBounce($errorMessage, $bounceURL, 'Payment Error');
     }
