@@ -89,34 +89,33 @@ private $_islive = FALSE;
    * Given a payment processor id, return details including publishable key
    *
    * @param int $paymentProcessorId
-   * @param array $fields
    * @return array
    */
   public static function getPaymentProcessorSettings($paymentProcessorId) {
     $fields = ["signature", "subject", "user_name", "is_test"];
-     try {
-       $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
-         'return' => $fields,
-         'id' => $paymentProcessorId,
-       ));
-     }
-     catch (CiviCRM_API3_Exception $e) {
-       $error = $e->getMessage();
-       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-         'domain' => 'com.aghstrategies.tsys',
-         1 => $error,
-       )));
-       return [];
-     }
+    try {
+      $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
+        'return' => $fields,
+        'id' => $paymentProcessorId,
+      ));
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+      return [];
+    }
 
-     // Throw an error if credential not found
-     foreach ($fields as $key => $field) {
-       if (!isset($paymentProcessorDetails[$field])) {
-         CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
-         Civi::log()->debug("TSYS Credential $field not found.");
-       }
-     }
-     return $paymentProcessorDetails;
+    // Throw an error if credential not found
+    foreach ($fields as $key => $field) {
+      if (!isset($paymentProcessorDetails[$field])) {
+        CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
+        Civi::log()->debug("TSYS Credential $field not found.");
+      }
+    }
+    return $paymentProcessorDetails;
   }
 
   /**
@@ -327,7 +326,7 @@ private $_islive = FALSE;
 
   /**
    * Check if the vault token has ben saved to the database already
-   * @param  int    $paymentProcessor payment processor id
+   * @param  int $paymentProcessor payment processor id
    * @param  string $vaultToken       vault token to check for
    * @return int                      number of tokens saved to the database
    */
@@ -365,7 +364,7 @@ private $_islive = FALSE;
 
     // If transaction approved
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
-    && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus  == "APPROVED"
+    && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED"
     && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
