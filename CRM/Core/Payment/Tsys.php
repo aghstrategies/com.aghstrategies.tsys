@@ -293,7 +293,9 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     elseif (!empty($params['credit_card_number']) &&
     !empty($params['cvv2']) &&
     !empty($params['credit_card_exp_date']['M']) &&
-    !empty($params['credit_card_exp_date']['Y'])) {
+    !empty($params['credit_card_exp_date']['Y']) &&
+    $params['unit_test'] == 1
+    ) {
       $creditCardInfo = array(
         'credit_card' => $params['credit_card_number'],
         'cvv' => $params['cvv2'],
@@ -405,7 +407,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       if (isset($params['unit_test']) && $params['unit_test'] == 1) {
         return $params;
       }
-      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url'], $makeTransaction, $params);
+      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url'], $makeTransaction);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
     }
   }
@@ -490,16 +492,12 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @param  string $errorMessage Error Message to be displayed to user
    * @param  string $bounceURL    Bounce URL
    * @param  string $makeTransaction response from TSYS
-   * @param  array $params submitted params
    * @return string               Error Message (or statusbounce if URL is specified)
    */
-  public static function handleErrorNotification($errorMessage, $bounceURL = NULL, $makeTransaction = [], $params = []) {
+  public static function handleErrorNotification($errorMessage, $bounceURL = NULL, $makeTransaction = []) {
     Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
     if (!empty($makeTransaction)) {
       CRM_Core_Error::debug_var('makeTransaction', $makeTransaction);
-    }
-    if (!empty($params)) {
-      CRM_Core_Error::debug_var('params', $params);
     }
     if ($bounceURL) {
       CRM_Core_Error::statusBounce($errorMessage, $bounceURL, 'Payment Error');
