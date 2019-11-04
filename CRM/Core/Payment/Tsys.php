@@ -396,7 +396,9 @@ private $_islive = FALSE;
       if (!empty($params['error_message'])) {
         $errorMessage .= $params['error_message'];
       }
-
+      if (isset($makeTransaction->Body->SaleResponse->SaleResult->ErrorMessage)) {
+        $errorMessage .= $makeTransaction->Body->SaleResponse->SaleResult->ErrorMessage;
+      }
       // If its a unit test return the params
       if (isset($params['unit_test']) && $params['unit_test'] == 1) {
         return $params;
