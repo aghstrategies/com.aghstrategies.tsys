@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Payment Processor class for Tsys
  *
  * copied from Payment Processor class for Stripe
@@ -7,36 +7,38 @@
 class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
 
   /**
-  * We only need one instance of this object. So we use the singleton
-  * pattern and cache the instance in this variable
-  *
-  * @var object
-  * @static
-  */
- static private $_singleton = NULL;
+   * We only need one instance of this object. So we use the singleton
+   * pattern and cache the instance in this variable
+   *
+   * @var object
+   * @static
+   */
+  static private $_singleton = NULL;
 
- /**
-  * Mode of operation: live or test.
-  *
-  * @var object
-  */
- protected $_mode = NULL;
+  /**
+   * Mode of operation: live or test.
+   *
+   * @var object
+   */
+  protected $_mode = NULL;
 
- /**
- * TRUE if we are dealing with a live transaction
- *
- * @var boolean
- */
-private $_islive = FALSE;
+  /**
+   * TRUE if we are dealing with a live transaction
+   *
+   * @var boolean
+   */
+  private $_islive = FALSE;
 
- /**
-  * Constructor
-  *
-  * @param string $mode
-  *   The mode of operation: live or test.
-  *
-  * @return void
-  */
+  /**
+   * Constructor
+   *
+   * @param string $mode
+   *   The mode of operation: live or test.
+   *
+   * @param object $paymentProcessor
+   *
+   * @return void
+   */
   public function __construct($mode, &$paymentProcessor) {
     $this->_mode = $mode;
     $this->_islive = ($mode == 'live') ? 1 : 0;
