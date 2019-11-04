@@ -19,6 +19,15 @@ CRM.$(function($) {
   var submitButton;
   var tsysLoading = false;
 
+  // Make sure data-cayan attributes for expiration fields
+  // because cannot do it using quickform
+  function markExpirationFields() {
+    $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
+    $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
+    debugging('Expiration month set');
+  }
+
+  markExpirationFields();
   // Disable the browser "Leave Page Alert" which is triggered because we mess with the form submit function.
   window.onbeforeunload = null;
 
@@ -27,8 +36,13 @@ CRM.$(function($) {
    */
   window.civicrmTsysHandleReload = function() {
     debugging('civicrmTsysHandleReload');
+
+    markExpirationFields();
+    debugging('checkAndLoad from document.ready');
+    checkAndLoad();
+
     // Load Tsys onto the form.
-    var cardElement = document.getElementById('card-element');
+    var cardElement = document.getElementById('payment-token');
     if ((typeof cardElement !== 'undefined') && (cardElement)) {
       if (!cardElement.children.length) {
         debugging('checkAndLoad from document.ready');
@@ -39,18 +53,49 @@ CRM.$(function($) {
   // On initial run we need to call this now.
   window.civicrmTsysHandleReload();
 
-  function successHandler(type, object) {
-    debugging(type + ': success - submitting form');
+  function successHandler(tokenResponse) {
+    debugging(tokenResponse + ': success - submitting form');
 
     // Insert the token ID into the form so it gets submitted to the server
     var hiddenInput = document.createElement('input');
     hiddenInput.setAttribute('type', 'hidden');
-    hiddenInput.setAttribute('name', type);
-    hiddenInput.setAttribute('value', object.id);
+    hiddenInput.setAttribute('name', 'payment_token');
+    hiddenInput.setAttribute('id', 'payment_token');
+    hiddenInput.setAttribute('value', tokenResponse.token);
     form.appendChild(hiddenInput);
+
+    // form.find('input#payment_token').val(tokenResponse.token);
 
     // Submit the form
     form.submit();
+  }
+
+  // Response from tsys.createToken.
+  function tsysFailureResponseHandler(tokenResponse) {
+    $form = getBillingForm();
+    $submit = getBillingSubmit($form);
+
+    $('html, body').animate({ scrollTop: 0 }, 300);
+
+    // Show the errors on the form.
+    if ($('.messages.crm-error.tsys-message').length > 0) {
+      $('.messages.crm-error.tsys-message').slideUp();
+      $('.messages.crm-error.tsys-message:first').remove();
+    }
+
+    // foreach thru error responses
+    $.each(tokenResponse, function (key, details) {
+      $form.prepend(
+        '<div class="messages alert alert-block alert-danger error crm-error tsys-message">'
+        + '<strong>Payment Error Response:</strong>'
+        + '<ul id="errorList">'
+        + '<li>' + details.error_code + ': ' + details.reason + '</li>'
+        + '</ul>'
+        + '</div>');
+    });
+
+    $form.data('submitted', false);
+    $submit.prop('disabled', false);
   }
 
   function nonTsysSubmit() {
@@ -74,47 +119,52 @@ CRM.$(function($) {
 
   function handleCardPayment() {
     debugging('handle card payment');
-    tsys.createPaymentMethod('card', card).then(function (result) {
-      if (result.error) {
-        // Show error in payment form
-        displayError(result);
-      }
-      else {
-        if (getIsRecur() === true) {
-          // Submit the form, if we need to do 3dsecure etc. we do it at the end (thankyou page) once subscription etc has been created
-          successHandler('paymentMethodID', result.paymentMethod);
-        }
-        else {
-          // Send paymentMethod.id to server
-          var url = CRM.url('civicrm/tsys/confirm-payment');
-          $.post(url, {
-            payment_method_id: result.paymentMethod.id,
-            amount: getTotalAmount(),
-            currency: CRM.vars.tsys.currency,
-            id: CRM.vars.tsys.id,
-            description: document.title,
-          }).then(function (result) {
-            // Handle server response (see Step 3)
-            handleServerResponse(result);
-          });
-        }
-      }
+    CayanCheckoutPlus.createPaymentToken({
+      success: successHandler,
+      error: tsysFailureResponseHandler,
     });
+
+    // tsys.createPaymentMethod('card', card).then(function (result) {
+    //   if (result.error) {
+    //     // Show error in payment form
+    //     displayError(result);
+    //   }
+    //   else {
+    //     if (getIsRecur() === true) {
+    //       // Submit the form, if we need to do 3dsecure etc. we do it at the end (thankyou page) once subscription etc has been created
+    //       successHandler('paymentMethodID', result.paymentMethod);
+    //     }
+    //     else {
+    //       // Send paymentMethod.id to server
+    //       var url = CRM.url('civicrm/tsys/confirm-payment');
+    //       $.post(url, {
+    //         payment_method_id: result.paymentMethod.id,
+    //         amount: getTotalAmount(),
+    //         currency: CRM.vars.tsys.currency,
+    //         id: CRM.vars.tsys.id,
+    //         description: document.title,
+    //       }).then(function (result) {
+    //         // Handle server response (see Step 3)
+    //         handleServerResponse(result);
+    //       });
+    //     }
+    //   }
+    // });
   }
 
-  function handleServerResponse(result) {
-    debugging('handleServerResponse');
-    if (result.error) {
-      // Show error from server on payment form
-      displayError(result);
-    } else if (result.requires_action) {
-      // Use Tsys.js to handle required card action
-      handleAction(result);
-    } else {
-      // All good, we can submit the form
-      successHandler('paymentIntentID', result.paymentIntent);
-    }
-  }
+  // function handleServerResponse(result) {
+  //   debugging('handleServerResponse');
+  //   if (result.error) {
+  //     // Show error from server on payment form
+  //     displayError(result);
+  //   } else if (result.requires_action) {
+  //     // Use Tsys.js to handle required card action
+  //     handleAction(result);
+  //   } else {
+  //     // All good, we can submit the form
+  //     successHandler('paymentIntentID', result.paymentIntent);
+  //   }
+  // }
 
   function handleAction(response) {
     tsys.handleCardAction(response.payment_intent_client_secret)
@@ -202,7 +252,7 @@ CRM.$(function($) {
       tsysLoading = true;
       debugging('Tsys.js is not loaded!');
 
-      $.getScript("https://js.tsys.com/v3", function () {
+      $.getScript('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js', function () {
         debugging("Script loaded and executed.");
         tsysLoading = false;
         loadTsysBillingBlock();
@@ -216,27 +266,44 @@ CRM.$(function($) {
   function loadTsysBillingBlock() {
     debugging('loadTsysBillingBlock');
 
-    if (typeof tsys === 'undefined') {
-      tsys = Tsys(CRM.vars.tsys.publishableKey);
-    }
-    var elements = tsys.elements();
 
-    var style = {
-      base: {
-        fontSize: '20px',
-      },
-    };
+    // Get api key
+    if (typeof CRM.vars.tsys.id === 'undefined') {
+      debugging('No payment processor id found');
+    } else if (typeof CRM.vars.tsys.allApiKeys === 'undefined') {
+      debugging('No payment processors array found');
+    } else if (CayanCheckoutPlus === 'undefined') {
+      debugging('No CayanCheckoutPlus');
+    } else {
+      if (CRM.vars.tsys.allApiKeys[CRM.vars.tsys.id]) {
+        // Setup tsys.Js
+        CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.allApiKeys[CRM.vars.tsys.id]);
+      } else {
+        debugging('current payment processor web api key not found');
+      }
+    }
+
+    // if (typeof tsys === 'undefined') {
+    //   tsys = Tsys(CRM.vars.tsys.publishableKey);
+    // }
+    // var elements = tsys.elements();
+
+    // var style = {
+    //   base: {
+    //     fontSize: '20px',
+    //   },
+    // };
 
     // Create an instance of the card Element.
-    card = elements.create('card', {style: style});
-    card.mount('#card-element');
-    debugging("created new card element", card);
-
-    // Hide the CiviCRM postcode field so it will still be submitted but will contain the value set in the tsys card-element.
-    document.getElementsByClassName('billing_postal_code-' + CRM.vars.tsys.billingAddressID + '-section')[0].setAttribute('hidden', true);
-    card.addEventListener('change', function(event) {
-      updateFormElementsFromCreditCardDetails(event);
-    });
+    // card = elements.create('card', {style: style});
+    // card.mount('#card-element');
+    // debugging("created new card element", card);
+    //
+    // // Hide the CiviCRM postcode field so it will still be submitted but will contain the value set in the tsys card-element.
+    // document.getElementsByClassName('billing_postal_code-' + CRM.vars.tsys.billingAddressID + '-section')[0].setAttribute('hidden', true);
+    // card.addEventListener('change', function(event) {
+    //   updateFormElementsFromCreditCardDetails(event);
+    // });
 
     // Get the form containing payment details
     form = getBillingForm();
@@ -428,7 +495,7 @@ CRM.$(function($) {
 
   function getBillingForm() {
     // If we have a tsys billing form on the page
-    var billingFormID = $('div#card-element').closest('form').prop('id');
+    var billingFormID = $('div#payment-token').closest('form').prop('id');
     if ((typeof billingFormID === 'undefined') || (!billingFormID.length)) {
       // If we have multiple payment processors to select and tsys is not currently loaded
       billingFormID = $('input[name=hidden_processor]').closest('form').prop('id');
@@ -497,12 +564,12 @@ CRM.$(function($) {
     return false;
   }
 
-  function updateFormElementsFromCreditCardDetails(event) {
-    if (!event.complete) {
-      return;
-    }
-    document.getElementById('billing_postal_code-' + CRM.vars.tsys.billingAddressID).value = event.value.postalCode;
-  }
+  // function updateFormElementsFromCreditCardDetails(event) {
+  //   if (!event.complete) {
+  //     return;
+  //   }
+  //   document.getElementById('billing_postal_code-' + CRM.vars.tsys.billingAddressID).value = event.value.postalCode;
+  // }
 
   function addSupportForCiviDiscount() {
     // Add a keypress handler to set flag if enter is pressed

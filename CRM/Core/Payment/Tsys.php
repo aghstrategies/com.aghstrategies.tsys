@@ -89,13 +89,15 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       'id' => $form->_paymentProcessor['id'],
       'currency' => 'USD',
       'billingAddressID' => CRM_Core_BAO_LocationType::getBilling(),
+      'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
       // 'publishableKey' => CRM_Core_Payment_Stripe::getPublicKeyById($form->_paymentProcessor['id']),
       'jsDebug' => TRUE,
       'paymentProcessorTypeID' => $form->_paymentProcessor['payment_processor_type_id'],
     ];
     \Civi::resources()->addVars(E::SHORT_NAME, $jsVars);
 
-    // Add help and javascript
+    CRM_Core_Region::instance('billing-block')->add(['template' => 'CRM/Core/Payment/Tsys/Card.tpl', 'weight' => -1]);
+
     CRM_Core_Region::instance('billing-block')->add([
       'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
     ]);
@@ -163,22 +165,6 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       }
     }
     return $allTsysPaymentProcessors;
-  }
-
-  /**
-   * Get array of fields that should be displayed on the payment form for credit cards.
-   *
-   * @return array
-   */
-  protected function getCreditCardFormFields() {
-    return array(
-      'credit_card_type',
-      'credit_card_number',
-      'cvv2',
-      'credit_card_exp_date',
-      // ADD PAYMENT TOKEN
-      'payment_token',
-    );
   }
 
   /**
