@@ -209,6 +209,22 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   }
 
   /**
+   * Get array of fields that should be displayed on the payment form for credit cards.
+   *
+   * @return array
+   */
+  protected function getCreditCardFormFields() {
+    return array(
+      'credit_card_type',
+      'credit_card_number',
+      'cvv2',
+      'credit_card_exp_date',
+      // ADD PAYMENT TOKEN
+      'payment_token',
+    );
+  }
+
+  /**
    * Process payment
    *
    * @param array $params

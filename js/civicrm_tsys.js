@@ -55,16 +55,16 @@ CRM.$(function($) {
 
   function successHandler(tokenResponse) {
     debugging(tokenResponse + ': success - submitting form');
-
+    console.log(tokenResponse);
     // Insert the token ID into the form so it gets submitted to the server
-    var hiddenInput = document.createElement('input');
-    hiddenInput.setAttribute('type', 'hidden');
-    hiddenInput.setAttribute('name', 'payment_token');
-    hiddenInput.setAttribute('id', 'payment_token');
-    hiddenInput.setAttribute('value', tokenResponse.token);
-    form.appendChild(hiddenInput);
+    // var hiddenInput = document.createElement('input');
+    // hiddenInput.setAttribute('type', 'hidden');
+    // hiddenInput.setAttribute('name', 'payment_token');
+    // hiddenInput.setAttribute('id', 'payment_token');
+    // hiddenInput.setAttribute('value', tokenResponse.token);
+    // form.appendChild(hiddenInput);
 
-    // form.find('input#payment_token').val(tokenResponse.token);
+    form.find('input#payment_token').val(tokenResponse.token);
 
     // Submit the form
     form.submit();
@@ -73,7 +73,7 @@ CRM.$(function($) {
   // Response from tsys.createToken.
   function tsysFailureResponseHandler(tokenResponse) {
     $form = getBillingForm();
-    $submit = getBillingSubmit($form);
+    $submit = getBillingSubmit();
 
     $('html, body').animate({ scrollTop: 0 }, 300);
 
@@ -277,6 +277,7 @@ CRM.$(function($) {
     } else {
       if (CRM.vars.tsys.allApiKeys[CRM.vars.tsys.id]) {
         // Setup tsys.Js
+        debugging(CRM.vars.tsys.allApiKeys[CRM.vars.tsys.id]);
         CayanCheckoutPlus.setWebApiKey(CRM.vars.tsys.allApiKeys[CRM.vars.tsys.id]);
       } else {
         debugging('current payment processor web api key not found');
@@ -332,7 +333,7 @@ CRM.$(function($) {
     }
 
     submitButton.addEventListener('click', submitButtonClick);
-
+     console.log(submitButton);
     function submitButtonClick(event) {
       if (form.dataset.submitted === true) {
         return;
@@ -340,6 +341,7 @@ CRM.$(function($) {
       form.dataset.submitted = true;
       // Take over the click function of the form.
       if (typeof CRM.vars.tsys === 'undefined') {
+        debugging('hi');
         // Submit the form
         return nonTsysSubmit();
       }
@@ -348,6 +350,7 @@ CRM.$(function($) {
 
       // Run through our own submit, that executes Tsys submission if
       // appropriate for this submit.
+      console.log('submit?')
       return submit(event);
     }
 
@@ -357,23 +360,23 @@ CRM.$(function($) {
     addSupportForCiviDiscount();
 
     // For CiviCRM Webforms.
-    if (getIsDrupalWebform()) {
-      // We need the action field for back/submit to work and redirect properly after submission
-
-      $('[type=submit]').click(function() {
-        addDrupalWebformActionElement(this.value);
-      });
-      // If enter pressed, use our submit function
-      form.addEventListener('keydown', function (e) {
-        if (e.keyCode === 13) {
-          addDrupalWebformActionElement(this.value);
-          submit(event);
-        }
-      });
-
-      $('#billingcheckbox:input').hide();
-      $('label[for="billingcheckbox"]').hide();
-    }
+    // if (getIsDrupalWebform()) {
+    //   // We need the action field for back/submit to work and redirect properly after submission
+    //
+    //   $('[type=submit]').click(function() {
+    //     addDrupalWebformActionElement(this.value);
+    //   });
+    //   // If enter pressed, use our submit function
+    //   form.addEventListener('keydown', function (e) {
+    //     if (e.keyCode === 13) {
+    //       addDrupalWebformActionElement(this.value);
+    //       submit(event);
+    //     }
+    //   });
+    //
+    //   $('#billingcheckbox:input').hide();
+    //   $('label[for="billingcheckbox"]').hide();
+    // }
 
     function submit(event) {
       event.preventDefault();
