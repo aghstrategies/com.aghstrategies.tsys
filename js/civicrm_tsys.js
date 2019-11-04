@@ -5,9 +5,15 @@
 CRM.$(function ($) {
   var onclickAction = null;
 
-  // Set data-cayan attributes for expiration fields because cannot do it using quickform
-  $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
-  $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
+  // Make sure data-cayan attributes for expiration fields
+  // because cannot do it using quickform
+  function markExpirationFields() {
+    $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
+    $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
+    debugging('Expiration month set');
+  }
+
+  markExpirationFields();
 
   // Response from tsys.createToken.
   function tsysSuccessResponseHandler(tokenResponse) {
@@ -74,6 +80,9 @@ CRM.$(function ($) {
 
   // Re-prep form when we've loaded a new payproc
   $(document).ajaxComplete(function (event, xhr, settings) {
+    // Make sure expiration fields are marked so cayan.js can find them
+    markExpirationFields();
+
     // /civicrm/payment/form? occurs when a payproc is selected on page
     // /civicrm/contact/view/participant occurs when payproc is first
     // loaded on event credit card payment
@@ -90,12 +99,6 @@ CRM.$(function ($) {
 
         if (ppid != $('#tsys-id').val()) {
           debugging('payment processor changed to id: ' + ppid);
-
-          // Make sure data-cayan attributes for expiration fields
-          // because cannot do it using quickform
-          $('select#credit_card_exp_date_M').attr('data-cayan', 'expirationmonth');
-          $('select#credit_card_exp_date_Y').attr('data-cayan', 'expirationyear');
-
           // see if the new payment processor id is a tsys payment processor.
           if (CRM.vars.tsys.allApiKeys[ppid]) {
             // It is a tsys payment processor, so update the key.
