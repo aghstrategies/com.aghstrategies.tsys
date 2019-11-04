@@ -1,4 +1,7 @@
 <?php
+
+use CRM_Tsys_ExtensionUtil as E;
+
 /**
  * Payment Processor class for Tsys
  *
@@ -81,10 +84,22 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @param \CRM_Core_Form $form
    */
   public function buildForm(&$form) {
-    CRM_Core_Resources::singleton()->addVars('tsys', [
-      'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
-      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+    // Don't use \Civi::resources()->addScriptFile etc as they often don't work on AJAX loaded forms (eg. participant backend registration)
+    $jsVars = [
+      'id' => $form->_paymentProcessor['id'],
+      'currency' => 'USD',
+      'billingAddressID' => CRM_Core_BAO_LocationType::getBilling(),
+      // 'publishableKey' => CRM_Core_Payment_Stripe::getPublicKeyById($form->_paymentProcessor['id']),
+      'jsDebug' => TRUE,
+      'paymentProcessorTypeID' => $form->_paymentProcessor['payment_processor_type_id'],
+    ];
+    \Civi::resources()->addVars(E::SHORT_NAME, $jsVars);
+
+    // Add help and javascript
+    CRM_Core_Region::instance('billing-block')->add([
+      'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
     ]);
+
   }
 
   /**

@@ -1,23 +1,23 @@
 /**
- * JS Integration between CiviCRM & Stripe.
+ * JS Integration between CiviCRM & Tsys.
  */
 CRM.$(function($) {
-  debugging("civicrm_stripe loaded, dom-ready function firing.");
+  debugging("civicrm_tsys loaded, dom-ready function firing.");
 
-  if (window.civicrmStripeHandleReload) {
+  if (window.civicrmTsysHandleReload) {
     // Call existing instance of this, instead of making new one.
 
-    debugging("calling existing civicrmStripeHandleReload.");
-    window.civicrmStripeHandleReload();
+    debugging("calling existing civicrmTsysHandleReload.");
+    window.civicrmTsysHandleReload();
     return;
   }
 
   // On initial load...
-  var stripe;
+  var tsys;
   var card;
   var form;
   var submitButton;
-  var stripeLoading = false;
+  var tsysLoading = false;
 
   // Disable the browser "Leave Page Alert" which is triggered because we mess with the form submit function.
   window.onbeforeunload = null;
@@ -25,9 +25,9 @@ CRM.$(function($) {
   /**
    * This function boots the UI.
    */
-  window.civicrmStripeHandleReload = function() {
-    debugging('civicrmStripeHandleReload');
-    // Load Stripe onto the form.
+  window.civicrmTsysHandleReload = function() {
+    debugging('civicrmTsysHandleReload');
+    // Load Tsys onto the form.
     var cardElement = document.getElementById('card-element');
     if ((typeof cardElement !== 'undefined') && (cardElement)) {
       if (!cardElement.children.length) {
@@ -37,7 +37,7 @@ CRM.$(function($) {
     }
   };
   // On initial run we need to call this now.
-  window.civicrmStripeHandleReload();
+  window.civicrmTsysHandleReload();
 
   function successHandler(type, object) {
     debugging(type + ': success - submitting form');
@@ -53,7 +53,7 @@ CRM.$(function($) {
     form.submit();
   }
 
-  function nonStripeSubmit() {
+  function nonTsysSubmit() {
     // Disable the submit button to prevent repeated clicks
     submitButton.setAttribute('disabled', true);
     return form.submit();
@@ -74,7 +74,7 @@ CRM.$(function($) {
 
   function handleCardPayment() {
     debugging('handle card payment');
-    stripe.createPaymentMethod('card', card).then(function (result) {
+    tsys.createPaymentMethod('card', card).then(function (result) {
       if (result.error) {
         // Show error in payment form
         displayError(result);
@@ -86,12 +86,12 @@ CRM.$(function($) {
         }
         else {
           // Send paymentMethod.id to server
-          var url = CRM.url('civicrm/stripe/confirm-payment');
+          var url = CRM.url('civicrm/tsys/confirm-payment');
           $.post(url, {
             payment_method_id: result.paymentMethod.id,
             amount: getTotalAmount(),
-            currency: CRM.vars.stripe.currency,
-            id: CRM.vars.stripe.id,
+            currency: CRM.vars.tsys.currency,
+            id: CRM.vars.tsys.id,
             description: document.title,
           }).then(function (result) {
             // Handle server response (see Step 3)
@@ -108,7 +108,7 @@ CRM.$(function($) {
       // Show error from server on payment form
       displayError(result);
     } else if (result.requires_action) {
-      // Use Stripe.js to handle required card action
+      // Use Tsys.js to handle required card action
       handleAction(result);
     } else {
       // All good, we can submit the form
@@ -117,7 +117,7 @@ CRM.$(function($) {
   }
 
   function handleAction(response) {
-    stripe.handleCardAction(response.payment_intent_client_secret)
+    tsys.handleCardAction(response.payment_intent_client_secret)
       .then(function(result) {
         if (result.error) {
           // Show error in payment form
@@ -140,35 +140,35 @@ CRM.$(function($) {
 
       // See if there is a payment processor selector on this form
       // (e.g. an offline credit card contribution page).
-      if (typeof CRM.vars.stripe === 'undefined') {
+      if (typeof CRM.vars.tsys === 'undefined') {
         return;
       }
       var paymentProcessorID = getPaymentProcessorSelectorValue();
       if (paymentProcessorID !== null) {
         // There is. Check if the selected payment processor is different
         // from the one we think we should be using.
-        if (paymentProcessorID !== parseInt(CRM.vars.stripe.id)) {
+        if (paymentProcessorID !== parseInt(CRM.vars.tsys.id)) {
           debugging('payment processor changed to id: ' + paymentProcessorID);
           if (paymentProcessorID === 0) {
             // Don't bother executing anything below - this is a manual / paylater
-            return notStripe();
+            return notTsys();
           }
-          // It is! See if the new payment processor is also a Stripe Payment processor.
-          // (we don't want to update the stripe pub key with a value from another payment processor).
-          // Now, see if the new payment processor id is a stripe payment processor.
+          // It is! See if the new payment processor is also a Tsys Payment processor.
+          // (we don't want to update the tsys pub key with a value from another payment processor).
+          // Now, see if the new payment processor id is a tsys payment processor.
           CRM.api3('PaymentProcessor', 'getvalue', {
             "return": "user_name",
             "id": paymentProcessorID,
-            "payment_processor_type_id": CRM.vars.stripe.paymentProcessorTypeID,
+            "payment_processor_type_id": CRM.vars.tsys.paymentProcessorTypeID,
           }).done(function(result) {
             var pub_key = result.result;
             if (pub_key) {
-              // It is a stripe payment processor, so update the key.
-              debugging("Setting new stripe key to: " + pub_key);
-              CRM.vars.stripe.publishableKey = pub_key;
+              // It is a tsys payment processor, so update the key.
+              debugging("Setting new tsys key to: " + pub_key);
+              CRM.vars.tsys.publishableKey = pub_key;
             }
             else {
-              return notStripe();
+              return notTsys();
             }
             // Now reload the billing block.
             debugging('checkAndLoad from ajaxComplete');
@@ -179,47 +179,47 @@ CRM.$(function($) {
     }
   });
 
-  function notStripe() {
-    debugging("New payment processor is not Stripe, clearing CRM.vars.stripe");
+  function notTsys() {
+    debugging("New payment processor is not Tsys, clearing CRM.vars.tsys");
     if ((typeof card !== 'undefined') && (card)) {
       debugging("destroying card element");
       card.destroy();
       card = undefined;
     }
-    delete(CRM.vars.stripe);
+    delete(CRM.vars.tsys);
   }
 
   function checkAndLoad() {
-    if (typeof CRM.vars.stripe === 'undefined') {
-      debugging('CRM.vars.stripe not defined! Not a Stripe processor?');
+    if (typeof CRM.vars.tsys === 'undefined') {
+      debugging('CRM.vars.tsys not defined! Not a Tsys processor?');
       return;
     }
 
-    if (typeof Stripe === 'undefined') {
-      if (stripeLoading) {
+    if (typeof Tsys === 'undefined') {
+      if (tsysLoading) {
         return;
       }
-      stripeLoading = true;
-      debugging('Stripe.js is not loaded!');
+      tsysLoading = true;
+      debugging('Tsys.js is not loaded!');
 
-      $.getScript("https://js.stripe.com/v3", function () {
+      $.getScript("https://js.tsys.com/v3", function () {
         debugging("Script loaded and executed.");
-        stripeLoading = false;
-        loadStripeBillingBlock();
+        tsysLoading = false;
+        loadTsysBillingBlock();
       });
     }
     else {
-      loadStripeBillingBlock();
+      loadTsysBillingBlock();
     }
   }
 
-  function loadStripeBillingBlock() {
-    debugging('loadStripeBillingBlock');
+  function loadTsysBillingBlock() {
+    debugging('loadTsysBillingBlock');
 
-    if (typeof stripe === 'undefined') {
-      stripe = Stripe(CRM.vars.stripe.publishableKey);
+    if (typeof tsys === 'undefined') {
+      tsys = Tsys(CRM.vars.tsys.publishableKey);
     }
-    var elements = stripe.elements();
+    var elements = tsys.elements();
 
     var style = {
       base: {
@@ -232,8 +232,8 @@ CRM.$(function($) {
     card.mount('#card-element');
     debugging("created new card element", card);
 
-    // Hide the CiviCRM postcode field so it will still be submitted but will contain the value set in the stripe card-element.
-    document.getElementsByClassName('billing_postal_code-' + CRM.vars.stripe.billingAddressID + '-section')[0].setAttribute('hidden', true);
+    // Hide the CiviCRM postcode field so it will still be submitted but will contain the value set in the tsys card-element.
+    document.getElementsByClassName('billing_postal_code-' + CRM.vars.tsys.billingAddressID + '-section')[0].setAttribute('hidden', true);
     card.addEventListener('change', function(event) {
       updateFormElementsFromCreditCardDetails(event);
     });
@@ -272,14 +272,14 @@ CRM.$(function($) {
       }
       form.dataset.submitted = true;
       // Take over the click function of the form.
-      if (typeof CRM.vars.stripe === 'undefined') {
+      if (typeof CRM.vars.tsys === 'undefined') {
         // Submit the form
-        return nonStripeSubmit();
+        return nonTsysSubmit();
       }
       debugging('clearing submitdontprocess');
       form.dataset.submitdontprocess = false;
 
-      // Run through our own submit, that executes Stripe submission if
+      // Run through our own submit, that executes Tsys submission if
       // appropriate for this submit.
       return submit(event);
     }
@@ -317,8 +317,8 @@ CRM.$(function($) {
         return false;
       }
 
-      if (typeof CRM.vars.stripe === 'undefined') {
-        debugging('Submitting - not a stripe processor');
+      if (typeof CRM.vars.tsys === 'undefined') {
+        debugging('Submitting - not a tsys processor');
         return true;
       }
 
@@ -327,15 +327,15 @@ CRM.$(function($) {
         return false;
       }
 
-      var stripeProcessorId = parseInt(CRM.vars.stripe.id);
+      var tsysProcessorId = parseInt(CRM.vars.tsys.id);
       var chosenProcessorId = null;
 
-      // Handle multiple payment options and Stripe not being chosen.
-      // @fixme this needs refactoring as some is not relevant anymore (with stripe 6.0)
+      // Handle multiple payment options and Tsys not being chosen.
+      // @fixme this needs refactoring as some is not relevant anymore (with tsys 6.0)
       if (getIsDrupalWebform()) {
-        // this element may or may not exist on the webform, but we are dealing with a single (stripe) processor enabled.
+        // this element may or may not exist on the webform, but we are dealing with a single (tsys) processor enabled.
         if (!$('input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]').length) {
-          chosenProcessorId = stripeProcessorId;
+          chosenProcessorId = tsysProcessorId;
         } else {
           chosenProcessorId = parseInt(form.querySelector('input[name="submitted[civicrm_1_contribution_1_contribution_payment_processor_id]"]:checked').value);
         }
@@ -344,29 +344,29 @@ CRM.$(function($) {
         // Most forms have payment_processor-section but event registration has credit_card_info-section
         if ((form.querySelector(".crm-section.payment_processor-section") !== null) ||
           (form.querySelector(".crm-section.credit_card_info-section") !== null)) {
-          stripeProcessorId = CRM.vars.stripe.id;
+          tsysProcessorId = CRM.vars.tsys.id;
           if (form.querySelector('input[name="payment_processor_id"]:checked') !== null) {
             chosenProcessorId = parseInt(form.querySelector('input[name="payment_processor_id"]:checked').value);
           }
         }
       }
 
-      // If any of these are true, we are not using the stripe processor:
+      // If any of these are true, we are not using the tsys processor:
       // - Is the selected processor ID pay later (0)
-      // - Is the Stripe processor ID defined?
-      // - Is selected processor ID and stripe ID undefined? If we only have stripe ID, then there is only one (stripe) processor on the page
-      if ((chosenProcessorId === 0) || (stripeProcessorId === null) ||
-        ((chosenProcessorId === null) && (stripeProcessorId === null))) {
-        debugging('Not a Stripe transaction, or pay-later');
-        return nonStripeSubmit();
+      // - Is the Tsys processor ID defined?
+      // - Is selected processor ID and tsys ID undefined? If we only have tsys ID, then there is only one (tsys) processor on the page
+      if ((chosenProcessorId === 0) || (tsysProcessorId === null) ||
+        ((chosenProcessorId === null) && (tsysProcessorId === null))) {
+        debugging('Not a Tsys transaction, or pay-later');
+        return nonTsysSubmit();
       }
       else {
-        debugging('Stripe is the selected payprocessor');
+        debugging('Tsys is the selected payprocessor');
       }
 
-      // Don't handle submits generated by non-stripe processors
-      if (typeof CRM.vars.stripe.publishableKey === 'undefined') {
-        debugging('submit missing stripe-pub-key element or value');
+      // Don't handle submits generated by non-tsys processors
+      if (typeof CRM.vars.tsys.publishableKey === 'undefined') {
+        debugging('submit missing tsys-pub-key element or value');
         return true;
       }
       // Don't handle submits generated by the CiviDiscount button.
@@ -376,7 +376,7 @@ CRM.$(function($) {
       }
 
       if (getIsDrupalWebform()) {
-        // If we have selected Stripe but amount is 0 we don't submit via Stripe
+        // If we have selected Tsys but amount is 0 we don't submit via Tsys
         if ($('#billing-payment-block').is(':hidden')) {
           debugging('no payment processor on webform');
           return true;
@@ -395,7 +395,7 @@ CRM.$(function($) {
       var totalFee = getTotalAmount();
       if (totalFee == '0') {
         debugging("Total amount is 0");
-        return nonStripeSubmit();
+        return nonTsysSubmit();
       }
 
       // Lock to prevent multiple submissions
@@ -427,10 +427,10 @@ CRM.$(function($) {
   }
 
   function getBillingForm() {
-    // If we have a stripe billing form on the page
+    // If we have a tsys billing form on the page
     var billingFormID = $('div#card-element').closest('form').prop('id');
     if ((typeof billingFormID === 'undefined') || (!billingFormID.length)) {
-      // If we have multiple payment processors to select and stripe is not currently loaded
+      // If we have multiple payment processors to select and tsys is not currently loaded
       billingFormID = $('input[name=hidden_processor]').closest('form').prop('id');
     }
     // We have to use document.getElementById here so we have the right elementtype for appendChild()
@@ -463,7 +463,7 @@ CRM.$(function($) {
     if (typeof calculateTotalFee == 'function') {
       // This is ONLY triggered in the following circumstances on a CiviCRM contribution page:
       // - With a priceset that allows a 0 amount to be selected.
-      // - When Stripe is the ONLY payment processor configured on the page.
+      // - When Tsys is the ONLY payment processor configured on the page.
       totalFee = calculateTotalFee();
     }
     else if (getIsDrupalWebform()) {
@@ -501,7 +501,7 @@ CRM.$(function($) {
     if (!event.complete) {
       return;
     }
-    document.getElementById('billing_postal_code-' + CRM.vars.stripe.billingAddressID).value = event.value.postalCode;
+    document.getElementById('billing_postal_code-' + CRM.vars.tsys.billingAddressID).value = event.value.postalCode;
   }
 
   function addSupportForCiviDiscount() {
@@ -522,8 +522,8 @@ CRM.$(function($) {
 
   function debugging(errorCode) {
     // Uncomment the following to debug unexpected returns.
-    if ((typeof(CRM.vars.stripe) === 'undefined') || (Boolean(CRM.vars.stripe.jsDebug) === true)) {
-      console.log(new Date().toISOString() + ' civicrm_stripe.js: ' + errorCode);
+    if ((typeof(CRM.vars.tsys) === 'undefined') || (Boolean(CRM.vars.tsys.jsDebug) === true)) {
+      console.log(new Date().toISOString() + ' civicrm_tsys.js: ' + errorCode);
     }
   }
 
