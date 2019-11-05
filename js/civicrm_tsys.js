@@ -84,12 +84,9 @@ CRM.$(function ($) {
     markExpirationFields();
 
     // /civicrm/payment/form? occurs when a payproc is selected on page
-    if ((settings.url.match('/civicrm/payment/form')) ||
-    // these occur when payproc is first loaded on event credit card payment
-    (settings.url.match('/civicrm/contact/view/participant')) ||
-    (settings.url.match('civicrm/custom&type=Participant')) ||
-    (settings.url.match('civicrm%2Fcontact%2Fview%2Fparticipant'))) {
-
+    if ((settings.url.match("civicrm(\/|%2F)payment(\/|%2F)form") !== null) ||
+      (settings.url.match("civicrm(\/|\%2F)contact(\/|\%2F)view(\/|\%2F)participant") !== null) ||
+      (settings.url.match("civicrm(\/|\%2F)custom") !== null)) {
       // See if there is a payment processor selector on this form
       // (e.g. an offline credit card contribution page).
       if ($('#payment_processor_id').length > 0) {
