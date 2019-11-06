@@ -22,6 +22,15 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
+
+    // Don't use \Civi::resources()->addScriptFile etc as they often don't work on AJAX loaded forms (eg. participant backend registration)
+    \Civi::resources()->addVars('tsys', [
+      'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
+      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+    ]);
+    CRM_Core_Region::instance('billing-block')->add([
+      'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
+    ]);
   }
 
   // Add help text
