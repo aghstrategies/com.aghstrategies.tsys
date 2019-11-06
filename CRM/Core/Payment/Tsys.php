@@ -30,6 +30,18 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   private $_islive = FALSE;
 
   /**
+   * We can use the smartdebit processor on the backend
+   * @return bool
+   */
+  public function supportsBackOffice() {
+    return TRUE;
+  }
+
+  public function supportsRecurring() {
+    return TRUE;
+  }
+
+  /**
    * Constructor
    *
    * @param string $mode
@@ -81,9 +93,13 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @param \CRM_Core_Form $form
    */
   public function buildForm(&$form) {
-    CRM_Core_Resources::singleton()->addVars('tsys', [
+    // Don't use \Civi::resources()->addScriptFile etc as they often don't work on AJAX loaded forms (eg. participant backend registration)
+    \Civi::resources()->addVars('tsys', [
       'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
       'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+    ]);
+    CRM_Core_Region::instance('billing-block')->add([
+      'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
     ]);
   }
 
