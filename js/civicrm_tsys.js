@@ -5,6 +5,10 @@
 CRM.$(function ($) {
   var onclickAction = null;
 
+  $.getScript('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js', function () {
+     debugging("Script loaded and executed.");
+   });
+
   // Make sure data-cayan attributes for expiration fields
   // because cannot do it using quickform
   function markExpirationFields() {

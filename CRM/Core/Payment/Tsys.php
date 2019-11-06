@@ -1,4 +1,7 @@
 <?php
+
+use CRM_Tsys_ExtensionUtil as E;
+
 /**
  * Payment Processor class for Tsys
  *
