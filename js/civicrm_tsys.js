@@ -5,6 +5,10 @@
 CRM.$(function ($) {
   var onclickAction = null;
 
+  $.getScript('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js', function () {
+     debugging("Script loaded and executed.");
+   });
+
   // Make sure data-cayan attributes for expiration fields
   // because cannot do it using quickform
   function markExpirationFields() {
@@ -84,10 +88,9 @@ CRM.$(function ($) {
     markExpirationFields();
 
     // /civicrm/payment/form? occurs when a payproc is selected on page
-    // /civicrm/contact/view/participant occurs when payproc is first
-    // loaded on event credit card payment
-    if ((settings.url.match('/civicrm/payment/form?')) ||
-    (settings.url.match('/civicrm/contact/view/participant?'))) {
+    if ((settings.url.match("civicrm(\/|%2F)payment(\/|%2F)form") !== null) ||
+      (settings.url.match("civicrm(\/|\%2F)contact(\/|\%2F)view(\/|\%2F)participant") !== null) ||
+      (settings.url.match("civicrm(\/|\%2F)custom") !== null)) {
       // See if there is a payment processor selector on this form
       // (e.g. an offline credit card contribution page).
       if ($('#payment_processor_id').length > 0) {

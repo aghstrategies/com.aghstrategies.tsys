@@ -9,28 +9,28 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
+
+  // Load stripe.js on all civi forms per stripe requirements
+  if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
+    \Civi::resources()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
+    \Civi::$statics[E::LONG_NAME]['tsysJSLoaded'] = TRUE;
+  }
+
   // If on a form with a Tsys Payment Processor
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
-
-    $res = CRM_Core_Resources::singleton();
-    $res->addVars('tsys', [
-      'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
-      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
-    ]);
-
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
 
-    // Add tsys js to create payment tokens:
-    $res->addScriptFile('com.aghstrategies.tsys', 'js/civicrm_tsys.js', 10, 'page-header');
-
-    // TODO it would be best to link to the Cayan script instead of including a copy of it
-    // BUT doing so breaks adding a contribution on the backend from a popup
-    // $res->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js', 11, 'page-header');
-    $res->addScriptFile('com.aghstrategies.tsys', 'js/cayan.js', 10, 'page-header');
-
+    // Don't use \Civi::resources()->addScriptFile etc as they often don't work on AJAX loaded forms (eg. participant backend registration)
+    \Civi::resources()->addVars('tsys', [
+      'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
+      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+    ]);
+    CRM_Core_Region::instance('billing-block')->add([
+      'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
+    ]);
   }
 
   // Add help text
