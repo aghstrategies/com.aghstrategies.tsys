@@ -240,6 +240,12 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
+    // AGH #19994 if amount is 0 skip pinging tsys and just record a completed payment
+    if ($params['amount'] == 0) {
+      $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+      $params['payment_status_id'] = $params['contribution_status_id'] = $completedStatusId;
+      return $params;
+    }
     if (empty($params['invoice_number'])) {
       $params['invoice_number'] = rand(1, 9999999);
     }
