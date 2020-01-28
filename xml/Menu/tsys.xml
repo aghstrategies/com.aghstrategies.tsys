@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/tsys/refund</path>
+    <page_callback>CRM_Tsys_Form_Refund</page_callback>
+    <title>Credit Card Actions</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
