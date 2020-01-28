@@ -6,7 +6,8 @@ use CRM_Tsys_ExtensionUtil as E;
 
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   // Adds a refund link to the payment details section
-  // NOTE relies on PR https://github.com/civicrm/civicrm-core/pull/16401 and will not work with versions before this pr is accepted
+  // TODO only add a refund link for payments that can be refunded
+  // TODO once PR https://github.com/civicrm/civicrm-core/pull/16401 has been accepted make this version of tsys require that version of CiviCRM
   if ($objectName == 'Payment') {
     $links[] = [
       'name' => 'Record Refund',
