@@ -10,11 +10,11 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
   // TODO once PR https://github.com/civicrm/civicrm-core/pull/16401 has been accepted make this version of tsys require that version of CiviCRM
   if ($objectName == 'Payment') {
     $links[] = [
-      'name' => 'Record Refund',
+      'name' => 'Refund',
       'url' => 'civicrm/payment/refund',
       'class' => 'medium-popup',
       'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
-      'title' => 'Record Refund',
+      'title' => 'Refund',
       'bit' => 2,
     ];
   }
