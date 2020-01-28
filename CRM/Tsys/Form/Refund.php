@@ -13,7 +13,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
    * Set variables up before form is built.
    */
   public function preProcess() {
-    // $this->_action = CRM_Core_Action::UPDATE;
+    $this->_action = CRM_Core_Action::UPDATE;
     parent::preProcess();
     $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
     $this->assign('id', $this->_id);
@@ -29,17 +29,21 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
   public function buildQuickForm() {
     $defaults = [];
 
+    // TODO should the amount to be refunded be editable?
     // add form elements
+    // Documentation on AddMoney => https://github.com/civicrm/civicrm-core/blob/3329ccb30f7dab40ed0f3aa85ff30dff6901c8da/CRM/Core/Form.php#L1906
     $this->addMoney(
       'refund_amount',
       E::ts('Amount to Refund'),
+      // Required?
       TRUE,
       ['readonly' => TRUE],
-      TRUE,
+      FALSE,
       'currency',
       NULL,
-      TRUE
+      FALSE
     );
+    $this->add('hidden','contribution_id', $this->_contributionID);
 
     if (!empty($this->_values['total_amount'])) {
       $defaults['refund_amount'] = $this->_values['total_amount'];
@@ -62,6 +66,9 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
   public function postProcess() {
     $values = $this->exportValues();
+    $contributionId = $values['contribution_id'];
+
+    // TODO Issue refund
     CRM_Core_Session::setStatus(E::ts('Refund issued', array(
       1 => 'success',
     )));
