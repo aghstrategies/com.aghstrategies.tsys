@@ -11,7 +11,7 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
   if ($objectName == 'Payment') {
     $links[] = [
       'name' => 'Refund',
-      'url' => 'civicrm/payment/refund',
+      'url' => 'civicrm/tsys/refund',
       'class' => 'medium-popup',
       'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
       'title' => 'Refund',
