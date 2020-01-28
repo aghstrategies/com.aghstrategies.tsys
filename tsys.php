@@ -3,6 +3,22 @@
 require_once 'tsys.civix.php';
 use CRM_Tsys_ExtensionUtil as E;
 
+
+function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
+  // Adds a refund link to the payment details section
+  // NOTE relies on PR https://github.com/civicrm/civicrm-core/pull/16401 and will not work with versions before this pr is accepted
+  if ($objectName == 'Payment') {
+    $links[] = [
+      'name' => 'Record Refund',
+      'url' => 'civicrm/payment/refund',
+      'class' => 'medium-popup',
+      'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
+      'title' => 'Record Refund',
+      'bit' => 2,
+    ];
+  }
+}
+
 /**
  * Implements hook_civicrm_buildForm().
  *
