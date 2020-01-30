@@ -22,7 +22,7 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
         )));
       }
       // DO NOT show refund link for payments that have failed or already been refunded.
-      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending'])) {
+      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending refund'])) {
         try {
           $trxnDetails = civicrm_api3('FinancialTrxn', 'getsingle', [
             'return' => "payment_processor_id, status_id",

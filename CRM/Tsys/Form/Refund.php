@@ -20,9 +20,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     $this->_contributionID = CRM_Utils_Request::retrieve('contribution_id', 'Positive', $this);
 
     $this->_values = civicrm_api3('FinancialTrxn', 'getsingle', ['id' => $this->_id]);
-    if (!empty($this->_values['payment_processor_id'])) {
-      CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
-    }
+    // $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+    // if (!empty($this->_values['payment_processor_id']) && !in_array($this->_values['payment_processor_id'], $tsysProcessors)) {
+    //   CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
+    // }
   }
 
   public function buildQuickForm() {
