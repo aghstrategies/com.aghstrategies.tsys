@@ -21,15 +21,12 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
     $this->_values = civicrm_api3('FinancialTrxn', 'getsingle', ['id' => $this->_id]);
     if (!empty($this->_values['payment_processor_id'])) {
-      // TODO throw error if payment is tied to a payment processor that cannot be refunded (not TSYS), has already been refunded is not a payment etc.
-      // CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is tied to a payment processor'));
+      CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
     }
   }
 
   public function buildQuickForm() {
     $defaults = [];
-
-    // TODO should the amount to be refunded be editable?
     // add form elements
     // Documentation on AddMoney => https://github.com/civicrm/civicrm-core/blob/3329ccb30f7dab40ed0f3aa85ff30dff6901c8da/CRM/Core/Form.php#L1906
     $this->addMoney(
@@ -67,7 +64,6 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     parent::buildQuickForm();
   }
 
-  //TODO test this works for recurring payments the same way
   public function postProcess() {
     $values = $this->exportValues();
     // Get tsys credentials ($params come from a form)
@@ -93,8 +89,6 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
    * @return
    */
   public function processRefundResponse($runRefund, $values) {
-    // TODO deal with scenario where a user is issuing a partial refund
-    // TODO deal with scenario where user paid $100 and then switches to a $75 option and needs to be refunded the difference
     $text = '';
     $title = '';
     $type = 'no-popup';
@@ -102,8 +96,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     if (isset($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus)) {
       // Refund processed successfully in TSYS so update CiviCRM payment accordingly
       if ($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus == 'APPROVED') {
-        // TODO write function to update the contribution status for refunded payment... this needs some thinking thru
-        // Update the payment status to refunded
+        // Record the Refund as a new payment of a negative amount
         $trxnParams = [
           // 'status_id' => "Refunded",
           'total_amount' => -$values['refund_amount'],
