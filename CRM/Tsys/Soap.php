@@ -143,6 +143,40 @@ HEREDOC;
     return $response;
   }
 
+
+  /**
+   * Un Board Card to Tsys -> Delete Card from Tsys so
+   * @param  string $token    token generated from first transaction
+   * @param  array $tsysCreds payment processor credentials
+   * @return                  response from tsys
+   */
+  public static function composeRefundCardSoapRequest($token, $amount, $tsysCreds) {
+    $soap_request = <<<HEREDOC
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+   <soap:Body>
+      <Refund xmlns="http://schemas.merchantwarehouse.com/merchantware/v45/">
+         <Credentials>
+           <MerchantName>{$tsysCreds['user_name']}</MerchantName>
+           <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
+           <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
+         </Credentials>
+         <PaymentData>
+            <Source>PreviousTransaction</Source>
+            <!--Previous Transaction Field-->
+            <Token>$token</Token>
+         </PaymentData>
+         <Request>
+            <Amount>$amount</Amount>
+         </Request>
+      </Refund>
+   </soap:Body>
+</soap:Envelope>
+HEREDOC;
+    $response = self::doSoapRequest($soap_request);
+    return $response;
+  }
+
   /**
    * Execute SOAP Request and Parse Response
    * @param  string $soap_request SOAP Request

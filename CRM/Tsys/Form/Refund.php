@@ -21,7 +21,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
     $this->_values = civicrm_api3('FinancialTrxn', 'getsingle', ['id' => $this->_id]);
     if (!empty($this->_values['payment_processor_id'])) {
-      // TODO throw error if payment is tied to a payment processor that cannot be refunded (not TSYS)
+      // TODO throw error if payment is tied to a payment processor that cannot be refunded (not TSYS), has already been refunded is not a payment etc.
       // CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is tied to a payment processor'));
     }
   }
@@ -37,13 +37,16 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       E::ts('Amount to Refund'),
       // Required?
       TRUE,
-      ['readonly' => TRUE],
+      [],
       FALSE,
       'currency',
       NULL,
       FALSE
     );
     $this->add('hidden','contribution_id', $this->_contributionID);
+    $this->add('hidden','trxn_id', $this->_values['trxn_id']);
+    $this->add('hidden','payment_processor_id', $this->_values['payment_processor_id']);
+    $this->add('hidden','payment_id', $this->_id);
 
     if (!empty($this->_values['total_amount'])) {
       $defaults['refund_amount'] = $this->_values['total_amount'];
@@ -64,15 +67,81 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     parent::buildQuickForm();
   }
 
+  //TODO test this works for recurring payments the same way
   public function postProcess() {
     $values = $this->exportValues();
-    $contributionId = $values['contribution_id'];
+    // Get tsys credentials ($params come from a form)
+    if (!empty($values['payment_processor_id'])
+      && !empty($values['refund_amount'])
+      && !empty($values['trxn_id'])
+      && !empty($values['payment_id'])
+    ) {
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($values['payment_processor_id']);
 
-    // TODO Issue refund
-    CRM_Core_Session::setStatus(E::ts('Refund issued', array(
-      1 => 'success',
-    )));
+      if (!empty($tsysCreds)) {
+        $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($values['trxn_id'], $values['refund_amount'], $tsysCreds);
+        self::processRefundResponse($runRefund, $values);
+      }
+    }
     parent::postProcess();
+  }
+
+  public function processRefundResponse($runRefund, $values) {
+    // TODO deal with scenario where a user is issuing a partial refund
+    // TODO deal with scenario where user paid $100 and then switches to a $75 option and needs to be refunded the difference
+    $text = '';
+    $title = '';
+    $type = 'no-popup';
+    // We got a legible response!!
+    if (isset($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus)) {
+      // Refund processed successfully in TSYS so update CiviCRM payment accordingly
+      if ($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus == 'APPROVED') {
+        // TODO write function to update the contribution status for refunded payment... this needs some thinking thru
+        // Update the payment status to refunded
+        $trxnParams = [
+          'id' => $values['payment_id'],
+          'status_id' => "Refunded",
+        ];
+        if (isset($runRefund->Body->RefundResponse->RefundResult->TransactionDate)) {
+          $trxnParams['trxn_date'] = $runRefund->Body->RefundResponse->RefundResult->TransactionDate;
+        }
+        try {
+          $updateTrxnStatus = civicrm_api3('FinancialTrxn', 'create', $trxnParams);
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
+
+        // Update the user everything went well
+        $text = 'Payment successfully refunded.';
+        $title = 'Refund Approved';
+        $type = 'success';
+      }
+      // Refund failed explicitly so retrieve error
+      elseif (substr($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus, 0, 6 ) == "FAILED") {
+        $title = E::ts('Refund Failed');
+        $approvalStatus = explode(';', $runRefund->Body->RefundResponse->RefundResult->ApprovalStatus);
+        if (count($approvalStatus) == 3) {
+          $text = E::ts('Error Code %1, %2', array(
+            1 => $approvalStatus[1],
+            2 => $approvalStatus[2],
+          ));
+        } else {
+          $text = $approvalStatus;
+        }
+      }
+    }
+    // We did not get a legible response
+    else {
+      $title = E::ts('Refund Failed');
+      $text = E::ts('Refund Response could not be found see logs for more details.');
+      // TODO add debug logs
+    }
+    CRM_Core_Session::setStatus($text, $title, $type);
   }
 
   /**
