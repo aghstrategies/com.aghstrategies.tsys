@@ -43,7 +43,6 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     $this->add('hidden','contribution_id', $this->_contributionID);
     $this->add('hidden','trxn_id', $this->_values['trxn_id']);
     $this->add('hidden','payment_processor_id', $this->_values['payment_processor_id']);
-    $this->add('hidden','payment_id', $this->_id);
 
     if (!empty($this->_values['total_amount'])) {
       $defaults['refund_amount'] = $this->_values['total_amount'];
@@ -70,7 +69,6 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     if (!empty($values['payment_processor_id'])
       && !empty($values['refund_amount'])
       && !empty($values['trxn_id'])
-      && !empty($values['payment_id'])
     ) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($values['payment_processor_id']);
 
