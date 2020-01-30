@@ -86,6 +86,12 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     parent::postProcess();
   }
 
+  /**
+   * Process Refund Response - Update user and payment/contribution status
+   * @param  object $runRefund Response from Tsys
+   * @param  array  $values    form values
+   * @return
+   */
   public function processRefundResponse($runRefund, $values) {
     // TODO deal with scenario where a user is issuing a partial refund
     // TODO deal with scenario where user paid $100 and then switches to a $75 option and needs to be refunded the difference
@@ -99,14 +105,22 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         // TODO write function to update the contribution status for refunded payment... this needs some thinking thru
         // Update the payment status to refunded
         $trxnParams = [
-          'id' => $values['payment_id'],
-          'status_id' => "Refunded",
+          // 'status_id' => "Refunded",
+          'total_amount' => -$values['refund_amount'],
+          'payment_processor_id' => $values['payment_processor_id'],
+          'contribution_id' => $values['contribution_id'],
         ];
         if (isset($runRefund->Body->RefundResponse->RefundResult->TransactionDate)) {
-          $trxnParams['trxn_date'] = $runRefund->Body->RefundResponse->RefundResult->TransactionDate;
+          $trxnParams['trxn_date'] = (string) $runRefund->Body->RefundResponse->RefundResult->TransactionDate;
+        }
+        if (isset($runRefund->Body->RefundResponse->RefundResult->Token)) {
+          $trxnParams['trxn_id'] = (string) $runRefund->Body->RefundResponse->RefundResult->Token;
+        }
+        if (isset($runRefund->Body->RefundResponse->RefundResult->AuthorizationCode)) {
+          $trxnParams['trxn_result_code'] = (string) $runRefund->Body->RefundResponse->RefundResult->AuthorizationCode;
         }
         try {
-          $updateTrxnStatus = civicrm_api3('FinancialTrxn', 'create', $trxnParams);
+          $updateTrxnStatus = civicrm_api3('Payment', 'create', $trxnParams);
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();

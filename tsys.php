@@ -7,33 +7,50 @@ use CRM_Tsys_ExtensionUtil as E;
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   // Adds a refund link to each payment made thru TSYS with a status of completed
   // TODO once PR https://github.com/civicrm/civicrm-core/pull/16401 has been accepted make this version of tsys require that version of CiviCRM
-  if ($objectName == 'Payment') {
-    try {
-      $trxnDetails = civicrm_api3('FinancialTrxn', 'getsingle', [
-        'return' => "payment_processor_id, status_id",
-        'is_payment' => 1,
-        'id' => $values['id'],
-      ]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-    $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
-    if (!empty($trxnDetails['status_id']) && $trxnDetails['status_id'] == $completedStatusId) {
-      $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
-      if ($trxnDetails['payment_processor_id'] && !empty($tsysProcessors[$trxnDetails['payment_processor_id']])) {
-        $links[] = [
-          'name' => 'Refund',
-          'url' => 'civicrm/tsys/refund',
-          'class' => 'medium-popup',
-          'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
-          'title' => 'Refund',
-          'bit' => 2,
-        ];
+  if ($objectName == 'Payment' && $op == 'payment.manage.action') {
+    if (!empty($values['contribution_id'])) {
+      try {
+        $contribDetails = civicrm_api3('Contribution', 'getsingle', [
+          'id' => $values['contribution_id'],
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      // DO NOT show refund link for payments that have failed or already been refunded.
+      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending'])) {
+        try {
+          $trxnDetails = civicrm_api3('FinancialTrxn', 'getsingle', [
+            'return' => "payment_processor_id, status_id",
+            'is_payment' => 1,
+            'id' => $values['id'],
+          ]);
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
+        $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+        if (!empty($trxnDetails['status_id']) && $trxnDetails['status_id'] == $completedStatusId) {
+          $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+          if ($trxnDetails['payment_processor_id'] && !empty($tsysProcessors[$trxnDetails['payment_processor_id']])) {
+            $links[] = [
+              'name' => 'Refund',
+              'url' => 'civicrm/tsys/refund',
+              'class' => 'medium-popup',
+              'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
+              'title' => 'Refund',
+              'bit' => 2,
+            ];
+          }
+        }
       }
     }
   }
