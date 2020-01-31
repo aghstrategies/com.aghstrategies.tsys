@@ -9,6 +9,8 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
   // TODO once PR https://github.com/civicrm/civicrm-core/pull/16401 has been accepted make this version of tsys require that version of CiviCRM
   if ($objectName == 'Payment' && $op == 'payment.manage.action') {
     if (!empty($values['contribution_id'])) {
+
+      // DO NOT show refund link for payments that have failed or already been refunded.
       try {
         $contribDetails = civicrm_api3('Contribution', 'getsingle', [
           'id' => $values['contribution_id'],
@@ -21,11 +23,10 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
           1 => $error,
         )));
       }
-      // DO NOT show refund link for payments that have failed or already been refunded.
       if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending refund'])) {
         try {
           $trxnDetails = civicrm_api3('FinancialTrxn', 'getsingle', [
-            'return' => "payment_processor_id, status_id",
+            'return' => "payment_processor_id, status_id, trxn_id",
             'is_payment' => 1,
             'id' => $values['id'],
           ]);
@@ -41,6 +42,12 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
         if (!empty($trxnDetails['status_id']) && $trxnDetails['status_id'] == $completedStatusId) {
           $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
           if ($trxnDetails['payment_processor_id'] && !empty($tsysProcessors[$trxnDetails['payment_processor_id']])) {
+            // TODO Check Refund Amount -- 'RefundMaxAmount' is showing up as 0 so this is not very useful --
+            // unless these transactions need to be voided not refunded
+            // $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($trxnDetails['payment_processor_id']);
+            // $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($trxnDetails['trxn_id'], $tsysCreds);
+            // print_r($tsysInfo); die();
+
             $links[] = [
               'name' => 'Refund',
               'url' => 'civicrm/tsys/refund',
@@ -62,6 +69,9 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
+  // TODO add link to the Tsys Refund form to the Record Refund form that shows up when you change selections and have overpaid
+  // if ($formName == 'CRM_Contribute_Form_AdditionalPayment' && $form->getVar('_paymentType') == 'refund') {
+  // }
 
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
