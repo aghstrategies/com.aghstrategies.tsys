@@ -191,7 +191,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         CRM_Core_Session::setStatus(
           'Payment successfully refunded.',
           E::ts('Refund Approved'),
-          'Success'
+          'success'
         );
       }
       // Refund failed explicitly so retrieve error
@@ -272,7 +272,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         CRM_Core_Session::setStatus(
           'Payment successfully refunded.',
           E::ts('Refund Approved'),
-          'Success'
+          'success'
         );
       }
       // Refund failed explicitly so retrieve error
@@ -311,7 +311,6 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
    * Payment has been voided update the contribution status
    */
   public function calculateContributionStatus($voidedAmount, $contributionId, $cancelDate) {
-    $contribStatus = 'Partially paid';
     try {
       $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $contributionId]);
     }
@@ -336,7 +335,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
             self::updateContributionStatus([
               'id' => $contributionId,
               'contribution_status_id' => 'Cancelled',
-              'cancel_date' => $cancelDate,
+              // 'cancel_date' => $cancelDate,
             ]);
 
           // IF the payment we voided is NOT the full amount we should mark the contribution as partially paid
