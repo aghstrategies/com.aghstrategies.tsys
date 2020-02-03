@@ -138,11 +138,13 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       if (!empty($tsysCreds)) {
         if ($values['formaction'] == 'Refund') {
           $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($values['trxn_id'], $values['refund_amount'], $tsysCreds);
-          self::processRefundResponse($runRefund, $values);
+          $response = $runRefund->Body->RefundResponse->RefundResult;
+          self::processResponse($response, $values);
         }
         elseif ($values['formaction'] == 'Void') {
           $voidResponse = CRM_Tsys_Soap::composeVoidSoapRequest($values['trxn_id'], $tsysCreds);
-          self::processVoidResponse($voidResponse, $values);
+          $response = $voidResponse->Body->VoidResponse->VoidResult;
+          self::processResponse($response, $values);
         }
       }
     }
@@ -155,106 +157,33 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
    * @param  array  $values    form values
    * @return
    */
-  public function processRefundResponse($runRefund, $values) {
-    // We got a legible response!!
-    if (isset($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus)) {
-      // Refund processed successfully in TSYS so update CiviCRM payment accordingly
-      if ($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus == 'APPROVED') {
-        // Record the Refund as a new payment of a negative amount
-        $trxnParams = [
-          // 'status_id' => "Refunded",
-          'total_amount' => -$values['refund_amount'],
-          'payment_processor_id' => $values['payment_processor_id'],
-          'contribution_id' => $values['contribution_id'],
-        ];
-        if (isset($runRefund->Body->RefundResponse->RefundResult->TransactionDate)) {
-          $trxnParams['trxn_date'] = (string) $runRefund->Body->RefundResponse->RefundResult->TransactionDate;
-        }
-        if (isset($runRefund->Body->RefundResponse->RefundResult->Token)) {
-          $trxnParams['trxn_id'] = (string) $runRefund->Body->RefundResponse->RefundResult->Token;
-        }
-        if (isset($runRefund->Body->RefundResponse->RefundResult->AuthorizationCode)) {
-          $trxnParams['trxn_result_code'] = (string) $runRefund->Body->RefundResponse->RefundResult->AuthorizationCode;
-        }
-        try {
-          $updateTrxnStatus = civicrm_api3('Payment', 'create', $trxnParams);
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-            'domain' => 'com.aghstrategies.tsys',
-            1 => $error,
-          )));
-        }
-
-        // Update the user everything went well
-        CRM_Core_Session::setStatus(
-          'Payment successfully refunded.',
-          E::ts('Refund Approved'),
-          'success'
-        );
-      }
-      // Refund failed explicitly so retrieve error
-      elseif (substr($runRefund->Body->RefundResponse->RefundResult->ApprovalStatus, 0, 6 ) == "FAILED") {
-        $approvalStatus = explode(';', $runRefund->Body->RefundResponse->RefundResult->ApprovalStatus);
-        if (count($approvalStatus) == 3) {
-          CRM_Core_Session::setStatus(
-            E::ts('Error Code %1, %2', array(
-              1 => $approvalStatus[1],
-              2 => $approvalStatus[2],
-            )),
-            E::ts('Refund Failed'),
-            'error'
-          );
-        } else {
-          CRM_Core_Session::setStatus(
-            $approvalStatus,
-            E::ts('Refund Failed'),
-            'error'
-          );
-        }
-      }
-    }
-
-    // We did not get a legible response
-    else {
-      CRM_Core_Session::setStatus(
-        E::ts('Refund Response could not be found see logs for more details.'),
-        E::ts('Refund Failed'),
-        'error'
-      );
-      // TODO add debug logs
-    }
-  }
-
-  /**
-   * Process Refund Response - Update user and payment/contribution status
-   * @param  object $runRefund Response from Tsys
-   * @param  array  $values    form values
-   * @return
-   */
-  public function processVoidResponse($voidResponse, $values) {
-    $response = $voidResponse->Body->VoidResponse->VoidResult;
+  public function processResponse($response, $values) {
     // We got a legible response!!
     if (isset($response->ApprovalStatus)) {
       // Void successful in TSYS so update CiviCRM payment accordingly
       if ((string) $response->ApprovalStatus == 'APPROVED') {
-        // Record the Refund as a new payment of a negative amount
-        $trxnParams = [
-          'status_id' => "Cancelled",
-          'id' => $values['payment_id'],
-        ];
-        if (isset($response->TransactionDate)) {
-          $cancelDate = (string) $response->TransactionDate;
+        if ($values['formaction'] == 'Void') {
+          // Cancel the Payment
+          $trxnParams = ['id' => $values['payment_id']];
+          $apiAction = 'cancel';
         }
-        if (isset($response->Token)) {
-          $trxnParams['trxn_id'] = (string) $response->Token;
-        }
-        if (isset($response->AuthorizationCode)) {
-          $trxnParams['trxn_result_code'] = (string) $response->AuthorizationCode;
+        elseif ($values['formaction'] == 'Refund') {
+          $trxnParams['total_amount'] = -$values['refund_amount'];
+          $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
+          $trxnParams['contribution_id'] = $values['contribution_id'];
+          $apiAction = 'create';
+          if (isset($response->Token)) {
+            $trxnParams['trxn_id'] = (string) $response->Token;
+          }
+          if (isset($response->AuthorizationCode)) {
+            $trxnParams['trxn_result_code'] = (string) $response->AuthorizationCode;
+          }
+          if (isset($response->TransactionDate)) {
+            $trxnParams['trxn_date'] = (string) $response->TransactionDate;
+          }
         }
         try {
-          $updateTrxnStatus = civicrm_api3('FinancialTrxn', 'create', $trxnParams);
+          $updateTrxnStatus = civicrm_api3('Payment', $apiAction, $trxnParams);
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
@@ -263,19 +192,18 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
             1 => $error,
           )));
         }
-        // TODO update the contribution status
-        // IF the contribution consists of one payment and that payment is this one set contrib status to Cancelled
-        // IF the contribution consists of multiple payments and this payment is just one of them set the status to "Partially Paid"
-        self::calculateContributionStatus($values['refund_amount'], $values['contribution_id'], $cancelDate);
-
         // Update the user everything went well
         CRM_Core_Session::setStatus(
-          'Payment successfully refunded.',
-          E::ts('Refund Approved'),
+          E::ts('%1 of payment approved', [
+            1 => $action
+          ]),
+          E::ts('%1 Approved', [
+            1 => $action
+          ]),
           'success'
         );
       }
-      // Refund failed explicitly so retrieve error
+      // failed explicitly so retrieve error
       elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
         $approvalStatus = explode(';', $response->ApprovalStatus);
         if (count($approvalStatus) == 3) {
@@ -284,13 +212,17 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
               1 => $approvalStatus[1],
               2 => $approvalStatus[2],
             )),
-            E::ts('Void Failed'),
+            E::ts('%1 Failed', [
+              1 => $action,
+            ]),
             'error'
           );
         } else {
           CRM_Core_Session::setStatus(
             $approvalStatus,
-            E::ts('Void Failed'),
+            E::ts('%1 Failed', [
+              1 => $action,
+            ]),
             'error'
           );
         }
@@ -299,78 +231,15 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     // We did not get a legible response
     else {
       CRM_Core_Session::setStatus(
-        E::ts('Void Response could not be found see logs for more details.'),
-        E::ts('Void Failed'),
+        E::ts('%1 Response could not be found see logs for more details.', [
+          1 => $action,
+        ]),
+        E::ts('%1 Failed', [
+          1 => $action,
+        ]),
         'error'
       );
       // TODO add debug logs
-    }
-  }
-
-  /**
-   * Payment has been voided update the contribution status
-   */
-  public function calculateContributionStatus($voidedAmount, $contributionId, $cancelDate) {
-    try {
-      $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $contributionId]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-    if (isset($contribution['contribution_status'])) {
-      switch ($contribution['contribution_status']) {
-        case 'Partially paid':
-          // Stay Partially paid AKA do nothing
-          $status = 'Partially paid';
-          break;
-
-        case 'Completed':
-          // If the contribution was completed and we just voided the one
-          // payment that completed it we should mark the contribution as cancelled
-          if ($contribution['total_amount'] == $voidedAmount) {
-            self::updateContributionStatus([
-              'id' => $contributionId,
-              'contribution_status_id' => 'Cancelled',
-              // 'cancel_date' => $cancelDate,
-            ]);
-
-          // IF the payment we voided is NOT the full amount we should mark the contribution as partially paid
-          // TODO make it possible for contributions to go from "Completed" -> "Partially Paid" using
-          // the API https://lab.civicrm.org/dev/core/issues/1574
-          } else {
-            self::updateContributionStatus([
-              'id' => $contributionId,
-              'contribution_status_id' => 'Partially paid',
-            ]);
-          }
-          break;
-
-        // TODO I think we would need to do Adjustment to be able to go from Pending refund to
-        // Completed using Void
-        case 'Pending refund':
-          break;
-
-        default:
-          // code...
-          break;
-      }
-    }
-  }
-
-  public function updateContributionStatus($params) {
-    try {
-      $contribution = civicrm_api3('Contribution', 'create', $params);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
     }
   }
 
