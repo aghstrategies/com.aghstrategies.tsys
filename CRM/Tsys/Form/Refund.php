@@ -20,22 +20,63 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     $this->_contributionID = CRM_Utils_Request::retrieve('contribution_id', 'Positive', $this);
 
     $this->_values = civicrm_api3('FinancialTrxn', 'getsingle', ['id' => $this->_id]);
-    // $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
-    // if (!empty($this->_values['payment_processor_id']) && !in_array($this->_values['payment_processor_id'], $tsysProcessors)) {
-    //   CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
-    // }
+
+
+    $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+    if (!empty($this->_values['payment_processor_id']) && !in_array($this->_values['payment_processor_id'], $tsysProcessors)) {
+      // TODO Check Refund Amount -- 'RefundMaxAmount' is showing up as 0 so this is not very useful --
+      // unless these transactions need to be voided not refunded
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($this->_values['payment_processor_id']);
+      $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($this->_values['trxn_id'], $tsysCreds);
+      $response = $tsysInfo->Body->DetailedTransactionByReferenceResponse->DetailedTransactionByReferenceResult;
+      if ((string) $response->ApprovalStatus == 'APPROVED') {
+        if (isset($response->SupportedActions->RefundToken) && (string) $response->SupportedActions->RefundToken != '' && $response->SupportedActions->RefundMaxAmount > 0) {
+          $this->actionAvailable = 'Refund';
+          $this->maxRefundAmount = $response->SupportedActions->RefundMaxAmount;
+        }
+        if (isset($response->SupportedActions->VoidToken) && (string) $response->SupportedActions->VoidToken != '') {
+          $this->actionAvailable = 'Void';
+        }
+      }
+    }
+    else {
+      CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
+    }
   }
 
   public function buildQuickForm() {
     $defaults = [];
     // add form elements
     // Documentation on AddMoney => https://github.com/civicrm/civicrm-core/blob/3329ccb30f7dab40ed0f3aa85ff30dff6901c8da/CRM/Core/Form.php#L1906
+    if ($this->actionAvailable == 'Refund') {
+      $amountFieldName = E::ts('Amount to Refund');
+      $buttonName = E::ts('Issue Refund');
+      $extras = [];
+      if (isset($this->maxRefundAmount)) {
+        $this->add('hidden','max_refund_amount', $this->maxRefundAmount);
+        $defaults['refund_amount'] = $this->maxRefundAmount|crmMoney;
+        CRM_Core_Session::setStatus(E::ts('Amount Available to Refund: $%1. Submitting this form will result in a refund being issued from your TSYS payment procesor.', array(
+          1 => $this->maxRefundAmount,
+        )), '', 'no-popup');
+      }
+    }
+    elseif ($this->actionAvailable == 'Void') {
+      $amountFieldName = E::ts('Amount to be Voided');
+      $buttonName = E::ts('Void Payment');
+      $extras = ['readonly' => TRUE];
+      if (!empty($this->_values['total_amount'])) {
+        $defaults['refund_amount'] = $this->_values['total_amount'];
+        CRM_Core_Session::setStatus(E::ts('This transaction has not been settled it is recommended you void the full amount $%1. Submitting this form will result in this transaction being voided via your TSYS payment procesor.', array(
+          1 => $this->_values['total_amount'],
+        )), '', 'no-popup');
+      }
+    }
     $this->addMoney(
       'refund_amount',
-      E::ts('Amount to Refund'),
+      $amountFieldName,
       // Required?
       TRUE,
-      [],
+      $extras,
       FALSE,
       'currency',
       NULL,
@@ -44,17 +85,14 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     $this->add('hidden','contribution_id', $this->_contributionID);
     $this->add('hidden','trxn_id', $this->_values['trxn_id']);
     $this->add('hidden','payment_processor_id', $this->_values['payment_processor_id']);
-
-    if (!empty($this->_values['total_amount'])) {
-      $defaults['refund_amount'] = $this->_values['total_amount'];
-    }
+    $this->add('hidden','formaction', $this->actionAvailable);
 
     $this->setDefaults($defaults);
 
     $this->addButtons(array(
       array(
         'type' => 'submit',
-        'name' => E::ts('Issue Refund'),
+        'name' => $buttonName,
         'isDefault' => TRUE,
       ),
     ));
@@ -66,16 +104,26 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
   public function postProcess() {
     $values = $this->exportValues();
+    print_r($values); die();
     // Get tsys credentials ($params come from a form)
     if (!empty($values['payment_processor_id'])
       && !empty($values['refund_amount'])
-      && !empty($values['trxn_id'])
+      && !empty($values['trxn_id']
+      && !empty($values['formaction']))
     ) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($values['payment_processor_id']);
 
       if (!empty($tsysCreds)) {
-        $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($values['trxn_id'], $values['refund_amount'], $tsysCreds);
-        self::processRefundResponse($runRefund, $values);
+        if ($values['formaction'] == 'Refund') {
+          $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($values['trxn_id'], $values['refund_amount'], $tsysCreds);
+          self::processRefundResponse($runRefund, $values);
+        }
+        elseif ($values['formaction'] == 'Void') {
+          // TODO write code to void
+          $voidResponse = CRM_Tsys_Soap::composeVoidSoapRequest($values['trxn_id'], $values['refund_amount'], $tsysCreds);
+          self::processVoidResponse($voidResponse, $values);
+        }
+
       }
     }
     parent::postProcess();

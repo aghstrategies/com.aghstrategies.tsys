@@ -42,18 +42,12 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
         if (!empty($trxnDetails['status_id']) && $trxnDetails['status_id'] == $completedStatusId) {
           $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
           if ($trxnDetails['payment_processor_id'] && !empty($tsysProcessors[$trxnDetails['payment_processor_id']])) {
-            // TODO Check Refund Amount -- 'RefundMaxAmount' is showing up as 0 so this is not very useful --
-            // unless these transactions need to be voided not refunded
-            // $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($trxnDetails['payment_processor_id']);
-            // $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($trxnDetails['trxn_id'], $tsysCreds);
-            // print_r($tsysInfo); die();
-
             $links[] = [
-              'name' => 'Refund',
+              'name' => 'Credit Card Actions',
               'url' => 'civicrm/tsys/refund',
               'class' => 'medium-popup',
               'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
-              'title' => 'Refund',
+              'title' => 'Credit Card Actions',
               'bit' => 2,
             ];
           }
@@ -69,10 +63,6 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
-  // TODO add link to the Tsys Refund form to the Record Refund form that shows up when you change selections and have overpaid
-  // if ($formName == 'CRM_Contribute_Form_AdditionalPayment' && $form->getVar('_paymentType') == 'refund') {
-  // }
-
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
     \Civi::resources()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');

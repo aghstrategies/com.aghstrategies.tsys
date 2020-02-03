@@ -5,7 +5,6 @@
 </div> *}
 
 {* FIELD EXAMPLE: OPTION 1 (AUTOMATIC LAYOUT) *}
-<div class='messages status no-popup'>Are you sure you would like to issue a refund for this payment?</div>
 {foreach from=$elementNames item=elementName}
   <div class="crm-section">
     <div class="label">{$form.$elementName.label}</div>
