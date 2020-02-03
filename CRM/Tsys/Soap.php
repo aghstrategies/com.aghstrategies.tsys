@@ -179,6 +179,34 @@ HEREDOC;
   }
 
   /**
+   * Void Payment
+   * @param  string $token    token generated from first transaction
+   * @param  array $tsysCreds payment processor credentials
+   * @return                  response from tsys
+   */
+  public static function composeVoidSoapRequest($token, $tsysCreds) {
+    $soap_request = <<<HEREDOC
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+   <soap:Header/>
+   <soap:Body>
+      <Void xmlns="http://schemas.merchantwarehouse.com/merchantware/v45/">
+         <Credentials>
+         <MerchantName>{$tsysCreds['user_name']}</MerchantName>
+         <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
+         <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
+         </Credentials>
+         <Request>
+            <Token>$token</Token>
+         </Request>
+      </Void>
+   </soap:Body>
+</soap:Envelope>
+HEREDOC;
+    $response = self::doSoapRequest($soap_request);
+    return $response;
+  }
+
+  /**
    * Check if this payment can be refunded/for how much
    * @param  string $token    token generated from first transaction
    * @param  array $tsysCreds payment processor credentials
