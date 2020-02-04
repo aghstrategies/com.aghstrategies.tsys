@@ -33,7 +33,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   private $_islive = FALSE;
 
   /**
-   * We can use the smartdebit processor on the backend
+   * can use the smartdebit processor on the backend
    * @return bool
    */
   public function supportsBackOffice() {
@@ -43,6 +43,24 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   public function supportsRecurring() {
     return TRUE;
   }
+
+  /**
+   * can edit smartdebit recurring contributions
+   * @return bool
+   */
+  public function supportsEditRecurringContribution() {
+    return FALSE;
+  }
+
+  /**
+   * Does this payment processor support refund?
+   *
+   * @return bool
+   */
+  public function supportsRefund() {
+    return TRUE;
+  }
+
 
   /**
    * Constructor
