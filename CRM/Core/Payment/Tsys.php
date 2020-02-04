@@ -583,6 +583,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     * @throws \Civi\Payment\Exception\PaymentProcessorException
     */
    public function doRefund(&$params) {
+     // NOTE this is based off of Stripes doRefund function: https://lab.civicrm.org/extensions/stripe/blob/master/CRM/Core/Payment/Stripe.php#L737
+     // Currently it is called when one does a PaymentProcessor.refund API call
+     // It does not handle any of the logic to create the refund payment/update the contribution status
+
      // Ensure all required params have been sent
      $requiredParams = ['trxn_id', 'amount'];
      foreach ($requiredParams as $required) {
