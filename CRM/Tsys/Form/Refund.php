@@ -37,7 +37,11 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         }
         else {
           $this->actionAvailable = 'None';
+          CRM_Core_Error::debug_var('TSYS VOID/REFUND DetailedTransactionByReferenceResponse', $response);
         }
+      }
+      else {
+        CRM_Core_Error::debug_var('TSYS VOID/REFUND DetailedTransactionByReferenceResponse', $response);
       }
     }
     // If the payment was not run thru TSYS bounce
@@ -148,6 +152,9 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         }
       }
     }
+    else {
+      CRM_Core_Error::debug_var('TSYS VOID/REFUND form values to be processed', $values);
+    }
     parent::postProcess();
   }
 
@@ -198,6 +205,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       // failed explicitly so retrieve error
       elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
         $approvalStatus = explode(';', $response->ApprovalStatus);
+        CRM_Core_Error::debug_var('TSYS VOID/REFUND form values', $values);
         if (count($approvalStatus) == 3) {
           CRM_Core_Session::setStatus(
             E::ts('Error Code %1, %2', array(
@@ -231,7 +239,8 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         ]),
         'error'
       );
-      // TODO add debug logs
+      CRM_Core_Error::debug_var('TSYS VOID/REFUND response', $response);
+      CRM_Core_Error::debug_var('TSYS VOID/REFUND form submit values', $values);
     }
   }
 
