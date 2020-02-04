@@ -162,28 +162,20 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     if (isset($response->ApprovalStatus)) {
       // Void successful in TSYS so update CiviCRM payment accordingly
       if ((string) $response->ApprovalStatus == 'APPROVED') {
-        if ($values['formaction'] == 'Void') {
-          // Cancel the Payment
-          $trxnParams = ['id' => $values['payment_id']];
-          $apiAction = 'cancel';
+        $trxnParams['total_amount'] = -$values['refund_amount'];
+        $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
+        $trxnParams['contribution_id'] = $values['contribution_id'];
+        if (isset($response->Token)) {
+          $trxnParams['trxn_id'] = (string) $response->Token;
         }
-        elseif ($values['formaction'] == 'Refund') {
-          $trxnParams['total_amount'] = -$values['refund_amount'];
-          $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
-          $trxnParams['contribution_id'] = $values['contribution_id'];
-          $apiAction = 'create';
-          if (isset($response->Token)) {
-            $trxnParams['trxn_id'] = (string) $response->Token;
-          }
-          if (isset($response->AuthorizationCode)) {
-            $trxnParams['trxn_result_code'] = (string) $response->AuthorizationCode;
-          }
-          if (isset($response->TransactionDate)) {
-            $trxnParams['trxn_date'] = (string) $response->TransactionDate;
-          }
+        if (isset($response->AuthorizationCode)) {
+          $trxnParams['trxn_result_code'] = (string) $response->AuthorizationCode;
+        }
+        if (isset($response->TransactionDate)) {
+          $trxnParams['trxn_date'] = (string) $response->TransactionDate;
         }
         try {
-          $updateTrxnStatus = civicrm_api3('Payment', $apiAction, $trxnParams);
+          $updateTrxnStatus = civicrm_api3('Payment', 'create', $trxnParams);
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
@@ -195,10 +187,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         // Update the user everything went well
         CRM_Core_Session::setStatus(
           E::ts('%1 of payment approved', [
-            1 => $action
+            1 => $values['formaction']
           ]),
           E::ts('%1 Approved', [
-            1 => $action
+            1 => $values['formaction']
           ]),
           'success'
         );
@@ -213,7 +205,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
               2 => $approvalStatus[2],
             )),
             E::ts('%1 Failed', [
-              1 => $action,
+              1 => $values['formaction'],
             ]),
             'error'
           );
@@ -221,7 +213,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
           CRM_Core_Session::setStatus(
             $approvalStatus,
             E::ts('%1 Failed', [
-              1 => $action,
+              1 => $values['formaction'],
             ]),
             'error'
           );
@@ -232,10 +224,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     else {
       CRM_Core_Session::setStatus(
         E::ts('%1 Response could not be found see logs for more details.', [
-          1 => $action,
+          1 => $values['formaction'],
         ]),
         E::ts('%1 Failed', [
-          1 => $action,
+          1 => $values['formaction'],
         ]),
         'error'
       );
