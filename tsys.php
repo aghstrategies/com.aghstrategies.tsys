@@ -7,7 +7,7 @@ use CRM_Tsys_ExtensionUtil as E;
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   // Adds a refund link to each payment made thru TSYS with a status of completed
   // TODO once PR https://github.com/civicrm/civicrm-core/pull/16401 has been accepted make this version of tsys require that version of CiviCRM
-  if ($objectName == 'Payment' && $op == 'payment.manage.action') {
+  if ($objectName == 'Payment' && $op == 'payment.edit.action') {
     if (!empty($values['contribution_id'])) {
 
       // DO NOT show refund link for payments that have failed or already been refunded.
