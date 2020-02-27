@@ -341,12 +341,48 @@ CRM.$(function ($) {
       // Disable the submit button to prevent repeated clicks
       $submit.prop('disabled', true);
 
+      compileCardHolder();
+
       CayanCheckoutPlus.createPaymentToken({
         success: tsysSuccessResponseHandler,
         error: tsysFailureResponseHandler,
       });
       return false;
     }
+  }
+
+  // AGH #20367 compile Card Holder based on first and last name
+  function compileCardHolder() {
+    // Check if there is a card holder field
+    // if there is not create one
+    if ($("input#card_holder_tsys").length) {
+      $('input#card_holder_tsys').val('');
+    } else {
+      $('<input/>').attr({
+        type: 'text',
+        id: 'card_holder_tsys',
+        name: 'card_holder_tsys',
+        'data-cayan': 'cardholder',
+        style: 'display:none;',
+      }).appendTo('input#payment_token');
+    }
+
+    // Compile Card Holder Name
+    var nameParts = [];
+    var billingNameFields = [
+      'billing_first_name',
+      'billing_middle_name',
+      'billing_last_name',
+    ];
+    $.each(billingNameFields, function(index, fieldName) {
+      if ($('input#' + fieldName).val().length) {
+        nameParts.push($('input#' + fieldName).val());
+      }
+    });
+
+    // set value of the cardholder field to Card holder name
+    // compiled from billing name fields
+    $('input#card_holder_tsys').val(nameParts.join(' '));
   }
 
   function getIsWebform() {

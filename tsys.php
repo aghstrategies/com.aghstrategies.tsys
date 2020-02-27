@@ -23,8 +23,8 @@ function tsys_civicrm_buildForm($formName, &$form) {
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
 
-    // If street address and zip code fields are on the form add data-cayan
-    // attributes for them too so that data gets sent to TSYS
+    // AGH #20367 If street address and zip code fields are on the form add
+    // data-cayan attributes for them too so that data gets sent to TSYS
     if (isset($form->_paymentFields)) {
       foreach ($form->_paymentFields as $field => $value) {
         if (substr($field, 0, 22) == 'billing_street_address') {
