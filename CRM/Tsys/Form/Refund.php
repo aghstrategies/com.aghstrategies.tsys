@@ -191,6 +191,12 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
             1 => $error,
           )));
         }
+
+        // TODO to fix the financial type id not populating for the refund
+        // payment we  need to create a finacial item and an entity financial
+        // trxn for more details see
+        // https://lab.civicrm.org/dev/financial/issues/87
+
         // Update the user everything went well
         CRM_Core_Session::setStatus(
           E::ts('%1 of payment approved', [
