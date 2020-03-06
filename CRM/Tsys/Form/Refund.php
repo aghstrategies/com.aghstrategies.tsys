@@ -118,6 +118,9 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       CRM_Core_Session::setStatus(E::ts('No Credit Card Actions are available for this payment at this time.'), '', 'no-popup');
     }
 
+    $this->add('hidden','og_fin_trxn', $this->_values['id']);
+    $this->add('hidden','pan_truncation', $this->_values['pan_truncation']);
+    $this->add('hidden','card_type_id', $this->_values['card_type_id']);
     $this->add('hidden','contribution_id', $this->_contributionID);
     $this->add('hidden','trxn_id', $this->_values['trxn_id']);
     $this->add('hidden','payment_processor_id', $this->_values['payment_processor_id']);
@@ -172,6 +175,9 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         $trxnParams['total_amount'] = -$values['refund_amount'];
         $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
         $trxnParams['contribution_id'] = $values['contribution_id'];
+        $trxnParams['card_type_id'] = $values['card_type_id'];
+        $trxnParams['pan_truncation'] = $values['pan_truncation'];
+
         if (isset($response->Token)) {
           $trxnParams['trxn_id'] = (string) $response->Token;
         }
@@ -181,21 +187,8 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         if (isset($response->TransactionDate)) {
           $trxnParams['trxn_date'] = (string) $response->TransactionDate;
         }
-        try {
-          $updateTrxnStatus = civicrm_api3('Payment', 'create', $trxnParams);
-        }
-        catch (CiviCRM_API3_Exception $e) {
-          $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-            'domain' => 'com.aghstrategies.tsys',
-            1 => $error,
-          )));
-        }
 
-        // TODO to fix the financial type id not populating for the refund
-        // payment we  need to create a finacial item and an entity financial
-        // trxn for more details see
-        // https://lab.civicrm.org/dev/financial/issues/87
+        $refund = self::createRefundInCivi($trxnParams, $values);
 
         // Update the user everything went well
         CRM_Core_Session::setStatus(
@@ -269,6 +262,109 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       }
     }
     return $elementNames;
+  }
+
+  public function createRefundInCivi($trxnParams, $values) {
+
+    // Create Payment
+    try {
+      $updateTrxnStatus = civicrm_api3('Payment', 'create', $trxnParams);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+
+    // BECAUSE payment.create does not create a Financial Item we need to create
+    // a Financial Item so that the Financial Type shows up properly for more
+    // details see: https://lab.civicrm.org/dev/financial/issues/87
+
+    // Get Contribution Contact (because we need it to create the financial item)
+    try {
+      $contributionContact = civicrm_api3('Contribution', 'getvalue', [
+        'return' => "contact_id",
+        'id' => $trxnParams['contribution_id'],
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+
+    // Get Financial Type (because we need it to create the financial item)
+    try {
+      $eft = civicrm_api3('EntityFinancialTrxn', 'getsingle', [
+        'financial_trxn_id' => $values['og_fin_trxn'],
+        'entity_table' => "civicrm_financial_item",
+        'api.FinancialItem.get' => ['id' => "\$value.entity_id"],
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+
+    try {
+      $fi = civicrm_api3('FinancialItem', 'getsingle', [
+        'id' => $eft['entity_id'],
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+
+    $finItemParams = [
+      'entity_table' => "civicrm_financial_trxn",
+      'transaction_date' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['trxn_date'],
+      'entity_id' => $updateTrxnStatus['id'],
+      'financial_account_id' => $fi['financial_account_id'],
+      'status_id' => 1,
+      'contact_id' => $contributionContact,
+      'amount' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['total_amount'],
+      'description' => "TSYS Refund",
+      'currency' => "USD",
+    ];
+
+    try {
+      $createFinItem = civicrm_api3('FinancialItem', 'create', $finItemParams);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+
+    // And connect the Financial Item to the trxn using Entity Financial Trxn
+    try {
+      $entityFinTrxn = civicrm_api3('EntityFinancialTrxn', 'create', [
+        'entity_table' => "civicrm_financial_item",
+        'entity_id' => $createFinItem['id'],
+        'financial_trxn_id' => $updateTrxnStatus['id'],
+        'amount' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['total_amount'],
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
   }
 
 }
