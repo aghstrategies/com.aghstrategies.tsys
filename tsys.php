@@ -62,6 +62,16 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
+  // This adds a warning to the "New Refund" form letting the user know that submitting this form will not result in a refund in TSYS
+  // TODO either make it so submitting this form does result in a refund in TSYS or filter this message to only show up for TSYS payments
+  if ($formName == 'CRM_Contribute_Form_AdditionalPayment'
+  && $form->getVar('_paymentType') == 'refund') {
+    CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
+    NOT result in a refund in TSYS. A refund will be recorded in CiviCRM. If this
+    was a payment made thru a TSYS processor either: refund the payment using the
+    credit card action button OR submit this form and then login to TSYS to process
+    the refund.'), '', 'no-popup');
+  }
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
     \Civi::resources()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
