@@ -62,8 +62,16 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
-  // This adds a warning to the "New Refund" form letting the user know that submitting this form will not result in a refund in TSYS
-  // TODO either make it so submitting this form does result in a refund in TSYS or filter this message to only show up for TSYS payments
+  // This adds a warning to the "New Refund" form letting the user know that
+  // submitting this form will not result in a refund in TSYS. The new refund
+  // form can be found when you register for an event using a price set and then
+  // change the selected price to a LOWER price. This will make the
+  // contributions status "Pending Refund" and trigger a "Record Refund" button
+  // to appear. Clicking the record refund button will take you to the "New
+  // Refund" Form.
+
+  // TODO either make it so submitting this form does result in a refund in TSYS
+  // or filter this message to only show up for contributions that uses a TSYS processor
   if ($formName == 'CRM_Contribute_Form_AdditionalPayment'
   && $form->getVar('_paymentType') == 'refund') {
     CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
