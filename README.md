@@ -38,3 +38,6 @@ This processor works with the Contribution Transact API but one needs to pass th
 
 ### To Run phpunit tests:
 $ env CIVICRM_UF=UnitTests TSYS_user_name='name' TSYS_password="webApiKey" TSYS_signature="Key" TSYS_subject="siteId" phpunit5 ./tests/phpunit/CRM/Tsys/OneTimeContributionTsysTest.php
+
+## Versioning
+v.MAJOR.MINOR.PATCH
