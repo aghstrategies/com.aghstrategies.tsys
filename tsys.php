@@ -62,6 +62,11 @@ function tsys_civicrm_buildForm($formName, &$form) {
  * Prevent server validation of cc fields:
  */
 function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  if ($formName == 'CRM_Contribute_Form_Contribution') {
+    $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings(3);
+    $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, 3);
+    print_r($response); die();
+  }
   // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
   // Ensures credit card number does not get sent to server in edge case
   if (empty($form->_paymentProcessor['payment_processor_type'])) {
