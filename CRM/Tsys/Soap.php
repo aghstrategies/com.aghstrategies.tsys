@@ -158,18 +158,17 @@ HEREDOC;
 <soap:Header/>
  <soap:Body>
     <CreateTransaction xmlns="http://transport.merchantware.net/v4/">
-    <Credentials>
-      <MerchantName>{$tsysCreds['user_name']}</MerchantName>
-      <MerchantSiteId>{$tsysCreds['subject']}</MerchantSiteId>
-      <MerchantKey>{$tsysCreds['signature']}</MerchantKey>
-    </Credentials>
-
+    <merchantName>{$tsysCreds['user_name']}</merchantName>
+    <merchantSiteId>{$tsysCreds['subject']}</merchantSiteId>
+    <merchantKey>{$tsysCreds['signature']}</merchantKey>
     <request>
         <TransactionType>SALE</TransactionType>
         <Amount>$amount</Amount>
         <ClerkId>ABC123</ClerkId>
         <OrderNumber>$invoiceNumber</OrderNumber>
         <Dba>ZERO BRANDS</Dba>
+        <SoftwareName>com.aghstrategies.tsys</SoftwareName>
+        <SoftwareVersion>1.2.0</SoftwareVersion>
         <Invoice>
             <TaxIndicator>Provided</TaxIndicator>
             <ProductDescription>Misc Goods</ProductDescription>

@@ -63,8 +63,9 @@ function tsys_civicrm_buildForm($formName, &$form) {
  */
 function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if ($formName == 'CRM_Contribute_Form_Contribution') {
-    $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings(3);
+    $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings(9);
     $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, 3);
+    // TODO parse response
     print_r($response); die();
   }
   // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
