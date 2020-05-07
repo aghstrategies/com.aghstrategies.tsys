@@ -4,11 +4,65 @@ require_once 'tsys.civix.php';
 use CRM_Tsys_ExtensionUtil as E;
 
 /**
+ * Implements hook_civicrm_postProcess().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
+ */
+function tsys_civicrm_postProcess($formName, &$form) {
+  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+    $deviceSettingsToSave = [];
+    foreach ($form->_submitValues as $key => $value) {
+      if (isset($value)) {
+        if (substr($key, 0, 3) == 'ip_') {
+          $deviceSettingsToSave[substr($key, 3)]['ip'] = $value;
+        }
+        if (substr($key, 0, 11) == 'devicename_') {
+          $deviceSettingsToSave[substr($key, 11)]['devicename'] = $value;
+        }
+      }
+    }
+    try {
+       $result = civicrm_api3('Setting', 'create', array(
+         'tsys_devices' => $deviceSettingsToSave,
+       ));
+     }
+     catch (CiviCRM_API3_Exception $e) {
+       $error = $e->getMessage();
+       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+         'domain' => 'com.aghstrategies.tsys',
+         1 => $error,
+       )));
+     }
+  }
+}
+
+/**
  * Implements hook_civicrm_buildForm().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
+  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+    // Device Settings
+    $form->add('text', 'devicename_1', ts("Device Name 1"));
+    $form->add('text', 'ip_1', ts('IP address of Device 1'));
+    $form->add('text', 'devicename_2', ts("Device Name 2"));
+    $form->add('text', 'ip_2', ts('IP address of Device 2'));
+    $form->add('text', 'devicename_3', ts("Device Name 3"));
+    $form->add('text', 'ip_3', ts('IP address of Device 3'));
+    $templatePath = realpath(dirname(__FILE__) . "/templates");
+    CRM_Core_Region::instance('form-bottom')->add(array(
+      'template' => "{$templatePath}/devicesSettings.tpl",
+    ));
+
+    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceSettings.js');
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings();
+
+    //set defaults for Device Table
+    if (!empty($deviceSettings)) {
+      $form->setDefaults($deviceSettings);
+    }
+  }
 
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
@@ -19,6 +73,18 @@ function tsys_civicrm_buildForm($formName, &$form) {
   // If on a form with a Tsys Payment Processor
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
+      if ($formName == 'CRM_Contribute_Form_Contribution' && $form->isBackOffice == 1) {
+        $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+        foreach ($deviceSettings as $key => $values) {
+          if (!empty($values['devicename']) && !empty($values['ip'])) {
+            $form->add('button', "device_{$key}", "use {$values['devicename']}");
+          }
+        }
+        $templatePath = realpath(dirname(__FILE__) . "/templates");
+        CRM_Core_Region::instance('form-bottom')->add(array(
+          'template' => "{$templatePath}/deviceButtons.tpl",
+        ));
+      }
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));

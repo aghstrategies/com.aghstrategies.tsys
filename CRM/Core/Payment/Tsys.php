@@ -539,4 +539,34 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     return TRUE;
   }
 
+  public function getDeviceSettings($format = 'settings') {
+    $deviceSettings = [];
+    try {
+       $result = civicrm_api3('Setting', 'get', ['return' => 'tsys_devices']);
+     }
+     catch (CiviCRM_API3_Exception $e) {
+       $error = $e->getMessage();
+       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+         'domain' => 'com.aghstrategies.tsys',
+         1 => $error,
+       )));
+     }
+     if (!empty($result['values'][1]['tsys_devices'])) {
+       if ($format == 'settings') {
+         foreach ($result['values'][1]['tsys_devices'] as $key => $values) {
+           if (isset($values['devicename'])) {
+             $deviceSettings["devicename_{$key}"] = $values['devicename'];
+           }
+           if (isset($values['ip'])) {
+             $deviceSettings["ip_{$key}"] = $values['ip'];
+           }
+         }
+       }
+       else {
+         $deviceSettings = $result['values'][1]['tsys_devices'];
+       }
+     }
+     return $deviceSettings;
+  }
+
 }
