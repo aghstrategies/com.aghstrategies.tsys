@@ -63,10 +63,39 @@ function tsys_civicrm_buildForm($formName, &$form) {
  */
 function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if ($formName == 'CRM_Contribute_Form_Contribution') {
+    // TODO move to dopayment
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings(9);
     $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, 3);
+    $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
+    if (!empty($response['TransportKey'])) {
+      $url = "http://192.168.0.156:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";
+      $responseFromDevice = CRM_Core_Payment_TsysDevice::curlapicall($url);
+
+// $responseFromDevice looks like:
+//       stdClass Object
+// (
+//     [Status] => APPROVED
+//     [AmountApproved] => 3.00
+//     [AuthorizationCode] => OK9999
+//     [Cardholder] => TEST CARD/GENIUS
+//     [AccountNumber] => ************0026
+//     [PaymentType] => VISA
+//     [EntryMode] => SWIPE
+//     [ErrorMessage] =>
+//     [Token] => 3177255465
+//     [TransactionDate] => 5/7/2020 6:46:37 PM
+//     [TransactionType] => SALE
+//     [ResponseType] => SINGLE
+//     [ValidationKey] => faeb97f2-402b-4d41-b8ad-2f3b6bd076d2
+      // TODO process response from Device
+      // TODO Make transaction with token
+      // TODO record payment in CiviCRM
+      // TODO add ced hostname field to settings
+      // TODO make this play nicely with the back end credit card form
+      print_r($responseFromDevice); die();
+    }
     // TODO parse response
-    print_r($response); die();
+    // print_r($response); die();
   }
   // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
   // Ensures credit card number does not get sent to server in edge case
