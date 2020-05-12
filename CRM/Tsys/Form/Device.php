@@ -9,15 +9,36 @@ use CRM_Tsys_ExtensionUtil as E;
  */
 class CRM_Tsys_Form_Device extends CRM_Core_Form {
   public function buildQuickForm() {
-
-    // add form elements
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+    $deviceOptions = $this->getDeviceOptions($deviceSettings);
     $this->add(
       'select', // field type
-      'favorite_color', // field name
-      'Favorite Color', // field label
-      $this->getColorOptions(), // list of options
+      'device_id', // field name
+      'Device', // field label
+      $deviceOptions,
       TRUE // is required
     );
+
+    $this->addEntityRef('contact_id', ts('Select Contact'), [], TRUE);
+    $this->addEntityRef('financial_type_id', ts('Financial Type'), [
+      'entity' => 'FinancialType',
+      'select' => ['minimumInputLength' => 0],
+    ], TRUE);
+
+    $this->add('text', 'total_amount', "Total Amount", TRUE);
+
+   // Set defaults
+   $defaults = [];
+   if ($_GET['cid']) {
+     $defaults['contact_id'] = $_GET['cid'];
+   }
+   if ($_GET['deviceid']) {
+     $defaults['device_id'] = $_GET['deviceid'];
+   }
+   $this->setDefaults($defaults);
+
+   // 'receive_date' => "",
+
     $this->addButtons(array(
       array(
         'type' => 'submit',
@@ -32,27 +53,95 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
   }
 
   public function postProcess() {
+    // TODO need to fixup ids of devices so they are unique even if there are multiple processors with devices
     $values = $this->exportValues();
-    $options = $this->getColorOptions();
-    CRM_Core_Session::setStatus(E::ts('You picked color "%1"', array(
-      1 => $options[$values['favorite_color']],
-    )));
-    parent::postProcess();
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+    if (!empty($deviceSettings[$values['device_id']])) {
+      $deviceWeAreUsing = $deviceSettings[$values['device_id']];
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($deviceWeAreUsing['processorid']);
+      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount']);
+      $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
+      if (!empty($response['TransportKey'])) {
+        $url = "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";
+        $responseFromDevice = CRM_Core_Payment_TsysDevice::curlapicall($url);
+        if ($responseFromDevice->Status == 'APPROVED' && $responseFromDevice->TransactionType == 'SALE') {
+          // TODO start here.. need to process response and create contribution!
+          // processResponseFromTsys($values, $responseFromDevice, 'response');
+          print_r($values); die();
+          // $params = $this->formatResponse($responseFromDevice, $values);
+          print_r($params); die();
+          // $values['receive_date'] = $responseFromDevice->TransactionDate;
+          CRM_Core_Payment_Tsys::doPayment($params);
+          // $makeTransaction = CRM_Tsys_Soap::composeSaleSoapRequestToken(
+          //   $responseFromDevice->Token,
+          //   $tsysCreds,
+          //   $values['total_amount'],
+          //   rand(1, 9999999)
+          // );
+          // print_r($makeTransaction); die();
+        }
+      }
+
+
+  // $responseFromDevice looks like:
+  //       stdClass Object
+  // (
+  //     [Status] => APPROVED
+  //     [AmountApproved] => 3.00
+  //     [AuthorizationCode] => OK9999
+  //     [Cardholder] => TEST CARD/GENIUS
+  //     [AccountNumber] => ************0026
+  //     [PaymentType] => VISA
+  //     [EntryMode] => SWIPE
+  //     [ErrorMessage] =>
+  //     [Token] => 3177255465
+  //     [TransactionDate] => 5/7/2020 6:46:37 PM
+  //     [TransactionType] => SALE
+  //     [ResponseType] => SINGLE
+  //     [ValidationKey] => faeb97f2-402b-4d41-b8ad-2f3b6bd076d2
+        // TODO process response from Device
+        // TODO Make transaction with token
+        // TODO record payment in CiviCRM
+        // TODO make this play nicely with the back end credit card form
+      }
+      // TODO parse response
+      // print_r($response); die();
+
+      // CRM_Core_Session::setStatus(E::ts('You picked color "%1"', array(
+      //   1 => $options[$values['favorite_color']],
+      // )));
+      // parent::postProcess();
   }
 
-  public function getColorOptions() {
-    $options = array(
-      '' => E::ts('- select -'),
-      '#f00' => E::ts('Red'),
-      '#0f0' => E::ts('Green'),
-      '#00f' => E::ts('Blue'),
-      '#f0f' => E::ts('Purple'),
-    );
-    foreach (array('1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e') as $f) {
-      $options["#{$f}{$f}{$f}"] = E::ts('Grey (%1)', array(1 => $f));
+  public function getDeviceOptions($deviceSettings) {
+    $options = [];
+    foreach ($deviceSettings as $key => $value) {
+      if (!empty($value['devicename'])) {
+        $options[$key] = $value['devicename'];
+      }
     }
     return $options;
   }
+
+  // public function formatResponse($responseFromDevice, $values) {
+  //   foreach ($responseFromDevice as $key => $value) {
+  //     print_r($key);
+  //     switch ($key) {
+  //
+  //       case 'TransactionDate':
+  //         $values['receive_date'] = $value;
+  //         break;
+  //
+  //       case 'AdditionalParameters':
+  //         break;
+  //
+  //       default:
+  //         $values[$key] = $value;
+  //         break;
+  //     }
+  //     return $values;
+  //   }
+  // }
 
   /**
    * Get the fields/elements defined in this form.
