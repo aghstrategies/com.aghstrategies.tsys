@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/tsysdevice</path>
+    <page_callback>CRM_Tsys_Form_Device</page_callback>
+    <title>Device</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>

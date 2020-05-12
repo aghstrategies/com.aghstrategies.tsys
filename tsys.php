@@ -3,6 +3,31 @@
 require_once 'tsys.civix.php';
 use CRM_Tsys_ExtensionUtil as E;
 
+
+function tsys_civicrm_pageRun( &$page ) {
+  if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab') {
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+    if (!empty($deviceSettings)) {
+      foreach ($deviceSettings as $key => $values) {
+        if (!empty($values['devicename']) && !empty($values['ip'])) {
+          $cid = $page->getVar('_contactId');
+          $deviceUrl = CRM_Utils_System::url('civicrm/tsysdevice', "reset=1&deviceid={$key}&cid={$cid}");
+          $devices[] = [
+            'label' => $values['devicename'],
+            'url' => $deviceUrl,
+          ];
+          $page->assign('devices', $devices);
+        }
+      }
+      $templatePath = realpath(dirname(__FILE__) . "/templates");
+      CRM_Core_Region::instance('form-bottom')->add(array(
+        'template' => "{$templatePath}/deviceButtons.tpl",
+      ));
+      CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceButtons.js');
+    }
+  }
+}
+
 /**
  * Implements hook_civicrm_postProcess().
  *
@@ -43,6 +68,7 @@ function tsys_civicrm_postProcess($formName, &$form) {
  */
 function tsys_civicrm_buildForm($formName, &$form) {
   if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+    // TODO abstract device logic so you can have infinite devices
     // Device Settings
     $form->add('text', 'devicename_1', ts("Device Name 1"));
     $form->add('text', 'ip_1', ts('IP address of Device 1'));
@@ -73,18 +99,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
   // If on a form with a Tsys Payment Processor
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
-      if ($formName == 'CRM_Contribute_Form_Contribution' && $form->isBackOffice == 1) {
-        $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
-        foreach ($deviceSettings as $key => $values) {
-          if (!empty($values['devicename']) && !empty($values['ip'])) {
-            $form->add('button', "device_{$key}", "use {$values['devicename']}");
-          }
-        }
-        $templatePath = realpath(dirname(__FILE__) . "/templates");
-        CRM_Core_Region::instance('form-bottom')->add(array(
-          'template' => "{$templatePath}/deviceButtons.tpl",
-        ));
-      }
+
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
