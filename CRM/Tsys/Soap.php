@@ -231,11 +231,8 @@ HEREDOC;
     return $response;
   }
 
-
-
   /**
-   * Compose Soap Request using a Tsys Token
-   * @param  string $token         payment token
+   * Stage Transaction Soap Request using a Tsys Token
    * @param  array  $tsysCreds     payment processor credentials
    * @param  int    $amount        transaction amount
    * @param  int    $invoiceNumber invoice number
@@ -296,8 +293,11 @@ HEREDOC;
 
   /**
    * Execute SOAP Request and Parse Response
-   * @param  string $soap_request SOAP Request
-   * @return                response from tsys
+   * @param  string  $soap_request Request to be sent to TSYS via SOAP
+   * @param  integer $test         is this a test transaction?
+   * @param  integer $report       is this a report transaction?
+   * @param  integer $terminal     is this transaction sent from a device?
+   * @return string response from TSYS
    */
   public static function doSoapRequest($soap_request, $test = 0, $report = 0, $terminal = 0) {
     if ($test == 0) {
