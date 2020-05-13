@@ -5,7 +5,7 @@ use CRM_Tsys_ExtensionUtil as E;
 
 
 function tsys_civicrm_pageRun( &$page ) {
-  if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab') {
+  if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab' && $page->getVar('_id') == NULL) {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings)) {
       foreach ($deviceSettings as $key => $values) {

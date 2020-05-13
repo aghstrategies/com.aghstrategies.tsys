@@ -394,7 +394,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
     && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED"
     && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
-      $params = self::processResponseFromTsys($params, $makeTransaction);
+      $params = self::processResponseFromTsys($params, $makeTransaction->Body->SaleResponse->SaleResult);
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
@@ -467,8 +467,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       2 => 'Discover',
     ];
     foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
-      if (isset($makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML)) {
-        $XMLvalueAsString = (string) $makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML;
+      if (isset($makeTransaction->$fieldInXML)) {
+        $XMLvalueAsString = (string) $makeTransaction->$fieldInXML;
         switch ($fieldInXML) {
           case 'CardType':
             if (!empty($tsysCardTypes[$XMLvalueAsString])) {
