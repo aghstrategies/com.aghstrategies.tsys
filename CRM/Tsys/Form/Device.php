@@ -72,7 +72,6 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
           $params['payment_processor_id'] = $params['payment_processor'] = $deviceWeAreUsing['processorid'];
           $params['payment_token'] = $params['tsys_token'];
           $params['amount'] = $params['total_amount'];
-          unset($params['tsys_token']);
           $params['contribution_status_id'] = 'Pending';
           $params['payment_instrument_id'] = "Credit Card";
           $params['source'] = "device {$deviceWeAreUsing['devicename']}";
@@ -116,7 +115,8 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
               'payment_instrument_id' => $params['payment_instrument_id'],
               // If there is a processor, provide it:
               'payment_processor_id' => $params['payment_processor_id'],
-              ]);
+              'trxn_id' => $params['payment_token'],
+            ]);
           }
           catch (CiviCRM_API3_Exception $e) {
             $error = $e->getMessage();
