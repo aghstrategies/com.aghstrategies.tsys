@@ -33,7 +33,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   private $_islive = FALSE;
 
   /**
-   * We can use the smartdebit processor on the backend
+   * can use the smartdebit processor on the backend
    * @return bool
    */
   public function supportsBackOffice() {
@@ -43,6 +43,24 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   public function supportsRecurring() {
     return TRUE;
   }
+
+  /**
+   * can edit smartdebit recurring contributions
+   * @return bool
+   */
+  public function supportsEditRecurringContribution() {
+    return FALSE;
+  }
+
+  /**
+   * Does this payment processor support refund?
+   *
+   * @return bool
+   */
+  public function supportsRefund() {
+    return TRUE;
+  }
+
 
   /**
    * Constructor
@@ -539,4 +557,153 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     return TRUE;
   }
 
+  /**
+    * Get the currency for the transaction.
+    *
+    * Handle any inconsistency about how it is passed in here.
+    *
+    * @param array $params
+    *
+    * @return string
+    */
+   public function getAmount($params = []): string {
+     $amount = number_format((float) $params['amount'] ?? 0.0, CRM_Utils_Money::getCurrencyPrecision($this->getCurrency($params)), '.', '');
+     // Stripe amount required in cents.
+     $amount = preg_replace('/[^\d]/', '', strval($amount));
+     return $amount;
+   }
+
+  /**
+    * Submit a refund payment
+    *
+    * @param array $params
+    *   Assoc array of input parameters for this transaction.
+    *
+    * @return array
+    * @throws \Civi\Payment\Exception\PaymentProcessorException
+    */
+   public function doRefund(&$params) {
+     // NOTE this is based off of Stripes doRefund function: https://lab.civicrm.org/extensions/stripe/blob/master/CRM/Core/Payment/Stripe.php#L737
+     // Currently it is called when one does a PaymentProcessor.refund API call
+     // It does not handle any of the logic to create the refund payment/update the contribution status
+
+     // Ensure all required params have been sent
+     $requiredParams = ['trxn_id', 'amount'];
+     foreach ($requiredParams as $required) {
+       if (!isset($params[$required])) {
+         $message = 'TSYS doRefund: Missing mandatory parameter: ' . $required;
+         Civi::log()->error($message);
+         Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+       }
+     }
+
+     // Get Refund Amount
+     $refundAmount = $this->getAmount($params);
+
+     // Get amount of original payment
+     try {
+       $OGtrxn = civicrm_api3('FinancialTrxn', 'getsingle', [
+         'return' => ["total_amount"],
+         'trxn_id' => $params['trxn_id'],
+       ]);
+     }
+     catch (CiviCRM_API3_Exception $e) {
+       $error = $e->getMessage();
+       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+         'domain' => 'com.aghstrategies.tsys',
+         1 => $error,
+       )));
+     }
+     // Get Payment Processor Settings
+     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id']);
+
+     // Decide whether to refund, void or adjust amount
+     $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($params['trxn_id'], $tsysCreds);
+     $response = $tsysInfo->Body->DetailedTransactionByReferenceResponse->DetailedTransactionByReferenceResult;
+     if ((string) $response->ApprovalStatus == 'APPROVED') {
+       // If a refund token is available Refund
+       if (isset($response->SupportedActions->RefundToken) &&
+         (string) $response->SupportedActions->RefundToken != '' &&
+         $response->SupportedActions->RefundMaxAmount > 0
+       ) {
+         $maxRefundAmount = $response->SupportedActions->RefundMaxAmount;
+         $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($params['trxn_id'], $refundAmount, $tsysCreds);
+         $response = $runRefund->Body->RefundResponse->RefundResult;
+         // TODO Process response
+       }
+       // If a void token is available and we are negating the FULL payment void
+       elseif (isset($response->SupportedActions->VoidToken) &&
+         (string) $response->SupportedActions->VoidToken != '' &&
+         $OGtrxn['total_amount'] == $refundParams['amount']
+       ) {
+         $voidResponse = CRM_Tsys_Soap::composeVoidSoapRequest($params['trxn_id'], $tsysCreds);
+         $response = $voidResponse->Body->VoidResponse->VoidResult;
+         // TODO Process response
+       }
+       // IF we are only refunding part of a payment and it has not been
+       // batched yet so we need to Adjust the amount instead of Refund it
+       elseif (isset($response->SupportedActions->AdjustmentToken) &&
+         (string) $response->SupportedActions->AdjustmentToken != '' &&
+         $OGtrxn['total_amount'] != $refundParams['amount']
+       ) {
+         // TODO write soap action to adjust
+         $actionAvailable = 'Adjust';
+       }
+       // If no valid action found throw an error
+       else {
+         $actionAvailable = 'None';
+         CRM_Core_Error::debug_var('TSYS VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+         $message = 'TSYS doRefund: no valid action found';
+         Civi::log()->error($message);
+         Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+       }
+
+       // Process response from TSYS
+       $refundParams = self::processResponse($response);
+
+       // Return results
+       return $refundParams;
+     }
+     else {
+       $message = 'TSYS doRefund: No Valid Transaction found : ' . $params['trxn_id'];
+       Civi::log()->error($message);
+       Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+     }
+
+   }
+
+   /**
+    * Process Refund Response - Update user and payment/contribution status
+    * @param  object $runRefund Response from Tsys
+    * @return
+    */
+   public function processResponse($response) {
+     $trxnParams = [];
+     // We got a legible response!!
+     if (isset($response->ApprovalStatus)) {
+       $paramsToExtract = [
+         'refund_trxn_id' => 'Token',
+         'trxn_result_code' => 'AuthorizationCode',
+         'trxn_date' => 'TransactionDate',
+       ];
+       foreach ($paramsToExtract as $fieldInCivi => $fieldInResponse) {
+         if (isset($response->$fieldInResponse)) {
+           $trxnParams[$fieldInCivi] = (string) $response->$fieldInResponse;
+         }
+       }
+       // Refund successful
+       if ((string) $response->ApprovalStatus == 'APPROVED') {
+         $trxnParams['refund_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+       }
+       // Refund failed
+       elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
+         $trxnParams['refund_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+       }
+     }
+     // We did not get a legible response
+     else {
+       $trxnParams['refund_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+     }
+     return $trxnParams;
+   }
 }

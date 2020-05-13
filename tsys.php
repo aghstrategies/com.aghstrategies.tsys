@@ -3,13 +3,83 @@
 require_once 'tsys.civix.php';
 use CRM_Tsys_ExtensionUtil as E;
 
+
+function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
+  // Adds a refund link to each payment made thru TSYS with a status of completed
+  if ($objectName == 'Payment' && $op == 'Payment.edit.action') {
+    if (!empty($values['contribution_id'])) {
+
+      // DO NOT show refund link for payments that have failed or already been refunded.
+      try {
+        $contribDetails = civicrm_api3('Contribution', 'getsingle', [
+          'id' => $values['contribution_id'],
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending refund'])) {
+        try {
+          $trxnDetails = civicrm_api3('FinancialTrxn', 'getsingle', [
+            'return' => "payment_processor_id, status_id, trxn_id",
+            'is_payment' => 1,
+            'id' => $values['id'],
+          ]);
+        }
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+        }
+        $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+        if (!empty($trxnDetails['status_id']) && $trxnDetails['status_id'] == $completedStatusId) {
+          $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+          if ($trxnDetails['payment_processor_id'] && !empty($tsysProcessors[$trxnDetails['payment_processor_id']])) {
+            $links[] = [
+              'name' => 'Credit Card Actions',
+              'url' => 'civicrm/tsys/refund',
+              'class' => 'medium-popup',
+              'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
+              'title' => 'Credit Card Actions',
+              'bit' => 2,
+            ];
+          }
+        }
+      }
+    }
+  }
+}
+
 /**
  * Implements hook_civicrm_buildForm().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
+  // This adds a warning to the "New Refund" form letting the user know that
+  // submitting this form will not result in a refund in TSYS. The new refund
+  // form can be found when you register for an event using a price set and then
+  // change the selected price to a LOWER price. This will make the
+  // contributions status "Pending Refund" and trigger a "Record Refund" button
+  // to appear. Clicking the record refund button will take you to the "New
+  // Refund" Form.
 
+  // TODO either make it so submitting this form does result in a refund in TSYS
+  // or filter this message to only show up for contributions that uses a TSYS processor
+  if ($formName == 'CRM_Contribute_Form_AdditionalPayment'
+  && $form->getVar('_paymentType') == 'refund') {
+    CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
+    NOT result in a refund in TSYS. A refund will be recorded in CiviCRM. If this
+    was a payment made thru a TSYS processor either: refund the payment using the
+    credit card action button OR submit this form and then login to TSYS to process
+    the refund.'), '', 'no-popup');
+  }
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
     \Civi::resources()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
