@@ -3,8 +3,13 @@
 require_once 'tsys.civix.php';
 use CRM_Tsys_ExtensionUtil as E;
 
+/**
+ * Implements hook_civicrm_links().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
+ */
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
-  // Adds a refund link to each payment made thru TSYS with a status of completed
+  // Adds a refund link to each payment made thru TSYS with a status of completed (also known as the payments that can be refunded)
   if ($objectName == 'Payment' && $op == 'Payment.edit.action') {
     if (!empty($values['contribution_id'])) {
 
@@ -55,7 +60,13 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
   }
 }
 
+/**
+ * Implements hook_civicrm_pageRun().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
+ */
 function tsys_civicrm_pageRun( &$page ) {
+  // Adds buttons the the Contribution Summary tab for each TSYS Device
   if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab' && $page->getVar('_id') == NULL) {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings)) {
@@ -85,6 +96,7 @@ function tsys_civicrm_pageRun( &$page ) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
  */
 function tsys_civicrm_postProcess($formName, &$form) {
+  // Saves TSYS device settings
   if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
     $deviceSettingsToSave = [];
     foreach ($form->_submitValues as $key => $value) {
@@ -138,6 +150,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     the refund.'), '', 'no-popup');
   }
 
+  // Settings for TSYS Devices
   if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
     // TODO abstract device logic so you can have infinite devices
     // Device Settings
@@ -160,6 +173,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
       $form->setDefaults($deviceSettings);
     }
   }
+
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
     \Civi::resources()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
