@@ -6,4 +6,10 @@
     <title>Credit Card Actions</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/tsysdevice</path>
+    <page_callback>CRM_Tsys_Form_Device</page_callback>
+    <title>Submit Credit Card Payment with Device</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>

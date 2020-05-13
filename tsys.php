@@ -3,7 +3,6 @@
 require_once 'tsys.civix.php';
 use CRM_Tsys_ExtensionUtil as E;
 
-
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   // Adds a refund link to each payment made thru TSYS with a status of completed
   if ($objectName == 'Payment' && $op == 'Payment.edit.action') {
@@ -56,6 +55,64 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
   }
 }
 
+function tsys_civicrm_pageRun( &$page ) {
+  if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab' && $page->getVar('_id') == NULL) {
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+    if (!empty($deviceSettings)) {
+      foreach ($deviceSettings as $key => $values) {
+        if (!empty($values['devicename']) && !empty($values['ip'])) {
+          $cid = $page->getVar('_contactId');
+          $deviceUrl = CRM_Utils_System::url('civicrm/tsysdevice', "reset=1&deviceid={$key}&cid={$cid}");
+          $devices[] = [
+            'label' => $values['devicename'],
+            'url' => $deviceUrl,
+          ];
+          $page->assign('devices', $devices);
+        }
+      }
+      $templatePath = realpath(dirname(__FILE__) . "/templates");
+      CRM_Core_Region::instance('form-bottom')->add(array(
+        'template' => "{$templatePath}/deviceButtons.tpl",
+      ));
+      CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceButtons.js');
+    }
+  }
+}
+
+/**
+ * Implements hook_civicrm_postProcess().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
+ */
+function tsys_civicrm_postProcess($formName, &$form) {
+  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+    $deviceSettingsToSave = [];
+    foreach ($form->_submitValues as $key => $value) {
+      if (isset($value)) {
+        if (substr($key, 0, 3) == 'ip_') {
+          $deviceSettingsToSave[substr($key, 3)]['ip'] = $value;
+        }
+        if (substr($key, 0, 11) == 'devicename_') {
+          $deviceSettingsToSave[substr($key, 11)]['devicename'] = $value;
+          $deviceSettingsToSave[substr($key, 11)]['processorid'] = $form->getVar('_id');
+        }
+      }
+    }
+    try {
+       $result = civicrm_api3('Setting', 'create', array(
+         'tsys_devices' => $deviceSettingsToSave,
+       ));
+     }
+     catch (CiviCRM_API3_Exception $e) {
+       $error = $e->getMessage();
+       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+         'domain' => 'com.aghstrategies.tsys',
+         1 => $error,
+       )));
+     }
+  }
+}
+
 /**
  * Implements hook_civicrm_buildForm().
  *
@@ -80,6 +137,29 @@ function tsys_civicrm_buildForm($formName, &$form) {
     credit card action button OR submit this form and then login to TSYS to process
     the refund.'), '', 'no-popup');
   }
+
+  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+    // TODO abstract device logic so you can have infinite devices
+    // Device Settings
+    $form->add('text', 'devicename_1', ts("Device Name 1"));
+    $form->add('text', 'ip_1', ts('IP address of Device 1'));
+    $form->add('text', 'devicename_2', ts("Device Name 2"));
+    $form->add('text', 'ip_2', ts('IP address of Device 2'));
+    $form->add('text', 'devicename_3', ts("Device Name 3"));
+    $form->add('text', 'ip_3', ts('IP address of Device 3'));
+    $templatePath = realpath(dirname(__FILE__) . "/templates");
+    CRM_Core_Region::instance('form-bottom')->add(array(
+      'template' => "{$templatePath}/devicesSettings.tpl",
+    ));
+
+    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceSettings.js');
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings();
+
+    //set defaults for Device Table
+    if (!empty($deviceSettings)) {
+      $form->setDefaults($deviceSettings);
+    }
+  }
   // Load stripe.js on all civi forms per stripe requirements
   if (!isset(\Civi::$statics[E::LONG_NAME]['tsysJSLoaded'])) {
     \Civi::resources()->addScriptUrl('https://ecommerce.merchantware.net/v1/CayanCheckoutPlus.js');
@@ -89,6 +169,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
   // If on a form with a Tsys Payment Processor
   if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
     && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
+
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));

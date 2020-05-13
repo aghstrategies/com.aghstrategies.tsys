@@ -234,11 +234,72 @@ HEREDOC;
 
 
   /**
+   * Compose Soap Request using a Tsys Token
+   * @param  string $token         payment token
+   * @param  array  $tsysCreds     payment processor credentials
+   * @param  int    $amount        transaction amount
+   * @param  int    $invoiceNumber invoice number
+   * @return                       response from tsys
+   */
+  public static function composeStageTransaction($tsysCreds, $amount, $invoiceNumber = 0) {
+    $soap_request = <<<HEREDOC
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Header/>
+ <soap:Body>
+    <CreateTransaction xmlns="http://transport.merchantware.net/v4/">
+    <merchantName>{$tsysCreds['user_name']}</merchantName>
+    <merchantSiteId>{$tsysCreds['subject']}</merchantSiteId>
+    <merchantKey>{$tsysCreds['signature']}</merchantKey>
+    <request>
+        <TransactionType>SALE</TransactionType>
+        <Amount>$amount</Amount>
+        <ClerkId>ABC123</ClerkId>
+        <OrderNumber>$invoiceNumber</OrderNumber>
+        <Dba>ZERO BRANDS</Dba>
+        <SoftwareName>com.aghstrategies.tsys</SoftwareName>
+        <SoftwareVersion>1.2.0</SoftwareVersion>
+        <Invoice>
+            <TaxIndicator>Provided</TaxIndicator>
+            <ProductDescription>Misc Goods</ProductDescription>
+            <DiscountAmount>1.01</DiscountAmount>
+            <ShippingAmount>1.02</ShippingAmount>
+            <DutyAmount>1.03</DutyAmount>
+            <DestinationPostalCode>06033</DestinationPostalCode>
+            <DestinationCountryCode>840</DestinationCountryCode>
+            <ShipFromPostalCode>01887</ShipFromPostalCode>
+            <LineItems>
+                <LineItem>
+                    <CommodityCode>030</CommodityCode>
+                    <Description>Misc Goods</Description>
+                    <Upc>012345678901</Upc>
+                    <Quantity>5.1</Quantity>
+                    <UnitOfMeasure>lbs</UnitOfMeasure>
+                    <UnitCost>0.60</UnitCost>
+                    <DiscountAmount>0.61</DiscountAmount>
+                    <TotalAmount>0.62</TotalAmount>
+                    <TaxAmount>0.63</TaxAmount>
+                    <ExtendedAmount>0.64</ExtendedAmount>
+                    <DebitOrCreditIndicator>Credit</DebitOrCreditIndicator>
+                    <NetOrGrossIndicator>Gross</NetOrGrossIndicator>
+               </LineItem>
+            </LineItems>
+        </Invoice>
+    </request>
+    </CreateTransaction>
+ </soap:Body>
+</soap:Envelope>
+HEREDOC;
+    $response = self::doSoapRequest($soap_request, $tsysCreds['is_test'], 0, 1);
+    return $response;
+  }
+
+  /**
    * Execute SOAP Request and Parse Response
    * @param  string $soap_request SOAP Request
    * @return                response from tsys
    */
-  public static function doSoapRequest($soap_request, $test = 0, $report = 0) {
+  public static function doSoapRequest($soap_request, $test = 0, $report = 0, $terminal = 0) {
     if ($test == 0) {
       $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/RetailTransaction/v45/Credit.asmx";
     }
@@ -256,6 +317,10 @@ HEREDOC;
       "Pragma: no-cache",
       "Content-length: ".strlen($soap_request),
     );
+    if ($terminal == 1) {
+      $header['SOAPAction'] = "http://transport.merchantware.net/v4/CreateTransaction";
+      $endpointURL = "https://transport.merchantware.net/v4/transportService.asmx";
+    }
 
     $soap_do = curl_init();
     curl_setopt($soap_do, CURLOPT_URL, $endpointURL);
