@@ -46,11 +46,11 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
           $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
           if ($trxnDetails['payment_processor_id'] && !empty($tsysProcessors[$trxnDetails['payment_processor_id']])) {
             $links[] = [
-              'name' => 'Credit Card Actions',
+              'name' => '<i class="crm-i fa fa-undo" aria-hidden="true"></i>',
               'url' => 'civicrm/tsys/refund',
               'class' => 'medium-popup',
               'qs' => 'reset=1&id=%%id%%&contribution_id=%%contribution_id%%',
-              'title' => 'Credit Card Actions',
+              'title' => 'Refund or Void Payment',
               'bit' => 2,
             ];
           }
