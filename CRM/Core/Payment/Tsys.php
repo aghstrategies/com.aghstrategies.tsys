@@ -707,7 +707,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     return $trxnParams;
   }
 
-  public function getDeviceSettings($format = 'settings') {
+  public function getDeviceSettings($format = 'settings', $processorId = NULL) {
     $deviceSettings = [];
     try {
        $result = civicrm_api3('Setting', 'get', ['return' => 'tsys_devices']);
@@ -722,11 +722,13 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
      if (!empty($result['values'][1]['tsys_devices'])) {
        if ($format == 'settings') {
          foreach ($result['values'][1]['tsys_devices'] as $key => $values) {
-           if (isset($values['devicename'])) {
-             $deviceSettings["devicename_{$key}"] = $values['devicename'];
-           }
-           if (isset($values['ip'])) {
-             $deviceSettings["ip_{$key}"] = $values['ip'];
+           if ($processorId == $values["processorid"]) {
+             if (isset($values['devicename'])) {
+               $deviceSettings["devicename_{$key}"] = $values['devicename'];
+             }
+             if (isset($values['ip'])) {
+               $deviceSettings["ip_{$key}"] = $values['ip'];
+             }
            }
          }
        }

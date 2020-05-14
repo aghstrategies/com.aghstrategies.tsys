@@ -151,7 +151,8 @@ function tsys_civicrm_buildForm($formName, &$form) {
   }
 
   // Settings for TSYS Devices
-  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
+  if ($formName == 'CRM_Admin_Form_PaymentProcessor' && !empty($form->getVar('_id'))) {
+    $pid = $form->getVar('_id');
     // TODO abstract device logic so you can have infinite devices
     // Device Settings
     $form->add('text', 'devicename_1', ts("Device Name 1"));
@@ -166,7 +167,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     ));
 
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceSettings.js');
-    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings();
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('settings', $pid);
 
     //set defaults for Device Table
     if (!empty($deviceSettings)) {
