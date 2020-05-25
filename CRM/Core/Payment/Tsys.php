@@ -747,6 +747,9 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
              if (isset($values['ip'])) {
                $deviceSettings["ip_{$key}"] = $values['ip'];
              }
+             if (isset($values['terminalid'])) {
+               $deviceSettings["terminalid_{$key}"] = $values['terminalid'];
+             }
            }
          }
        }

@@ -238,7 +238,7 @@ HEREDOC;
    * @param  int    $invoiceNumber invoice number
    * @return                       response from tsys
    */
-  public static function composeStageTransaction($tsysCreds, $amount, $loggedInUser, $invoiceNumber = 0) {
+  public static function composeStageTransaction($tsysCreds, $amount, $loggedInUser, $terminalId, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -257,6 +257,7 @@ HEREDOC;
         <Dba>{$tsysCreds['user_name']}</Dba>
         <SoftwareName>com.aghstrategies.tsys</SoftwareName>
         <SoftwareVersion>2.0.0</SoftwareVersion>
+        <TerminalId>$terminalId</TerminalId>
     </request>
     </CreateTransaction>
  </soap:Body>

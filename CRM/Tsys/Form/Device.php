@@ -62,9 +62,15 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings[$values['device_id']])) {
       $deviceWeAreUsing = $deviceSettings[$values['device_id']];
+
+      // TODO Set up cancel functionality need to find away for the user to click something to curl the cancelurl after submitting the form
+      // $res = CRM_Core_Resources::singleton();
+      // $res->addScriptFile('com.aghstrategies.tsys', 'js/cancelDevice.js');
+      // $res->addVars('tsys', ['cancelurl' => "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?Action=Cancel&Format=JSON"]);
+
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($deviceWeAreUsing['processorid']);
       $loggedInUser = CRM_Core_Session::singleton()->getLoggedInContactID();
-      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount'], $loggedInUser);
+      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount'], $loggedInUser, $deviceWeAreUsing['terminalid']);
       $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
       if (!empty($response['TransportKey'])) {
         $url = "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";
@@ -80,6 +86,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             $params['amount'] = $params['total_amount'] = $params['amount_approved'];
             $params['contribution_status_id'] = 'Pending';
             $params['payment_instrument_id'] = "Credit Card";
+            // TODO record if payment instrument is a debit card
             $params['source'] = " Credit Card Contribution via {$deviceWeAreUsing['devicename']} entry mode: {$params['entry_mode']}";
 
             // NOTE record details for certification script in note field
@@ -154,6 +161,13 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
         elseif ($responseFromDevice->Status == 'UserCancelled') {
           CRM_Core_Session::setStatus(
             E::ts('User Cancelled this transaction.'),
+            "Cancelled",
+            'error'
+          );
+        }
+        elseif ($responseFromDevice->Status == 'POSCancelled') {
+          CRM_Core_Session::setStatus(
+            E::ts('You Cancelled this transaction.'),
             "Cancelled",
             'error'
           );

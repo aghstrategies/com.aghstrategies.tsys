@@ -108,6 +108,9 @@ function tsys_civicrm_postProcess($formName, &$form) {
           $deviceSettingsToSave[substr($key, 11)]['devicename'] = $value;
           $deviceSettingsToSave[substr($key, 11)]['processorid'] = $form->getVar('_id');
         }
+        if (substr($key, 0, 11) == 'terminalid_') {
+          $deviceSettingsToSave[substr($key, 11)]['terminalid'] = $value;
+        }
       }
     }
     try {
@@ -157,10 +160,13 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // Device Settings
     $form->add('text', 'devicename_1', ts("Device Name 1"));
     $form->add('text', 'ip_1', ts('IP address of Device 1'));
+    $form->add('text', 'terminalid_1', ts('Terminal ID for Device 1'));
     $form->add('text', 'devicename_2', ts("Device Name 2"));
     $form->add('text', 'ip_2', ts('IP address of Device 2'));
+    $form->add('text', 'terminalid_2', ts('Terminal ID for Device 2'));
     $form->add('text', 'devicename_3', ts("Device Name 3"));
     $form->add('text', 'ip_3', ts('IP address of Device 3'));
+    $form->add('text', 'terminalid_3', ts('Terminal ID for Device 3'));
     $templatePath = realpath(dirname(__FILE__) . "/templates");
     CRM_Core_Region::instance('form-bottom')->add(array(
       'template' => "{$templatePath}/devicesSettings.tpl",
