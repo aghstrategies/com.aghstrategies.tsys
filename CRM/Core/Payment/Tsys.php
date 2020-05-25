@@ -496,6 +496,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       'MASTERCARD' => 'MasterCard',
       'AMEX' => 'Amex',
       'DISCOVER' => 'Discover',
+      // TODO there are other payment types... do we need to deal with these
+      // https://docs.tsysmerchant.com/genius/transactions#stage
     ];
     foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
       if (isset($makeTransaction->$fieldInXML)) {
