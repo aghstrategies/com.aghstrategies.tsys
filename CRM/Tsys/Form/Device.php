@@ -39,13 +39,17 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
 
    // 'receive_date' => "",
 
-    $this->addButtons(array(
-      array(
+    $this->addButtons([
+      [
         'type' => 'submit',
         'name' => E::ts('Submit'),
         'isDefault' => TRUE,
-      ),
-    ));
+      ],
+      [
+        'type' => 'cancel',
+        'name' => E::ts('Cancel'),
+      ],
+    ]);
 
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
@@ -64,70 +68,84 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       if (!empty($response['TransportKey'])) {
         $url = "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";
         $responseFromDevice = CRM_Core_Payment_TsysDevice::curlapicall($url);
-        if ($responseFromDevice->Status == 'APPROVED' && $responseFromDevice->TransactionType == 'SALE') {
+        $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
+        if ($responseFromDevice->TransactionType == 'SALE') {
+          if ($responseFromDevice->Status == 'APPROVED') {
 
-          // Clean up params so they have the needed items
-          $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice);
-          $params['currency'] = 'USD';
-          $params['payment_processor_id'] = $params['payment_processor'] = $deviceWeAreUsing['processorid'];
-          $params['payment_token'] = $params['tsys_token'];
-          $params['amount'] = $params['total_amount'];
-          $params['contribution_status_id'] = 'Pending';
-          $params['payment_instrument_id'] = "Credit Card";
-          $params['source'] = "Submit Credit Card Contribution via Device ({$deviceWeAreUsing['devicename']})";
+            // Clean up params so they have the needed items
+            $params['currency'] = 'USD';
+            $params['payment_processor_id'] = $params['payment_processor'] = $deviceWeAreUsing['processorid'];
+            $params['payment_token'] = $params['tsys_token'];
+            $params['amount'] = $params['total_amount'];
+            $params['contribution_status_id'] = 'Pending';
+            $params['payment_instrument_id'] = "Credit Card";
+            $params['source'] = "Submit Credit Card Contribution via Device ({$deviceWeAreUsing['devicename']})";
 
-          // Make transaction - This is the way the docs say to make a contribution thru the api as of 5/13/20
-          // Copied from https://docs.civicrm.org/dev/en/latest/financial/orderAPI/ 5/13/20
-          try {
-            $order = civicrm_api3('Order', 'create', $params);
-          }
-          catch (CiviCRM_API3_Exception $e) {
-            $error = $e->getMessage();
-            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-              'domain' => 'com.aghstrategies.tsys',
-              1 => $error,
-            )));
-          }
+            // Make transaction - This is the way the docs say to make a contribution thru the api as of 5/13/20
+            // Copied from https://docs.civicrm.org/dev/en/latest/financial/orderAPI/ 5/13/20
+            try {
+              $order = civicrm_api3('Order', 'create', $params);
+            }
+            catch (CiviCRM_API3_Exception $e) {
+              $error = $e->getMessage();
+              CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                'domain' => 'com.aghstrategies.tsys',
+                1 => $error,
+              )));
+            }
 
-          try {
-            // Use the Payment Processor to attempt to take the actual payment. You may
-            // pass in other params here, too.
-            $pay = civicrm_api3('PaymentProcessor', 'pay', [
-              'payment_processor_id' => $params['payment_processor_id'],
-              'contribution_id' => $order['id'],
-              'amount' => $params['total_amount'],
-            ]);
+            try {
+              // Use the Payment Processor to attempt to take the actual payment. You may
+              // pass in other params here, too.
+              $pay = civicrm_api3('PaymentProcessor', 'pay', [
+                'payment_processor_id' => $params['payment_processor_id'],
+                'contribution_id' => $order['id'],
+                'amount' => $params['total_amount'],
+                'pan_truncation' => $params['pan_truncation'],
+                'card_type_id' => $params['card_type_id'],
+              ]);
+            }
+            catch (CiviCRM_API3_Exception $e) {
+              $error = $e->getMessage();
+              CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                'domain' => 'com.aghstrategies.tsys',
+                1 => $error,
+              )));
+            }
+            try {
+              // Assuming the payment was taken, record it which will mark the Contribution
+              // as Completed and update related entities.
+              $paymentCreate = civicrm_api3('Payment', 'create', [
+                'contribution_id' => $order['id'],
+                'total_amount' => $params['amount'],
+                'payment_instrument_id' => $params['payment_instrument_id'],
+                // If there is a processor, provide it:
+                'payment_processor_id' => $params['payment_processor_id'],
+                'trxn_id' => $params['payment_token'],
+                'pan_truncation' => $params['pan_truncation'],
+                'card_type_id' => $params['card_type_id'],
+              ]);
+            }
+            catch (CiviCRM_API3_Exception $e) {
+              $error = $e->getMessage();
+              CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                'domain' => 'com.aghstrategies.tsys',
+                1 => $error,
+              )));
+            }
+            parent::postProcess();
+            $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
+            CRM_Utils_System::redirect($viewContribution);
           }
-          catch (CiviCRM_API3_Exception $e) {
-            $error = $e->getMessage();
-            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-              'domain' => 'com.aghstrategies.tsys',
-              1 => $error,
-            )));
+          else {
+            CRM_Core_Session::setStatus(
+              E::ts('%1', [
+                1 => $params['error_message'],
+              ]),
+              "Transaction Failed",
+              'error'
+            );
           }
-
-          try {
-            // Assuming the payment was taken, record it which will mark the Contribution
-            // as Completed and update related entities.
-            $paymentCreate = civicrm_api3('Payment', 'create', [
-              'contribution_id' => $order['id'],
-              'total_amount' => $params['amount'],
-              'payment_instrument_id' => $params['payment_instrument_id'],
-              // If there is a processor, provide it:
-              'payment_processor_id' => $params['payment_processor_id'],
-              'trxn_id' => $params['payment_token'],
-            ]);
-          }
-          catch (CiviCRM_API3_Exception $e) {
-            $error = $e->getMessage();
-            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-              'domain' => 'com.aghstrategies.tsys',
-              1 => $error,
-            )));
-          }
-          parent::postProcess();
-          $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
-          CRM_Utils_System::redirect($viewContribution);
         }
       }
     }

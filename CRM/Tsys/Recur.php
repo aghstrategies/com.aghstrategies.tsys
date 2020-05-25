@@ -143,7 +143,7 @@ class CRM_Tsys_Recur {
     );
 
     // add relevant information from the tsys response
-    $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction);
+    $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction->Body->SaleResponse->SaleResult, 'sale');
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {

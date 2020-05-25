@@ -412,7 +412,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
     && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED"
     && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
-      $params = self::processResponseFromTsys($params, $makeTransaction->Body->SaleResponse->SaleResult);
+      $params = self::processResponseFromTsys($params, $makeTransaction->Body->SaleResponse->SaleResult, 'sale');
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
@@ -461,7 +461,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @param  string $makeTransaction response from Tsys
    * @return array $params           updated params
    */
-  public static function processResponseFromTsys(&$params, $makeTransaction) {
+  public static function processResponseFromTsys(&$params, $makeTransaction, $type = 'sale') {
     $retrieveFromXML = [
       'trxn_id' => 'Token',
       'pan_truncation' => 'CardNumber',
@@ -476,6 +476,15 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       'error_message' => 'ErrorMessage',
 
     ];
+    if ($type == 'initiate') {
+      $retrieveFromXML['card_type_id'] = 'PaymentType';
+      $retrieveFromXML['pan_truncation'] = 'AccountNumber';
+      $retrieveFromXML['amount_approved'] = 'AmountApproved';
+      $retrieveFromXML['entry_mode'] = 'EntryMode';
+      $retrieveFromXML['receive_date'] = 'TransactionDate';
+      $retrieveFromXML['transaction_type'] = 'TransactionType	';
+    }
+
 
     // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale
     $tsysCardTypes = [
@@ -483,12 +492,17 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       3 => 'MasterCard',
       1 => 'Amex',
       2 => 'Discover',
+      'VISA' => 'Visa',
+      'MASTERCARD' => 'MasterCard',
+      'AMEX' => 'Amex',
+      'DISCOVER' => 'Discover',
     ];
     foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
       if (isset($makeTransaction->$fieldInXML)) {
         $XMLvalueAsString = (string) $makeTransaction->$fieldInXML;
         switch ($fieldInXML) {
           case 'CardType':
+          case 'PaymentType':
             if (!empty($tsysCardTypes[$XMLvalueAsString])) {
               try {
                 $cardType = civicrm_api3('OptionValue', 'getsingle', [
@@ -511,6 +525,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
             }
             break;
 
+          case 'AccountNumber':
           case 'CardNumber':
             $params[$fieldInCivi] = substr($XMLvalueAsString, -4);
             break;
