@@ -63,7 +63,8 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     if (!empty($deviceSettings[$values['device_id']])) {
       $deviceWeAreUsing = $deviceSettings[$values['device_id']];
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($deviceWeAreUsing['processorid']);
-      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount']);
+      $loggedInUser = CRM_Core_Session::singleton()->getLoggedInContactID();
+      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount'], $loggedInUser);
       $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
       if (!empty($response['TransportKey'])) {
         $url = "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";

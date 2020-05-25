@@ -238,7 +238,7 @@ HEREDOC;
    * @param  int    $invoiceNumber invoice number
    * @return                       response from tsys
    */
-  public static function composeStageTransaction($tsysCreds, $amount, $invoiceNumber = 0) {
+  public static function composeStageTransaction($tsysCreds, $amount, $loggedInUser, $invoiceNumber = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -249,39 +249,14 @@ HEREDOC;
     <merchantSiteId>{$tsysCreds['subject']}</merchantSiteId>
     <merchantKey>{$tsysCreds['signature']}</merchantKey>
     <request>
+        <ForceDuplicate>true</ForceDuplicate>
         <TransactionType>SALE</TransactionType>
         <Amount>$amount</Amount>
-        <ClerkId>ABC123</ClerkId>
+        <ClerkId>$loggedInUser</ClerkId>
         <OrderNumber>$invoiceNumber</OrderNumber>
-        <Dba>ZERO BRANDS</Dba>
+        <Dba>{$tsysCreds['user_name']}</Dba>
         <SoftwareName>com.aghstrategies.tsys</SoftwareName>
-        <SoftwareVersion>1.2.0</SoftwareVersion>
-        <Invoice>
-            <TaxIndicator>Provided</TaxIndicator>
-            <ProductDescription>Misc Goods</ProductDescription>
-            <DiscountAmount>1.01</DiscountAmount>
-            <ShippingAmount>1.02</ShippingAmount>
-            <DutyAmount>1.03</DutyAmount>
-            <DestinationPostalCode>06033</DestinationPostalCode>
-            <DestinationCountryCode>840</DestinationCountryCode>
-            <ShipFromPostalCode>01887</ShipFromPostalCode>
-            <LineItems>
-                <LineItem>
-                    <CommodityCode>030</CommodityCode>
-                    <Description>Misc Goods</Description>
-                    <Upc>012345678901</Upc>
-                    <Quantity>5.1</Quantity>
-                    <UnitOfMeasure>lbs</UnitOfMeasure>
-                    <UnitCost>0.60</UnitCost>
-                    <DiscountAmount>0.61</DiscountAmount>
-                    <TotalAmount>0.62</TotalAmount>
-                    <TaxAmount>0.63</TaxAmount>
-                    <ExtendedAmount>0.64</ExtendedAmount>
-                    <DebitOrCreditIndicator>Credit</DebitOrCreditIndicator>
-                    <NetOrGrossIndicator>Gross</NetOrGrossIndicator>
-               </LineItem>
-            </LineItems>
-        </Invoice>
+        <SoftwareVersion>2.0.0</SoftwareVersion>
     </request>
     </CreateTransaction>
  </soap:Body>
