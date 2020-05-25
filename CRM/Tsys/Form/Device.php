@@ -147,6 +147,13 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             );
           }
         }
+        elseif ($responseFromDevice->Status == 'UserCancelled') {
+          CRM_Core_Session::setStatus(
+            E::ts('User Cancelled this transaction.'),
+            "Cancelled",
+            'error'
+          );
+        }
       }
     }
   }
