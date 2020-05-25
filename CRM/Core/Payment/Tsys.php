@@ -483,6 +483,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $retrieveFromXML['entry_mode'] = 'EntryMode';
       $retrieveFromXML['receive_date'] = 'TransactionDate';
       $retrieveFromXML['transaction_type'] = 'TransactionType	';
+      $retrieveFromXML['approval_status'] = 'Status';
     }
 
 

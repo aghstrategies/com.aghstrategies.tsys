@@ -82,6 +82,9 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             $params['payment_instrument_id'] = "Credit Card";
             $params['source'] = " Credit Card Contribution via {$deviceWeAreUsing['devicename']} entry mode: {$params['entry_mode']}";
 
+            // NOTE record details for certification script in note field
+            $params['note'] = "Transport Key = {$response['TransportKey']}, Authorization Code = {$params['trxn_result_code']}, Token = {$params['tsys_token']}, Status = {$params['approval_status']}";
+
             // Make transaction - This is the way the docs say to make a contribution thru the api as of 5/13/20
             // Copied from https://docs.civicrm.org/dev/en/latest/financial/orderAPI/ 5/13/20
             try {
