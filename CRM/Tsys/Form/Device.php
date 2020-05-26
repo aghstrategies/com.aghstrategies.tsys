@@ -26,6 +26,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     ], TRUE);
 
     $this->add('text', 'total_amount', "Total Amount", NULL, TRUE);
+    $this->addElement('checkbox', 'is_test', ts('Test transaction?'));
 
    // Set defaults
    $defaults = [];
@@ -70,10 +71,16 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
 
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($deviceWeAreUsing['processorid']);
       $loggedInUser = CRM_Core_Session::singleton()->getLoggedInContactID();
-      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount'], $loggedInUser, $deviceWeAreUsing['terminalid']);
+
+      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount'], $loggedInUser, $deviceWeAreUsing['terminalid'], 0, $values['is_test']);
+
       $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
       if (!empty($response['TransportKey'])) {
         $url = "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";
+        if ($values['is_test'] == 1) {
+          $url = "http://certeng-test.getsandbox.com/pos?TransportKey={$response['TransportKey']}&Format=JSON";
+          $params['is_test'] = 1;
+        }
         $responseFromDevice = CRM_Core_Payment_TsysDevice::curlapicall($url);
         $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
         if ($responseFromDevice->TransactionType == 'SALE') {

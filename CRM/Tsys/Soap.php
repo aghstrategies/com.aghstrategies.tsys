@@ -238,7 +238,7 @@ HEREDOC;
    * @param  int    $invoiceNumber invoice number
    * @return                       response from tsys
    */
-  public static function composeStageTransaction($tsysCreds, $amount, $loggedInUser, $terminalId, $invoiceNumber = 0) {
+  public static function composeStageTransaction($tsysCreds, $amount, $loggedInUser, $terminalId, $invoiceNumber = 0, $is_test = 0) {
     $soap_request = <<<HEREDOC
 <?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -263,7 +263,7 @@ HEREDOC;
  </soap:Body>
 </soap:Envelope>
 HEREDOC;
-    $response = self::doSoapRequest($soap_request, $tsysCreds['is_test'], 0, 1);
+    $response = self::doSoapRequest($soap_request, $is_test, 0, 1);
     return $response;
   }
 
@@ -291,11 +291,14 @@ HEREDOC;
       "Accept: text/xml",
       "Cache-Control: no-cache",
       "Pragma: no-cache",
-      "Content-length: ".strlen($soap_request),
+      "Content-length: " . strlen($soap_request),
     );
     if ($terminal == 1) {
       $header['SOAPAction'] = "http://transport.merchantware.net/v4/CreateTransaction";
       $endpointURL = "https://transport.merchantware.net/v4/transportService.asmx";
+      if ($test == 1) {
+        $endpointURL = "https://certeng-test.getsandbox.com/v4/transportService.asmx";
+      }
     }
 
     $soap_do = curl_init();
