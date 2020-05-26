@@ -234,6 +234,15 @@ function tsys_civicrm_buildForm($formName, &$form) {
  * Prevent server validation of cc fields:
  */
 function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+
+  // ensure total amount is a positive number
+  if ($formName == 'CRM_Tsys_Form_Device') {
+    $total = CRM_Utils_Array::value('total_amount', $fields );
+    if ($total < 0) {
+      $errors['total_amount'] = ts( 'Total Amount must be a positive number' );
+    }
+  }
+
   // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
   // Ensures credit card number does not get sent to server in edge case
   if (empty($form->_paymentProcessor['payment_processor_type'])) {

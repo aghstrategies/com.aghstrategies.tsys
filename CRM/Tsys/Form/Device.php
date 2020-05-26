@@ -25,7 +25,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       'select' => ['minimumInputLength' => 0],
     ], TRUE);
 
-    $this->add('text', 'total_amount', "Total Amount", TRUE);
+    $this->add('text', 'total_amount', "Total Amount", NULL, TRUE);
 
    // Set defaults
    $defaults = [];
@@ -150,8 +150,12 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
           }
           else {
             CRM_Core_Session::setStatus(
-              E::ts('%1', [
+              E::ts('error: %1, Transport Key: %2, Authorization Code: %3, Token: %4, Status: %5', [
                 1 => $params['error_message'],
+                2 => $response['TransportKey'],
+                3 => $params['trxn_result_code'],
+                4 => $params['tsys_token'],
+                5 => $params['approval_status'],
               ]),
               "Transaction Failed",
               'error'
