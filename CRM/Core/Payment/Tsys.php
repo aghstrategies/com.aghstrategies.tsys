@@ -482,7 +482,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $retrieveFromXML['amount_approved'] = 'AmountApproved';
       $retrieveFromXML['entry_mode'] = 'EntryMode';
       $retrieveFromXML['receive_date'] = 'TransactionDate';
-      $retrieveFromXML['transaction_type'] = 'TransactionType	';
+      $retrieveFromXML['transaction_type'] = 'TransactionType';
       $retrieveFromXML['approval_status'] = 'Status';
     }
 
@@ -503,6 +503,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
       if (isset($makeTransaction->$fieldInXML)) {
         $XMLvalueAsString = (string) $makeTransaction->$fieldInXML;
+        trim($fieldInXML);
         switch ($fieldInXML) {
           case 'CardType':
           case 'PaymentType':

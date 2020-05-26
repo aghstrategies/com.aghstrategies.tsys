@@ -85,11 +85,10 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
         $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
         if ($responseFromDevice->TransactionType == 'SALE') {
           if ($responseFromDevice->Status == 'APPROVED') {
-
             // Clean up params so they have the needed items
             $params['currency'] = 'USD';
             $params['payment_processor_id'] = $params['payment_processor'] = $deviceWeAreUsing['processorid'];
-            $params['payment_token'] = $params['tsys_token'];
+            $params['payment_token'] = $params['token'] = $params['tsys_token'];
             $params['amount'] = $params['total_amount'] = $params['amount_approved'];
             $params['contribution_status_id'] = 'Pending';
             $params['payment_instrument_id'] = "Credit Card";
@@ -121,6 +120,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
                 'amount' => $params['total_amount'],
                 'pan_truncation' => $params['pan_truncation'],
                 'card_type_id' => $params['card_type_id'],
+                'payment_token' => $params['tsys_token'],
               ]);
             }
             catch (CiviCRM_API3_Exception $e) {
