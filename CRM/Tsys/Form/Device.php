@@ -183,6 +183,13 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             'error'
           );
         }
+        else {
+          CRM_Core_Session::setStatus(
+            E::ts('Perhaps you have Invalid credentials or the wrong TransportKey'),
+            "Something went wrong",
+            'error'
+          );
+        }
       }
     }
   }
