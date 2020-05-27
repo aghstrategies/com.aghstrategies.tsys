@@ -485,6 +485,12 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $retrieveFromXML['transaction_type'] = 'TransactionType';
       $retrieveFromXML['approval_status'] = 'Status';
     }
+    if (isset($makeTransaction->Error)) {
+      $makeTransaction = $makeTransaction->Error;
+      $params['status'] = "Error";
+      $retrieveFromXML['message'] = 'Message';
+      $retrieveFromXML['error_code'] = 'ErrorCode';
+    }
 
 
     // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale

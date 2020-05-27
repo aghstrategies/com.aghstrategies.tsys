@@ -183,6 +183,17 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             'error'
           );
         }
+        elseif (!empty($params['message']) && !empty($params['error_code'])) {
+          CRM_Core_Session::setStatus(
+            E::ts('error code: %1, Message: %3, Transport Key: %2', [
+              1 => $params['error_code'],
+              2 => $response['TransportKey'],
+              3 => $params['message'],
+            ]),
+            "Transaction Failed",
+            'error'
+          );
+        }
         else {
           CRM_Core_Session::setStatus(
             E::ts('Perhaps you have Invalid credentials or the wrong TransportKey'),
