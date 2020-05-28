@@ -110,26 +110,6 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
                 1 => $error,
               )));
             }
-
-            try {
-              // Use the Payment Processor to attempt to take the actual payment. You may
-              // pass in other params here, too.
-              $pay = civicrm_api3('PaymentProcessor', 'pay', [
-                'payment_processor_id' => $params['payment_processor_id'],
-                'contribution_id' => $order['id'],
-                'amount' => $params['total_amount'],
-                'pan_truncation' => $params['pan_truncation'],
-                'card_type_id' => $params['card_type_id'],
-                'payment_token' => $params['tsys_token'],
-              ]);
-            }
-            catch (CiviCRM_API3_Exception $e) {
-              $error = $e->getMessage();
-              CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-                'domain' => 'com.aghstrategies.tsys',
-                1 => $error,
-              )));
-            }
             try {
               // Assuming the payment was taken, record it which will mark the Contribution
               // as Completed and update related entities.
