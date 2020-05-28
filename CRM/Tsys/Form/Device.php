@@ -136,6 +136,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             $params['is_test'] = 1;
           }
           $responseFromDevice = CRM_Core_Payment_TsysDevice::curlapicall($url);
+          CRM_Core_Error::debug_var('responseFromDevice', $responseFromDevice);
           $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
           if ($responseFromDevice->TransactionType == 'SALE') {
             if ($responseFromDevice->Status == 'APPROVED') {
