@@ -52,6 +52,11 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       ],
     ]);
 
+    // Set up cancel transaction while in progress
+    $res = CRM_Core_Resources::singleton();
+    $res->addScriptFile('com.aghstrategies.tsys', 'js/cancelDevice.js');
+    $res->addVars('tsys', ['ips' => $deviceSettings]);
+
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
     parent::buildQuickForm();
@@ -63,12 +68,6 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings[$values['device_id']])) {
       $deviceWeAreUsing = $deviceSettings[$values['device_id']];
-
-      // TODO Set up cancel functionality need to find away for the user to click something to curl the cancelurl after submitting the form
-      // $res = CRM_Core_Resources::singleton();
-      // $res->addScriptFile('com.aghstrategies.tsys', 'js/cancelDevice.js');
-      // $res->addVars('tsys', ['cancelurl' => "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?Action=Cancel&Format=JSON"]);
-
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($deviceWeAreUsing['processorid']);
       $loggedInUser = CRM_Core_Session::singleton()->getLoggedInContactID();
 

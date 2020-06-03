@@ -81,11 +81,6 @@ function tsys_civicrm_pageRun( &$page ) {
           $page->assign('devices', $devices);
         }
       }
-      $templatePath = realpath(dirname(__FILE__) . "/templates");
-      CRM_Core_Region::instance('form-bottom')->add(array(
-        'template' => "{$templatePath}/deviceButtons.tpl",
-      ));
-      CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceButtons.js');
     }
   }
 }
