@@ -15,6 +15,9 @@ CRM.$(function ($) {
         if (data.Status == "Denied") {
           CRM.alert(data.ResponseMessage + " click 'Cancel In Progress Transaction' button again", data.Status, 'info', []);
         }
+        if (data.Status == "Failed") {
+          CRM.alert(data.ResponseMessage, data.Status, 'error', []);
+        }
       });
     }
   });
