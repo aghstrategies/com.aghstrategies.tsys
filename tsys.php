@@ -86,44 +86,6 @@ function tsys_civicrm_pageRun( &$page ) {
 }
 
 /**
- * Implements hook_civicrm_postProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
- */
-function tsys_civicrm_postProcess($formName, &$form) {
-  // Saves TSYS device settings
-  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
-    $deviceSettingsToSave = [];
-    foreach ($form->_submitValues as $key => $value) {
-      if (isset($value)) {
-        if (substr($key, 0, 3) == 'ip_') {
-          $deviceSettingsToSave[substr($key, 3)]['ip'] = $value;
-        }
-        if (substr($key, 0, 11) == 'devicename_') {
-          $deviceSettingsToSave[substr($key, 11)]['devicename'] = $value;
-          $deviceSettingsToSave[substr($key, 11)]['processorid'] = $form->getVar('_id');
-        }
-        if (substr($key, 0, 11) == 'terminalid_') {
-          $deviceSettingsToSave[substr($key, 11)]['terminalid'] = $value;
-        }
-      }
-    }
-    try {
-       $result = civicrm_api3('Setting', 'create', array(
-         'tsys_devices' => $deviceSettingsToSave,
-       ));
-     }
-     catch (CiviCRM_API3_Exception $e) {
-       $error = $e->getMessage();
-       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-         'domain' => 'com.aghstrategies.tsys',
-         1 => $error,
-       )));
-     }
-  }
-}
-
-/**
  * Implements hook_civicrm_buildForm().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
@@ -146,34 +108,6 @@ function tsys_civicrm_buildForm($formName, &$form) {
     was a payment made thru a TSYS processor either: refund the payment using the
     credit card action button OR submit this form and then login to TSYS to process
     the refund.'), '', 'no-popup');
-  }
-
-  // Settings for TSYS Devices
-  if ($formName == 'CRM_Admin_Form_PaymentProcessor' && !empty($form->getVar('_id'))) {
-    $pid = $form->getVar('_id');
-    // TODO abstract device logic so you can have infinite devices
-    // Device Settings
-    $form->add('text', 'devicename_1', ts("Device Name 1"));
-    $form->add('text', 'ip_1', ts('IP address of Device 1'));
-    $form->add('text', 'terminalid_1', ts('Terminal ID for Device 1'));
-    $form->add('text', 'devicename_2', ts("Device Name 2"));
-    $form->add('text', 'ip_2', ts('IP address of Device 2'));
-    $form->add('text', 'terminalid_2', ts('Terminal ID for Device 2'));
-    $form->add('text', 'devicename_3', ts("Device Name 3"));
-    $form->add('text', 'ip_3', ts('IP address of Device 3'));
-    $form->add('text', 'terminalid_3', ts('Terminal ID for Device 3'));
-    $templatePath = realpath(dirname(__FILE__) . "/templates");
-    CRM_Core_Region::instance('form-bottom')->add(array(
-      'template' => "{$templatePath}/devicesSettings.tpl",
-    ));
-
-    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/deviceSettings.js');
-    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('settings', $pid);
-
-    //set defaults for Device Table
-    if (!empty($deviceSettings)) {
-      $form->setDefaults($deviceSettings);
-    }
   }
 
   // Load stripe.js on all civi forms per stripe requirements
@@ -216,7 +150,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
   // Add help text
   if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
     $templatePath = realpath(dirname(__FILE__) . "/templates");
-    CRM_Core_Region::instance('form-buttons')->add(array(
+    CRM_Core_Region::instance('form-body')->add(array(
       'template' => "{$templatePath}/tsys.tpl",
     ));
   }

@@ -12,4 +12,16 @@
     <title>Submit Credit Card Payment with Device</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/tsyssettings</path>
+    <page_callback>CRM_Tsys_Form_Settings</page_callback>
+    <title>Settings - TSYS</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/tsyssettings/device</path>
+    <page_callback>CRM_Tsys_Form_Settings_Device</page_callback>
+    <title>TSYS Device Settings</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
