@@ -24,4 +24,10 @@
     <title>TSYS Device Settings</title>
     <access_arguments>administer payment processors</access_arguments>
   </item>
+  <item>
+    <path>civicrm/tsys/transportkey</path>
+    <page_callback>CRM_Tsys_Page_GetTransportKey</page_callback>
+    <title>GetTransportKey</title>
+    <access_arguments>1</access_arguments>
+  </item>
 </menu>

@@ -54,8 +54,17 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
 
     // Set up cancel transaction while in progress
     $res = CRM_Core_Resources::singleton();
+    // TODO is there a javascript way to compile this url?
+    $transportUrl = CRM_Utils_System::url('civicrm/tsys/transportkey');
+
+    $res->addVars('tsys', [
+      'ips' => $deviceSettings,
+      'transport' => $transportUrl,
+    ]);
+
+    // TODO these can probably be combined
     $res->addScriptFile('com.aghstrategies.tsys', 'js/cancelDevice.js');
-    $res->addVars('tsys', ['ips' => $deviceSettings]);
+    $res->addScriptFile('com.aghstrategies.tsys', 'js/deviceTransact.js');
 
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
@@ -63,7 +72,9 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
   }
 
   public function postProcess() {
-    // TODO need to fixup ids of devices so they are unique even if there are multiple processors with devices
+    // TODO MOST of this needs to be done via js so:
+    // TODO move to js calls
+    // TODO process response from js here
     $values = $this->exportValues();
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings[$values['device_id']])) {

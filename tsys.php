@@ -9,7 +9,8 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
  */
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
-  // Adds a refund link to each payment made thru TSYS with a status of completed (also known as the payments that can be refunded)
+  // Adds a refund link to each payment made thru TSYS with a status of completed
+  // (also known as the payments that can be refunded)
   if ($objectName == 'Payment' && $op == 'Payment.edit.action') {
     if (!empty($values['contribution_id'])) {
 
