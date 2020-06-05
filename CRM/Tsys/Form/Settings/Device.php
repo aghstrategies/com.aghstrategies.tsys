@@ -55,6 +55,8 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
     if ($this->_action) {
       if (!empty($_GET['id']) && $this->_action == CRM_Core_Action::UPDATE) {
         if (!empty($deviceSettings[$_GET['id']])) {
+          // add previous id to the form
+          $this->addElement('hidden', 'prev_id', $_GET['id']);
           $this->setDefaults($deviceSettings[$_GET['id']]);
         }
       }

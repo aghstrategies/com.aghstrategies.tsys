@@ -171,6 +171,21 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
       $errors['total_amount'] = ts( 'Total Amount must be a positive number' );
     }
   }
+  // If adding a new device ensure the terminal id is unique
+  if ($formName == 'CRM_Tsys_Form_Settings_Device') {
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
+    if ($form->_action && $form->_action == CRM_Core_Action::ADD) {
+      if (!empty($fields['terminalid']) && !empty($deviceSettings[$fields['terminalid']])) {
+        $errors['terminalid'] = ts('Terminal ID must be unique.');
+      }
+    }
+    // IF the user is updating a device AND changing the terminal id check that it does not already exist
+    if ($form->_action == CRM_Core_Action::UPDATE
+    && $fields['terminalid'] != $form->_submitValues['prev_id']
+    && !empty($deviceSettings[$fields['terminalid']])) {
+      $errors['terminalid'] = ts('This Terminal ID is taken. Please update the relevant device instead.');
+    }
+  }
 
   // This is copied from stripe: https://lab.civicrm.org/extensions/stripe/blob/master/stripe.php#L125
   // Ensures credit card number does not get sent to server in edge case
