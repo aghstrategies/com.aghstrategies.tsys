@@ -30,12 +30,12 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       }
       $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
       CRM_Utils_System::redirect($tsysSettingsForm);
-
     }
   }
 
   public function buildQuickForm() {
-    // $this->add('text', 'id', ts('ID'));
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
+
     $this->add('text', 'devicename', ts("Device Name"), [], TRUE);
     $this->add('text', 'ip', ts('IP address of Device'), [], TRUE);
     $this->add('text', 'terminalid', ts('Terminal ID for Device'), [], TRUE);
@@ -52,9 +52,8 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
         'isDefault' => TRUE,
       ),
     ));
-    if ($this->_action && !empty($_GET['id'])) {
-      if ($this->_action == CRM_Core_Action::UPDATE) {
-        $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
+    if ($this->_action) {
+      if (!empty($_GET['id']) && $this->_action == CRM_Core_Action::UPDATE) {
         if (!empty($deviceSettings[$_GET['id']])) {
           $this->setDefaults($deviceSettings[$_GET['id']]);
         }
@@ -66,15 +65,50 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
   }
 
   public function postProcess() {
-    // TODO Save New
-    // TODO update existing
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
     $values = $this->exportValues();
-    CRM_Core_Session::setStatus(E::ts('You picked color "%1"', array(
-      1 => $options[$values['favorite_color']],
-    )));
-    parent::postProcess();
-  }
+    $deviceDetails = [];
+    $fieldsToSave = [
+      'devicename',
+      'ip',
+      'terminalid',
+      'processorid',
+    ];
 
+    foreach ($fieldsToSave as $key => $fieldName) {
+      if (!empty($values[$fieldName])) {
+        $deviceDetails[$fieldName] = $values[$fieldName];
+      }
+    }
+    $deviceSettings[$deviceDetails['terminalid']] = $deviceDetails;
+
+    try {
+      $tsysDevices = civicrm_api3('Setting', 'create', [
+        'tsys_devices' => $deviceSettings,
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    if ($tsysDevices['is_error'] == 0) {
+      CRM_Core_Session::setStatus(E::ts('Device %2 (%1) created successfully', array(
+        1 => $deviceDetails['terminalid'],
+        2 => $deviceDetails['devicename']
+      )), SUCCESS, info);
+      parent::postProcess();
+      $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
+      CRM_Utils_System::redirect($tsysSettingsForm);
+    }
+    else {
+      CRM_Core_Session::setStatus(E::ts('Device not created: %1', array(
+        1 => $error,
+      )));
+    }
+  }
 
   /**
    * Get the fields/elements defined in this form.
