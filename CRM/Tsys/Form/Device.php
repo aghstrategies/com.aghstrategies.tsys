@@ -38,19 +38,10 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
    }
    $this->setDefaults($defaults);
 
-   // 'receive_date' => "",
-
-    $this->addButtons([
-      [
-        'type' => 'submit',
-        'name' => E::ts('Submit'),
-        'isDefault' => TRUE,
-      ],
-      [
-        'type' => 'cancel',
-        'name' => E::ts('Cancel'),
-      ],
-    ]);
+   $this->addButtons([[
+    'type' => 'cancel',
+    'name' => E::ts('Cancel'),
+   ]]);
 
     // Set up cancel transaction while in progress
     $res = CRM_Core_Resources::singleton();

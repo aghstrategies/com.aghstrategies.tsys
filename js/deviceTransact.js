@@ -1,5 +1,4 @@
 CRM.$(function ($) {
-  $("<span class='crm-button crm-i-button transport'><i class='crm-i fa-check'></i><input crm-icon='fa-times' class='crm-form-submit transport crm-button' value='Transport'></span>").insertAfter('span.crm-button-type-submit');
   $("input.transport").click(function() {
     var test = 0;
     if ($('input#is_test').prop('checked')) {

@@ -1,8 +1,7 @@
 CRM.$(function ($) {
-
-  $("<span class='crm-button crm-i-button cancelInProgress'><i class='crm-i fa-times'></i><input crm-icon='fa-times' class='crm-form-submit cancelInProgress crm-button' value='Cancel In Progress Transaction'></span>").insertAfter('span.crm-button-type-cancel');
+  
+  // Cancel a transaction in process
   $("span.cancelInProgress").hide();
-
   $('input.crm-form-submit').click(function () {
     $("span.cancelInProgress").show();
     $('span.crm-button-type-cancel').hide();
