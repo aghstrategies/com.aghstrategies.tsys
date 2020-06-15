@@ -30,4 +30,10 @@
     <title>GetTransportKey</title>
     <access_arguments>1</access_arguments>
   </item>
+  <item>
+    <path>civicrm/processdeviceresponse</path>
+    <page_callback>CRM_Tsys_Page_ProcessDeviceResponse</page_callback>
+    <title>ProcessDeviceResponse</title>
+    <access_arguments>1</access_arguments>
+  </item>
 </menu>

@@ -1,11 +1,4 @@
 CRM.$(function ($) {
-  
-  // Cancel a transaction in process
-  $("span.cancelInProgress").hide();
-  $('input.crm-form-submit').click(function () {
-    $("span.cancelInProgress").show();
-    $('span.crm-button-type-cancel').hide();
-  });
 
   $("input.cancelInProgress").click(function() {
     if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {

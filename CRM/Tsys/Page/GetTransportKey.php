@@ -16,15 +16,5 @@ class CRM_Tsys_Page_GetTransportKey extends CRM_Core_Page {
     $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $amount, $loggedInUser, $deviceWeAreUsing['terminalid'], 0, $test);
     $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
     CRM_Core_Page_AJAX::returnJsonResponse($response);
-    return 'hi';
-    // Example: Set the page-title dynamically; alternatively, declare a static title in xml/Menu/*.xml
-    // CRM_Utils_System::setTitle(E::ts('GetTransportKey'));
-    //
-    // // Example: Assign a variable for use in a template
-    // $this->assign('currentTime', date('Y-m-d H:i:s'));
-    //
-    // parent::run();
-    // return;
   }
-
 }
