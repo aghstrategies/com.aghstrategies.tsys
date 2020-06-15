@@ -61,29 +61,10 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
           );
         }
         if (!empty($order['id'])) {
-          try {
-            // Assuming the payment was taken, record it which will mark the Contribution
-            // as Completed and update related entities.
-            $paymentCreate = civicrm_api3('Payment', 'create', [
-              'contribution_id' => $order['id'],
-              'total_amount' => $params['amount_approved'],
-              'payment_instrument_id' => $params['payment_instrument_id'],
-              // If there is a processor, provide it:
-              'payment_processor_id' => $params['payment_processor_id'],
-              'trxn_id' => $params['payment_token'],
-              'pan_truncation' => $params['pan_truncation'],
-              'card_type_id' => $params['card_type_id'],
-            ]);
-          }
-          catch (CiviCRM_API3_Exception $e) {
-            $error = $e->getMessage();
-            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
-              'domain' => 'com.aghstrategies.tsys',
-              1 => $error,
-            )));
-          }
           $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
-          CRM_Utils_System::redirect($viewContribution);
+          // CRM_Core_Session::singleton()->pushUserContext($viewContribution);
+          CRM_Core_Page_AJAX::returnJsonResponse($viewContribution);
+          // CRM_Utils_System::redirect($viewContribution);
         }
         else {
           CRM_Core_Session::setStatus(

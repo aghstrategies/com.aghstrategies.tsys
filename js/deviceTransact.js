@@ -61,7 +61,10 @@ CRM.$(function ($) {
             var myJson = JSON.stringify(response);
             var processCreate = CRM.vars.tsys.process + $urlParams + "&json=" + myJson;
             console.log(processCreate);
-            $.get(processCreate, function() {});
+            $.get(processCreate, function(url) {
+              console.log(url.userContext);
+              window.location = url.userContext;
+            });
           });
         }
         else {
