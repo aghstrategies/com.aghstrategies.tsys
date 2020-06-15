@@ -85,6 +85,13 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
           $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
           CRM_Utils_System::redirect($viewContribution);
         }
+        else {
+          CRM_Core_Session::setStatus(
+            E::ts('Order not created'),
+            "Cancelled",
+            'error'
+          );
+        }
       }
       else {
         CRM_Core_Session::setStatus(
