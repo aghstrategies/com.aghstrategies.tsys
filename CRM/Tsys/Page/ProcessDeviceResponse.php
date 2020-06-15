@@ -4,13 +4,14 @@ use CRM_Tsys_ExtensionUtil as E;
 class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
 
   public function run() {
-    $values = [];
+    $values = $results = [];
     $valuesToPullFromURL = [
       'test'=> 'is_test',
       'device' => 'device_id',
       'amount' => 'total_amount',
       'fintype' => 'financial_type_id',
       'contact' => 'contact_id',
+      'transportkey' => 'transport_key',
     ];
     foreach ($valuesToPullFromURL as $urlParam => $fieldNameInCivi) {
       if (isset($_GET[$urlParam])) {
@@ -38,7 +39,7 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
         $params['source'] = " Credit Card Contribution via {$deviceWeAreUsing['devicename']} entry mode: {$params['entry_mode']}";
 
         // NOTE record details for certification script in note field
-        $params['note'] = "Transport Key = {$response['TransportKey']}, Authorization Code = {$params['trxn_result_code']}, Token = {$params['tsys_token']}, Status = {$params['approval_status']}";
+        $params['note'] = "Transport Key = {$params['transport_key']}, Authorization Code = {$params['trxn_result_code']}, Token = {$params['tsys_token']}, Status = {$params['approval_status']}";
 
         // Make transaction - This is the way the docs say to make a contribution thru the api as of 5/13/20
         // Copied from https://docs.civicrm.org/dev/en/latest/financial/orderAPI/ 5/13/20
@@ -61,9 +62,9 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
           );
         }
         if (!empty($order['id'])) {
-          $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
+          $results = ['status' => 'success'];
+          // $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
           // CRM_Core_Session::singleton()->pushUserContext($viewContribution);
-          CRM_Core_Page_AJAX::returnJsonResponse($viewContribution);
           // CRM_Utils_System::redirect($viewContribution);
         }
         else {
@@ -78,7 +79,7 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
         CRM_Core_Session::setStatus(
           E::ts('error: %1, Transport Key: %2, Authorization Code: %3, Token: %4, Status: %5', [
             1 => $params['error_message'],
-            2 => $response['TransportKey'],
+            2 => $params['transport_key'],
             3 => $params['trxn_result_code'],
             4 => $params['tsys_token'],
             5 => $params['approval_status'],
@@ -106,7 +107,7 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
       CRM_Core_Session::setStatus(
         E::ts('error code: %1, Message: %3, Transport Key: %2', [
           1 => $params['error_code'],
-          2 => $response['TransportKey'],
+          2 => $params['transport_key'],
           3 => $params['message'],
         ]),
         "Transaction Failed",
@@ -120,6 +121,6 @@ class CRM_Tsys_Page_ProcessDeviceResponse extends CRM_Core_Page {
         'error'
       );
     }
-
+    CRM_Core_Page_AJAX::returnJsonResponse($results);
   }
 }

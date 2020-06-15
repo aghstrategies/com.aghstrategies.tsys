@@ -59,11 +59,15 @@ CRM.$(function ($) {
 
             // Process create transaction response
             var myJson = JSON.stringify(response);
-            var processCreate = CRM.vars.tsys.process + $urlParams + "&json=" + myJson;
-            console.log(processCreate);
-            $.get(processCreate, function(url) {
-              console.log(url.userContext);
-              window.location = url.userContext;
+            var processCreate = CRM.vars.tsys.process + $urlParams + "&transportkey" + data.TransportKey + "&json=" + myJson;
+            $.get(processCreate, function(createResponse) {
+              if (createResponse.status == 'success') {
+                console.log(createResponse.userContext);
+                window.location = createResponse.userContext;
+              }
+              else {
+                console.log(createResponse);
+              }
             });
           });
         }
