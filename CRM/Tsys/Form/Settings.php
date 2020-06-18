@@ -23,7 +23,7 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
       $details['id'] = $key;
       $details['action'] = CRM_Core_Action::formLink(self::links(), NULL,
         array('id' => $key),
-        ts('more'),
+        E::ts('more'),
         FALSE,
         'tsysdevice.manage.action',
         'TsysDevice',
@@ -108,16 +108,16 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
    if (!(self::$_links)) {
      self::$_links = array(
        CRM_Core_Action::UPDATE => array(
-         'name' => ts('Edit'),
+         'name' => E::ts('Edit'),
          'url' => 'civicrm/tsyssettings/device',
          'qs' => 'action=update&id=%%id%%&reset=1',
-         'title' => ts('Edit TSYS Device'),
+         'title' => E::ts('Edit TSYS Device'),
        ),
        CRM_Core_Action::DELETE => array(
-         'name' => ts('Delete'),
+         'name' => E::ts('Delete'),
          'url' => 'civicrm/tsyssettings/device',
          'qs' => 'action=delete&id=%%id%%',
-         'title' => ts('Delete TSYS Device'),
+         'title' => E::ts('Delete TSYS Device'),
        ),
      );
    }

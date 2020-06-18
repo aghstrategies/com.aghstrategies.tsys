@@ -76,7 +76,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     $this->_mode = $mode;
     $this->_islive = ($mode == 'live') ? 1 : 0;
     $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName = ts('TSYS');
+    $this->_processorName = E::ts('TSYS');
   }
 
   /**
@@ -97,7 +97,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     );
     foreach ($credFields as $name => $label) {
       if (empty($this->_paymentProcessor[$name])) {
-        $error[] = ts("The '%1' is not set in the TSYS Payment Processor settings.", array(1 => $label));
+        $error[] = E::ts("The '%1' is not set in the TSYS Payment Processor settings.", array(1 => $label));
       }
     }
     if (!empty($error)) {
@@ -140,7 +140,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -150,7 +150,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // Throw an error if credential not found
     foreach ($fields as $key => $field) {
       if (!isset($paymentProcessorDetails[$field])) {
-        CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
+        CRM_Core_Error::statusBounce(E::ts('Could not find valid TSYS Payment Processor credentials'));
         Civi::log()->debug("TSYS Credential $field not found.");
       }
     }
@@ -174,7 +174,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -229,7 +229,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -387,7 +387,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -524,7 +524,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
               }
               catch (CiviCRM_API3_Exception $e) {
                 $error = $e->getMessage();
-                CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
                   'domain' => 'com.aghstrategies.tsys',
                   1 => $error,
                 )));
@@ -546,7 +546,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         }
       }
       else {
-        CRM_Core_Error::debug_log_message(ts('Error retrieving %1 from XML', array(
+        CRM_Core_Error::debug_log_message(E::ts('Error retrieving %1 from XML', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $fieldInXML,
         )));
@@ -577,8 +577,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * support corresponding CiviCRM method
    */
   public function cancelSubscription(&$message = '', $params = array()) {
-    $userAlert = ts('You have cancelled this recurring contribution.');
-    CRM_Core_Session::setStatus($userAlert, ts('Warning'), 'alert');
+    $userAlert = E::ts('You have cancelled this recurring contribution.');
+    CRM_Core_Session::setStatus($userAlert, E::ts('Warning'), 'alert');
     return TRUE;
   }
 
@@ -634,7 +634,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -739,7 +739,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
      }
      catch (CiviCRM_API3_Exception $e) {
        $error = $e->getMessage();
-       CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+       CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
          'domain' => 'com.aghstrategies.tsys',
          1 => $error,
        )));

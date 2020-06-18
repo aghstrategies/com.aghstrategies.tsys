@@ -23,7 +23,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -36,12 +36,12 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
   public function buildQuickForm() {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
 
-    $this->add('text', 'devicename', ts("Device Name"), [], TRUE);
-    $this->add('text', 'ip', ts('IP address of Device'), [], TRUE);
-    $this->add('text', 'terminalid', ts('Terminal ID for Device'), [], TRUE);
-    $this->addEntityRef('processorid', ts('Payment Processor'), [
+    $this->add('text', 'devicename', E::ts("Device Name"), [], TRUE);
+    $this->add('text', 'ip', E::ts('IP address of Device'), [], TRUE);
+    $this->add('text', 'terminalid', E::ts('Terminal ID for Device'), [], TRUE);
+    $this->addEntityRef('processorid', E::ts('Payment Processor'), [
       'entity' => 'PaymentProcessor',
-      'placeholder' => ts('- Select Payment Processor -'),
+      'placeholder' => E::ts('- Select Payment Processor -'),
       'select' => ['minimumInputLength' => 0],
     ], TRUE);
 
@@ -91,7 +91,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));

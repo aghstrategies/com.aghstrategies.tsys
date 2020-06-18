@@ -22,7 +22,7 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -37,7 +37,7 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -169,7 +169,7 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
   if ($formName == 'CRM_Tsys_Form_Device') {
     $total = CRM_Utils_Array::value('total_amount', $fields );
     if ($total < 0) {
-      $errors['total_amount'] = ts( 'Total Amount must be a positive number' );
+      $errors['total_amount'] = E::ts( 'Total Amount must be a positive number' );
     }
   }
   // If adding a new device ensure the terminal id is unique
@@ -177,14 +177,14 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
     if ($form->_action && $form->_action == CRM_Core_Action::ADD) {
       if (!empty($fields['terminalid']) && !empty($deviceSettings[$fields['terminalid']])) {
-        $errors['terminalid'] = ts('Terminal ID must be unique.');
+        $errors['terminalid'] = E::ts('Terminal ID must be unique.');
       }
     }
     // IF the user is updating a device AND changing the terminal id check that it does not already exist
     if ($form->_action == CRM_Core_Action::UPDATE
     && $fields['terminalid'] != $form->_submitValues['prev_id']
     && !empty($deviceSettings[$fields['terminalid']])) {
-      $errors['terminalid'] = ts('This Terminal ID is taken. Please update the relevant device instead.');
+      $errors['terminalid'] = E::ts('This Terminal ID is taken. Please update the relevant device instead.');
     }
   }
 
@@ -227,7 +227,7 @@ function tsys_civicrm_check(&$messages) {
   }
   catch (CiviCRM_API3_Exception $e) {
     $error = $e->getMessage();
-    CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+    CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
       'domain' => 'com.aghstrategies.tsys',
       1 => $error,
     )));
@@ -249,7 +249,7 @@ function tsys_civicrm_check(&$messages) {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -271,11 +271,11 @@ function tsys_civicrm_check(&$messages) {
           1 => $failedContributions['count'],
           2 => $recurContributionToLookInto,
         );
-        $details = ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
+        $details = E::ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
         $messages[] = new CRM_Utils_Check_Message(
           'failed_recurring_contributions_found',
           $details,
-          ts('Uncompleted Recurring TSYS Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+          E::ts('Uncompleted Recurring TSYS Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
           $warningLevel,
           'fa-user-times'
         );

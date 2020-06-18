@@ -46,7 +46,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     // If the payment was not run thru TSYS bounce
     else {
-      CRM_Core_Error::statusBounce(ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
+      CRM_Core_Error::statusBounce(E::ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
     }
   }
 
@@ -272,7 +272,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -291,7 +291,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -307,7 +307,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -320,7 +320,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -343,7 +343,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -360,7 +360,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));

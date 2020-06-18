@@ -19,14 +19,14 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       TRUE // is required
     );
 
-    $this->addEntityRef('contact_id', ts('Select Contact'), [], TRUE);
-    $this->addEntityRef('financial_type_id', ts('Financial Type'), [
+    $this->addEntityRef('contact_id', E::ts('Select Contact'), [], TRUE);
+    $this->addEntityRef('financial_type_id', E::ts('Financial Type'), [
       'entity' => 'FinancialType',
       'select' => ['minimumInputLength' => 0],
     ], TRUE);
 
     $this->add('text', 'total_amount', "Total Amount", NULL, TRUE);
-    $this->addElement('checkbox', 'is_test', ts('Test transaction?'));
+    $this->addElement('checkbox', 'is_test', E::ts('Test transaction?'));
 
    // Set defaults
    $defaults = [];
