@@ -4,16 +4,10 @@ CRM.$(function ($) {
   $(document).ready(function () {
     // hide link to cancel an in progress transaction
     $("span.cancelInProgress").hide();
-
-    var $submit = $("input.crm-form-submit.validate");
-    // Store and remove any onclick Action currently assigned to the form.
-    // We will re-add it if the transaction goes through.
-    onclickAction = $submit.attr('onclick');
-    $submit.removeAttr('onclick');
-
   });
 
   var validateForm = function() {
+    // validate form
     var allData = 1;
     $.each({
       amount: 'input#total_amount',
@@ -30,7 +24,7 @@ CRM.$(function ($) {
   };
 
   var compileURL = function(baseUrl) {
-    // Check that all required fields are populated
+    // compile url parameters
     var $urlParams = '';
 
     // Is test?
@@ -50,7 +44,6 @@ CRM.$(function ($) {
         $urlParams = $urlParams + "&" + name + "=" + $(val).val();
       }
     });
-
     return baseUrl + $urlParams;
   };
 
@@ -61,19 +54,28 @@ CRM.$(function ($) {
       test = 1;
     }
 
-    // TODO sniff https or http set up url accordingly
-    // Compile create Transaction URL
-    var $create = "http://" +
-    CRM.vars.tsys.ips[$('select#device_id').val()].ip
-    + ":8080/v1/pos?TransportKey=" + data.TransportKey + "&Format=JSON";
-    if (test == 1) {
-      $create = "http://certeng-test.getsandbox.com/pos?TransportKey=" + data.TransportKey + "&Format=JSON";
+    // sniff https or http set up url accordingly
+    if (window.location.protocol == 'https:') {
+      var $create = "https://" +
+      CRM.vars.tsys.ips[$('select#device_id').val()].ip
+      + ":8443/v1/pos?TransportKey=" + data.TransportKey + "&Format=JSON";
+      if (test == 1) {
+        $create = "https://certeng-test.getsandbox.com/pos?TransportKey=" + data.TransportKey + "&Format=JSON";
+      }
     }
-
+    else {
+      var $create = "http://" +
+      CRM.vars.tsys.ips[$('select#device_id').val()].ip
+      + ":8080/v1/pos?TransportKey=" + data.TransportKey + "&Format=JSON";
+      if (test == 1) {
+        $create = "http://certeng-test.getsandbox.com/pos?TransportKey=" + data.TransportKey + "&Format=JSON";
+      }
+    }
     return $create;
   }
 
-  $('form.CRM_Tsys_Form_Device').submit(function() {
+  $('form.CRM_Tsys_Form_Device').submit(function(e) {
+    // e.preventDefault();
     // If all required fields are populated
     allData = validateForm();
     console.log(allData);
@@ -87,23 +89,32 @@ CRM.$(function ($) {
       // Compile Transport URL
       var $url = compileURL(CRM.vars.tsys.transport);
 
-      // Get Transport Key using Transport URL
-      $.get($url).done(function(data, textStatus, jqXHR) {
-        if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
-          $create = compileCreateTransactionURL(data);
-          $.get($create).done(function(response, textStatus, jqXHR) {
-            var myJson = JSON.stringify(response);
-            $('input#tsys_response').val(myJson);
-            return true;
-          })
+      $.ajax({
+        url: $url,
+        type: 'get',
+        async: false,
+        success:function(data,status,xhr) {
+          if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
+            $create = compileCreateTransactionURL(data);
+            $.ajax({
+              url: $create,
+              type: 'get',
+              async: false,
+              success:function(response,status,xhr) {
+                var myJson = JSON.stringify(response);
+                $('input#tsys_response').val(myJson);
+                console.log(myJson);
+              },
+              error: function(xhr,status,error) {
+                console.log(error);
+              }
+            });
+          }
+        },
+        error: function(xhr,status,error) {
+          console.log(error);
         }
-      })
-      .fail(function(jqXHR, textStatus, errorThrown) {
-          console.log(jqXHR);
-          console.log(textStatus);
-          console.log(errorThrown );
       });
     }
-    // return false;
   });
 });
