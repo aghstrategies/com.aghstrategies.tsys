@@ -90,23 +90,11 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     // TODO move to js calls
     // TODO process response from js here
     $values = $this->exportValues();
-    print_r($values); die();
-    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
-    if (!empty($deviceSettings[$values['device_id']])) {
-      $deviceWeAreUsing = $deviceSettings[$values['device_id']];
-      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($deviceWeAreUsing['processorid']);
-      $loggedInUser = CRM_Core_Session::singleton()->getLoggedInContactID();
-
-      $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $values['total_amount'], $loggedInUser, $deviceWeAreUsing['terminalid'], 0, $values['is_test']);
-
-      $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
-      if (!empty($response['TransportKey'])) {
-        $url = "http://{$deviceWeAreUsing['ip']}:8080/v1/pos?TransportKey={$response['TransportKey']}&Format=JSON";
-        if ($values['is_test'] == 1) {
-          $url = "http://certeng-test.getsandbox.com/pos?TransportKey={$response['TransportKey']}&Format=JSON";
-          $params['is_test'] = 1;
-        }
-        $responseFromDevice = CRM_Core_Payment_TsysDevice::curlapicall($url);
+    if (!empty($values['tsys_response'])) {
+      $responseFromDevice = json_decode($values['tsys_response']);
+      $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+      if (!empty($deviceSettings[$values['device_id']])) {
+        $deviceWeAreUsing = $deviceSettings[$values['device_id']];
         $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
         if ($responseFromDevice->TransactionType == 'SALE') {
           if ($responseFromDevice->Status == 'APPROVED') {
