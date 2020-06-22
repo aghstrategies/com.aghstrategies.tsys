@@ -74,11 +74,35 @@ CRM.$(function ($) {
     return $create;
   }
 
+  function transportSuccess(data,status,xhr) {
+    if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
+      $create = compileCreateTransactionURL(data);
+      $.ajax({
+        url: $create,
+        type: 'get',
+        async: false,
+        success: createSuccess,
+        error: transportError,
+      });
+    }
+  }
+
+  function createSuccess(response,status,xhr) {
+    var myJson = JSON.stringify(response);
+    $('input#tsys_response').val(myJson);
+    console.log(myJson);
+  }
+
+  function transportError(xhr,status,error) {
+    console.log(error);
+  }
+
   $('form.CRM_Tsys_Form_Device').submit(function(e) {
-    // e.preventDefault();
+
     // If all required fields are populated
     allData = validateForm();
     console.log(allData);
+
     // If form is valid (all required fields are populated)
     if (allData == 1) {
 
@@ -93,27 +117,8 @@ CRM.$(function ($) {
         url: $url,
         type: 'get',
         async: false,
-        success:function(data,status,xhr) {
-          if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
-            $create = compileCreateTransactionURL(data);
-            $.ajax({
-              url: $create,
-              type: 'get',
-              async: false,
-              success:function(response,status,xhr) {
-                var myJson = JSON.stringify(response);
-                $('input#tsys_response').val(myJson);
-                console.log(myJson);
-              },
-              error: function(xhr,status,error) {
-                console.log(error);
-              }
-            });
-          }
-        },
-        error: function(xhr,status,error) {
-          console.log(error);
-        }
+        success: transportSuccess,
+        error: transportError,
       });
     }
   });
