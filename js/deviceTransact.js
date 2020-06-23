@@ -97,7 +97,7 @@ CRM.$(function ($) {
     console.log(error);
   }
 
-  $('form.CRM_Tsys_Form_Device').submit(function(e) {
+  function sendInfoToTsys(e) {
 
     // If all required fields are populated
     allData = validateForm();
@@ -121,5 +121,8 @@ CRM.$(function ($) {
         error: transportError,
       });
     }
-  });
+  }
+
+  $('form.CRM_Tsys_Form_Device').submit(sendInfoToTsys);
+  
 });
