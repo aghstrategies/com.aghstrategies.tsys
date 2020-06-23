@@ -30,8 +30,11 @@ Otherwise, download and install as you would for any other CiviCRM extension.
 ## When Recurring Transactions Fail
 The status of the Recurring Contribution should be set to Pending and a message should appear on the System Status page.
 
-## Contribute Transact API
-This processor works with the Contribution Transact API but one needs to pass the Currency as USD.
+## Devices
+This Payment Processor works with TSYS countertop Devices
+
+## Refunds
+This Payment Processor allows the user to refund payments from CiviCRM.
 
 ## Testing
 [Credit Card Numbers to test with](https://docs.tsysmerchant.com/knowledge-base/testing-certification-tools/test-processor)
