@@ -1,18 +1,33 @@
 CRM.$(function ($) {
-  // If the cancel button is cliched
+
+  // If the cancel button is clicked
   $("input.cancelInProgress").click(function() {
     if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
       var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
-      $.get("http://" + $ip + ":8080/v1/pos?Action=Cancel&Format=JSON", function(data) {
-        if (data.Status == "Denied") {
-          CRM.alert(data.ResponseMessage + " click 'Cancel In Progress Transaction' button again", data.Status, 'info', []);
-        }
-        if (data.Status == "Failed") {
-          CRM.alert(data.ResponseMessage, data.Status, 'error', []);
-        }
+      var $cancelUrl = "http://" + $ip + ":8080/v1/pos?Action=Cancel&Format=JSON";
+
+      // if https use https version of cancel url
+      if (window.location.protocol == 'https:') {
+        var $cancelUrl = "https://" + $ip + ":8443/v1/pos?Action=Cancel&Format=JSON";
+      }
+      $.ajax({
+        url: $cancelUrl,
+        type: 'get',
+        async: false,
+        success: cancelSuccess,
+        error: transportError,
       });
     }
   });
+
+  function cancelSuccess(data) {
+    if (data.Status == "Denied") {
+      CRM.alert(data.ResponseMessage + " click 'Cancel In Progress Transaction' button again", data.Status, 'info', []);
+    }
+    if (data.Status == "Failed") {
+      CRM.alert(data.ResponseMessage, data.Status, 'error', []);
+    }
+  }
 
   $(document).ready(function () {
     // hide link to cancel an in progress transaction
@@ -118,7 +133,7 @@ CRM.$(function ($) {
   function sendInfoToTsys(e) {
 
     // If all required fields are populated
-    allData = validateForm();
+    var allData = validateForm();
 
     // If form is valid (all required fields are populated)
     if (allData == 1) {
