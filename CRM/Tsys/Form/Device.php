@@ -23,6 +23,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     $this->addEntityRef('financial_type_id', E::ts('Financial Type'), [
       'entity' => 'FinancialType',
       'select' => ['minimumInputLength' => 0],
+      'placeholder' => E::ts('- Select Financial Type -')
     ], TRUE);
 
     // TODO make money field
