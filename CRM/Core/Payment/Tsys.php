@@ -513,6 +513,9 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         switch ($fieldInXML) {
           case 'CardType':
           case 'PaymentType':
+            if ($XMLvalueAsString == 'DEBIT') {
+              $params['payment_instrument_id'] = "Debit Card";
+            }
             if (!empty($tsysCardTypes[$XMLvalueAsString])) {
               try {
                 $cardType = civicrm_api3('OptionValue', 'getsingle', [
@@ -532,6 +535,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
             }
             if (!empty($cardType['value'])) {
               $params[$fieldInCivi] = $cardType['value'];
+              $params['payment_instrument_id'] = "Credit Card";
             }
             break;
 

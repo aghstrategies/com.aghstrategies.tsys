@@ -62,7 +62,6 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     // Set up cancel transaction while in progress
     $res = CRM_Core_Resources::singleton();
 
-    // TODO is there a javascript way to compile this url?
     $transportUrl = CRM_Utils_System::url('civicrm/tsys/transportkey', NULL, TRUE, NULL, FALSE, FALSE, FALSE);
 
     $res->addVars('tsys', [
@@ -106,11 +105,9 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             $params['payment_token'] = $params['token'] = $params['tsys_token'];
             $params['amount'] = $params['total_amount'] = $params['amount_approved'];
             $params['contribution_status_id'] = 'Pending';
-            $params['payment_instrument_id'] = "Credit Card";
-            // TODO record if payment instrument is a debit card
             $params['source'] = " Credit Card Contribution via {$deviceWeAreUsing['devicename']} entry mode: {$params['entry_mode']}";
 
-            // NOTE record details for certification script in note field
+            // NOTE recording details for certification script in note field just for testing
             $params['note'] = "Transport Key = {$response->TransportKey}, Authorization Code = {$params['trxn_result_code']}, Token = {$params['tsys_token']}, Status = {$params['approval_status']}";
 
             // Make transaction - This is the way the docs say to make a contribution thru the api as of 5/13/20
