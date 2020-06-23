@@ -147,15 +147,6 @@ function tsys_civicrm_buildForm($formName, &$form) {
       'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
     ]);
   }
-
-  // Add help text
-  if ($formName == 'CRM_Admin_Form_PaymentProcessor') {
-    $templatePath = realpath(dirname(__FILE__) . "/templates");
-    CRM_Core_Region::instance('form-body')->add(array(
-      'template' => "{$templatePath}/tsys.tpl",
-    ));
-  }
-
 }
 
 /**
