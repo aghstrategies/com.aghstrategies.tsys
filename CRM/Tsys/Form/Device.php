@@ -29,7 +29,8 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     // TODO make money field
     $this->add('text', 'total_amount', "Total Amount", NULL, TRUE);
 
-    $this->add('text', 'tsys_response', "TSYS Response", NULL);
+    $this->add('text', 'tsys_initiate_response', "TSYS Initiate Response", NULL);
+    $this->add('text', 'tsys_create_response', "TSYS Create Response", NULL);
 
     $this->addElement('checkbox', 'is_test', E::ts('Test transaction?'));
 
@@ -59,12 +60,10 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     $res = CRM_Core_Resources::singleton();
     // TODO is there a javascript way to compile this url?
     $transportUrl = CRM_Utils_System::url('civicrm/tsys/transportkey', NULL, TRUE, NULL, FALSE, FALSE, FALSE);
-    $processUrl = CRM_Utils_System::url('civicrm/processdeviceresponse', NULL, TRUE, NULL, FALSE, FALSE, FALSE);
 
     $res->addVars('tsys', [
       'ips' => $deviceSettings,
       'transport' => $transportUrl,
-      'process' => $processUrl,
     ]);
 
     // TODO these can probably be combined
@@ -87,12 +86,12 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
   }
 
   public function postProcess() {
-    // TODO MOST of this needs to be done via js so:
-    // TODO move to js calls
-    // TODO process response from js here
     $values = $this->exportValues();
-    if (!empty($values['tsys_response'])) {
-      $responseFromDevice = json_decode($values['tsys_response']);
+    if (!empty($values['tsys_create_response'])) {
+      if (!empty($values['tsys_initiate_response'])) {
+        $response = json_decode($values['tsys_initiate_response']);
+      }
+      $responseFromDevice = json_decode($values['tsys_create_response']);
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
       if (!empty($deviceSettings[$values['device_id']])) {
         $deviceWeAreUsing = $deviceSettings[$values['device_id']];
@@ -110,7 +109,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             $params['source'] = " Credit Card Contribution via {$deviceWeAreUsing['devicename']} entry mode: {$params['entry_mode']}";
 
             // NOTE record details for certification script in note field
-            $params['note'] = "Transport Key = {$response['TransportKey']}, Authorization Code = {$params['trxn_result_code']}, Token = {$params['tsys_token']}, Status = {$params['approval_status']}";
+            $params['note'] = "Transport Key = {$response->TransportKey}, Authorization Code = {$params['trxn_result_code']}, Token = {$params['tsys_token']}, Status = {$params['approval_status']}";
 
             // Make transaction - This is the way the docs say to make a contribution thru the api as of 5/13/20
             // Copied from https://docs.civicrm.org/dev/en/latest/financial/orderAPI/ 5/13/20
@@ -153,7 +152,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             CRM_Core_Session::setStatus(
               E::ts('error: %1, Transport Key: %2, Authorization Code: %3, Token: %4, Status: %5', [
                 1 => $params['error_message'],
-                2 => $response['TransportKey'],
+                2 => $response->TransportKey,
                 3 => $params['trxn_result_code'],
                 4 => $params['tsys_token'],
                 5 => $params['approval_status'],
@@ -181,7 +180,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
           CRM_Core_Session::setStatus(
             E::ts('error code: %1, Message: %3, Transport Key: %2', [
               1 => $params['error_code'],
-              2 => $response['TransportKey'],
+              2 => $response->TransportKey,
               3 => $params['message'],
             ]),
             "Transaction Failed",

@@ -4,6 +4,8 @@ CRM.$(function ($) {
   $(document).ready(function () {
     // hide link to cancel an in progress transaction
     $("span.cancelInProgress").hide();
+    $("input#tsys_initiate_response").parent().parent().hide();
+    $("input#tsys_create_response").parent().parent().hide();
   });
 
   var validateForm = function() {
@@ -75,6 +77,10 @@ CRM.$(function ($) {
   }
 
   function transportSuccess(data,status,xhr) {
+
+    var initiateResponse = JSON.stringify(data);
+    $('input#tsys_initiate_response').val(initiateResponse);
+
     if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
       $create = compileCreateTransactionURL(data);
       $.ajax({
@@ -88,9 +94,8 @@ CRM.$(function ($) {
   }
 
   function createSuccess(response,status,xhr) {
-    var myJson = JSON.stringify(response);
-    $('input#tsys_response').val(myJson);
-    console.log(myJson);
+    var createResponse = JSON.stringify(response);
+    $('input#tsys_create_response').val(createResponse);
   }
 
   function transportError(xhr,status,error) {
@@ -101,7 +106,6 @@ CRM.$(function ($) {
 
     // If all required fields are populated
     allData = validateForm();
-    console.log(allData);
 
     // If form is valid (all required fields are populated)
     if (allData == 1) {
@@ -124,5 +128,5 @@ CRM.$(function ($) {
   }
 
   $('form.CRM_Tsys_Form_Device').submit(sendInfoToTsys);
-  
+
 });
