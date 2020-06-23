@@ -9,6 +9,8 @@ use CRM_Tsys_ExtensionUtil as E;
  */
 class CRM_Tsys_Form_Device extends CRM_Core_Form {
   public function buildQuickForm() {
+
+    // set up device select field
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     $deviceOptions = $this->getDeviceOptions($deviceSettings);
     $this->add(
@@ -19,6 +21,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       TRUE // is required
     );
 
+    // Set up other fields needed for transaction
     $this->addEntityRef('contact_id', E::ts('Select Contact'), [], TRUE);
     $this->addEntityRef('financial_type_id', E::ts('Financial Type'), [
       'entity' => 'FinancialType',
@@ -26,9 +29,9 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       'placeholder' => E::ts('- Select Financial Type -')
     ], TRUE);
 
-    // TODO make money field
-    $this->add('text', 'total_amount', "Total Amount", NULL, TRUE);
+    $this->addMoney('total_amount', E::ts("Total Amount"), TRUE, NULL, FALSE, 'currency', 'USD', TRUE);
 
+    // Fields to save response from TSYS
     $this->add('text', 'tsys_initiate_response', "TSYS Initiate Response", NULL);
     $this->add('text', 'tsys_create_response', "TSYS Create Response", NULL);
 
@@ -45,19 +48,20 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
    $this->setDefaults($defaults);
 
    $this->addButtons([
-     [
-       'type' => 'cancel',
-       'name' => E::ts('Cancel'),
-     ],
-     [
-       'type' => 'submit',
-       'name' => E::ts('Submit'),
+       [
+         'type' => 'cancel',
+         'name' => E::ts('Cancel'),
+       ],
+       [
+         'type' => 'submit',
+         'name' => E::ts('Submit'),
+       ]
      ]
-   ]
- );
+   );
 
     // Set up cancel transaction while in progress
     $res = CRM_Core_Resources::singleton();
+
     // TODO is there a javascript way to compile this url?
     $transportUrl = CRM_Utils_System::url('civicrm/tsys/transportkey', NULL, TRUE, NULL, FALSE, FALSE, FALSE);
 
@@ -66,8 +70,6 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       'transport' => $transportUrl,
     ]);
 
-    // TODO these can probably be combined
-    $res->addScriptFile('com.aghstrategies.tsys', 'js/cancelDevice.js');
     $res->addScriptFile('com.aghstrategies.tsys', 'js/deviceTransact.js');
 
     // export form elements
