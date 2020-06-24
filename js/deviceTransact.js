@@ -29,7 +29,7 @@ CRM.$(function ($) {
   };
 
   // Compile Transport URL
-  var compileTransportURl = function() {
+  function compileTransportURL() {
     // compile url parameters
     var $urlParams = '';
 
@@ -101,8 +101,7 @@ CRM.$(function ($) {
       $('span.crm-button-type-submit').hide();
 
       // Compile Transport URL
-      var $transportUrl = compileTransportURl();
-
+      var $transportUrl = compileTransportURL();
       $.ajax({
         url: $transportUrl,
         type: 'get',
@@ -111,7 +110,6 @@ CRM.$(function ($) {
 
         var initiateResponse = JSON.stringify(data);
         $('input#tsys_initiate_response').val(initiateResponse);
-
         if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
           $create = compileCreateTransactionURL(data);
           $.ajax({
@@ -121,21 +119,15 @@ CRM.$(function ($) {
           .done(function(response) {
             var createResponse = JSON.stringify(response);
             $('input#tsys_create_response').val(createResponse);
-            console.log('create done')
             $('input.validate').unbind('click').click();
           })
-          .fail(ajaxError)
-          .always(function () {
-            console.log('create always')
-          });
+          .fail(ajaxError);
         }
-        console.log('transport done')
+        else {
+          CRM.alert("Transport Failed", data.status, 'error', []);
+        }
       })
       .fail(ajaxError)
-      .always(function() {
-        console.log('transport always')
-        // TODO submit Form
-      })
     }
   }
 
