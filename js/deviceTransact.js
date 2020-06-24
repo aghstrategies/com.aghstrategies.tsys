@@ -113,7 +113,7 @@ CRM.$(function ($) {
             var createResponse = JSON.stringify(response);
             $('input#tsys_create_response').val(createResponse);
             console.log('create done')
-
+            $('input.validate').unbind('click').click();
           })
           .fail(ajaxError)
           .always(function () {
