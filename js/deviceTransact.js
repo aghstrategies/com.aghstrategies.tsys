@@ -1,39 +1,10 @@
 CRM.$(function ($) {
 
-  // If the cancel button is clicked
-  $("input.cancelInProgress").click(function() {
-    if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
-      var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
-      var $cancelUrl = "http://" + $ip + ":8080/v1/pos?Action=Cancel&Format=JSON";
-
-      // if https use https version of cancel url
-      if (window.location.protocol == 'https:') {
-        var $cancelUrl = "https://" + $ip + ":8443/v1/pos?Action=Cancel&Format=JSON";
-      }
-      $.ajax({
-        url: $cancelUrl,
-        type: 'get',
-        async: false,
-        success: cancelSuccess,
-        error: transportError,
-      });
-    }
-  });
-
-  function cancelSuccess(data) {
-    if (data.Status == "Denied") {
-      CRM.alert(data.ResponseMessage + " click 'Cancel In Progress Transaction' button again", data.Status, 'info', []);
-    }
-    if (data.Status == "Failed") {
-      CRM.alert(data.ResponseMessage, data.Status, 'error', []);
-    }
-  }
-
   $(document).ready(function () {
     // hide link to cancel an in progress transaction
     $("span.cancelInProgress").hide();
-    $("input#tsys_initiate_response").parent().parent().hide();
-    $("input#tsys_create_response").parent().parent().hide();
+    // $("input#tsys_initiate_response").parent().parent().hide();
+    // $("input#tsys_create_response").parent().parent().hide();
   });
 
   var validateForm = function() {
@@ -104,34 +75,12 @@ CRM.$(function ($) {
     return $create;
   }
 
-  function transportSuccess(data,status,xhr) {
-
-    var initiateResponse = JSON.stringify(data);
-    $('input#tsys_initiate_response').val(initiateResponse);
-
-    if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
-      $create = compileCreateTransactionURL(data);
-      $.ajax({
-        url: $create,
-        type: 'get',
-        async: false,
-        success: createSuccess,
-        error: transportError,
-      });
-    }
-  }
-
-  function createSuccess(response,status,xhr) {
-    var createResponse = JSON.stringify(response);
-    $('input#tsys_create_response').val(createResponse);
-  }
-
-  function transportError(xhr,status,error) {
+  function ajaxError(xhr,status,error) {
     console.log(error);
   }
 
   function sendInfoToTsys(e) {
-
+    e.preventDefault();
     // If all required fields are populated
     var allData = validateForm();
 
@@ -148,13 +97,68 @@ CRM.$(function ($) {
       $.ajax({
         url: $url,
         type: 'get',
-        async: false,
-        success: transportSuccess,
-        error: transportError,
-      });
+      })
+      .done(function(data) {
+
+        var initiateResponse = JSON.stringify(data);
+        $('input#tsys_initiate_response').val(initiateResponse);
+
+        if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
+          $create = compileCreateTransactionURL(data);
+          $.ajax({
+            url: $create,
+            type: 'get',
+          })
+          .done(function(response) {
+            var createResponse = JSON.stringify(response);
+            $('input#tsys_create_response').val(createResponse);
+            console.log('create done')
+
+          })
+          .fail(ajaxError)
+          .always(function () {
+            console.log('create always')
+          });
+        }
+        console.log('transport done')
+      })
+      .fail(ajaxError)
+      .always(function() {
+        console.log('transport always')
+        // TODO submit Form
+      })
     }
   }
 
-  $('form.CRM_Tsys_Form_Device').submit(sendInfoToTsys);
+  $('input.validate').on('click', sendInfoToTsys);
+
+  // If the cancel button is clicked
+  $("input.cancelInProgress").click(function() {
+    if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
+      var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
+      var $cancelUrl = "http://" + $ip + ":8080/v1/pos?Action=Cancel&Format=JSON";
+
+      // if https use https version of cancel url
+      if (window.location.protocol == 'https:') {
+        var $cancelUrl = "https://" + $ip + ":8443/v1/pos?Action=Cancel&Format=JSON";
+      }
+      $.ajax({
+        url: $cancelUrl,
+        type: 'get',
+        async: false,
+        success: cancelSuccess,
+        error: ajaxError,
+      });
+    }
+  });
+
+  function cancelSuccess(data) {
+    if (data.Status == "Denied") {
+      CRM.alert(data.ResponseMessage + " click 'Cancel In Progress Transaction' button again", data.Status, 'info', []);
+    }
+    if (data.Status == "Failed") {
+      CRM.alert(data.ResponseMessage, data.Status, 'error', []);
+    }
+  }
 
 });
