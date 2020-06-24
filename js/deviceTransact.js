@@ -81,20 +81,20 @@ CRM.$(function ($) {
   }
 
   function ajaxError(xhr,status,error) {
-    console.log(error);
+    CRM.alert(status, error, 'error', []);
   }
 
   function sendInfoToTsys(e) {
-    // prevent form submit until ajax calls are done
-    e.preventDefault();
 
     // Check that all required fields are populated
     var allData = validateForm();
 
     // If form is valid (all required fields are populated)
     if (allData == 1) {
+      // prevent form submit until ajax calls are done
+      e.preventDefault();
 
-      // Show cancel in progress link
+      // hide submit and cancel buttons and show loading icon/cancel in progress transaction button
       $("span.cancelInProgress").show();
       $("i.loadingIcon").show();
       $('span.crm-button-type-cancel').hide();
@@ -141,7 +141,7 @@ CRM.$(function ($) {
 
   $('input.validate').on('click', sendInfoToTsys);
 
-  // If the cancel button is clicked
+  // If the cancel in progress transaction button is clicked, cancel the transaction
   $("input.cancelInProgress").click(function() {
     if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
       var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
