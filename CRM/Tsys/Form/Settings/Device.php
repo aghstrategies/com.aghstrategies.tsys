@@ -114,7 +114,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       CRM_Core_Session::setStatus(E::ts('Device %2 (%1) created successfully', array(
         1 => $deviceDetails['terminalid'],
         2 => $deviceDetails['devicename']
-      )), SUCCESS, info);
+      )), E::ts('Device Created'), success);
       parent::postProcess();
       $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
       CRM_Utils_System::redirect($tsysSettingsForm);
