@@ -3,10 +3,13 @@ CRM.$(function ($) {
   $(document).ready(function () {
     // hide link to cancel an in progress transaction
     $("span.cancelInProgress").hide();
-    // $("input#tsys_initiate_response").parent().parent().hide();
-    // $("input#tsys_create_response").parent().parent().hide();
+
+    // hide fields to save TSYS Responses
+    $("input#tsys_initiate_response").parent().parent().hide();
+    $("input#tsys_create_response").parent().parent().hide();
   });
 
+  // Function to ensure the required fields are populated before submit
   var validateForm = function() {
     // validate form
     var allData = 1;
@@ -24,7 +27,8 @@ CRM.$(function ($) {
     return allData;
   };
 
-  var compileURL = function(baseUrl) {
+  // Compile Transport URL
+  var compileTransportURl = function() {
     // compile url parameters
     var $urlParams = '';
 
@@ -45,7 +49,7 @@ CRM.$(function ($) {
         $urlParams = $urlParams + "&" + name + "=" + $(val).val();
       }
     });
-    return baseUrl + $urlParams;
+    return CRM.vars.tsys.transport + $urlParams;
   };
 
   function compileCreateTransactionURL(data) {
@@ -80,8 +84,10 @@ CRM.$(function ($) {
   }
 
   function sendInfoToTsys(e) {
+    // prevent form submit until ajax calls are done
     e.preventDefault();
-    // If all required fields are populated
+
+    // Check that all required fields are populated
     var allData = validateForm();
 
     // If form is valid (all required fields are populated)
@@ -92,10 +98,10 @@ CRM.$(function ($) {
       $('span.crm-button-type-cancel').hide();
 
       // Compile Transport URL
-      var $url = compileURL(CRM.vars.tsys.transport);
+      var $transportUrl = compileTransportURl();
 
       $.ajax({
-        url: $url,
+        url: $transportUrl,
         type: 'get',
       })
       .done(function(data) {
