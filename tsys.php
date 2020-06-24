@@ -322,14 +322,22 @@ function tsys_civicrm_managed(&$entities) {
  *
  */
 function tsys_civicrm_navigationMenu(&$menu) {
-  _tsys_civix_insert_navigation_menu($menu, 'Administer', array(
+  _tsys_civix_insert_navigation_menu($menu, 'Administer', [
     'label' => E::ts('TSYS Settings'),
     'name' => 'tsys-settings',
     'url' => 'civicrm/tsyssettings',
     'permission' => 'administer payment processors',
     // 'operator' => 'OR',
     'separator' => 1,
-  ));
+  ]);
+  _tsys_civix_insert_navigation_menu($menu, 'Contributions', [
+    'label' => E::ts('Submit Credit Card Payment Via Device'),
+    'name' => 'tsys-device',
+    'url' => 'civicrm/tsysdevice',
+    'permission' => 'administer payment processors',
+    // 'operator' => 'OR',
+    'separator' => 1,
+  ]);
   _tsys_civix_navigationMenu($menu);
 }
 
