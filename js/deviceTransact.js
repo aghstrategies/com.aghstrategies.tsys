@@ -1,9 +1,6 @@
 CRM.$(function ($) {
 
   $(document).ready(function () {
-    // hide link to cancel an in progress transaction
-    $("span.cancelInProgress").hide();
-
     // hide fields to save TSYS Responses
     $("input#tsys_initiate_response").parent().parent().hide();
     $("input#tsys_create_response").parent().parent().hide();
@@ -22,6 +19,10 @@ CRM.$(function ($) {
       if ($(val).val() == undefined || $(val).val() == '') {
         $(val).crmError(ts('is a required field'));
         allData = 0;
+      }
+      if (name == 'amount' && !$.isNumeric($(val).val())) {
+        allData = 0;
+        $(val).crmError(ts('must be numeric'));
       }
     });
     return allData;
@@ -95,7 +96,9 @@ CRM.$(function ($) {
 
       // Show cancel in progress link
       $("span.cancelInProgress").show();
+      $("i.loadingIcon").show();
       $('span.crm-button-type-cancel').hide();
+      $('span.crm-button-type-submit').hide();
 
       // Compile Transport URL
       var $transportUrl = compileTransportURl();
