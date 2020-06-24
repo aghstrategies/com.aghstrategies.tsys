@@ -151,10 +151,8 @@ CRM.$(function ($) {
       $.ajax({
         url: $cancelUrl,
         type: 'get',
-        async: false,
-        success: cancelSuccess,
-        error: ajaxError,
-      });
+      }).done(cancelSuccess)
+      .fail(ajaxError);
     }
   });
 
