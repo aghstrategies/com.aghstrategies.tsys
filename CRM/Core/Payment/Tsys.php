@@ -749,24 +749,15 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
        )));
      }
      if (!empty($result['values'][1]['tsys_devices'])) {
-       if ($format == 'settings') {
-         foreach ($result['values'][1]['tsys_devices'] as $key => $values) {
-           if ($processorId == $values["processorid"]) {
-             if (isset($values['devicename'])) {
-               $deviceSettings["devicename_{$key}"] = $values['devicename'];
-             }
-             if (isset($values['ip'])) {
-               $deviceSettings["ip_{$key}"] = $values['ip'];
-             }
-             if (isset($values['terminalid'])) {
-               $deviceSettings["terminalid_{$key}"] = $values['terminalid'];
-             }
-           }
+       foreach ($result['values'][1]['tsys_devices'] as $key => &$value) {
+         if ($value['is_enabled'] == 0) {
+           $value['class'] = 'disabled';
+         }
+         else {
+           $value['class'] = 'enabled';
          }
        }
-       else {
-         $deviceSettings = $result['values'][1]['tsys_devices'];
-       }
+       $deviceSettings = $result['values'][1]['tsys_devices'];
      }
      return $deviceSettings;
   }

@@ -11,10 +11,18 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
 
   public function preProcess() {
     // DELETE Device
-    if ($this->_action && !empty($_GET['id']) && $this->_action == CRM_Core_Action::DELETE) {
+    if ($this->_action && !empty($_GET['id']) && in_array($this->_action, [CRM_Core_Action::DISABLE, CRM_Core_Action::DELETE, CRM_Core_Action::ENABLE])) {
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
-      if (!empty($deviceSettings[$_GET['id']])) {
-        unset($deviceSettings[$_GET['id']]);
+      if ($this->_action == CRM_Core_Action::DELETE) {
+        if (!empty($deviceSettings[$_GET['id']])) {
+          unset($deviceSettings[$_GET['id']]);
+        }
+      }
+      elseif ($this->_action == CRM_Core_Action::ENABLE) {
+        $deviceSettings[$_GET['id']]['is_enabled'] = 1;
+      }
+      elseif ($this->_action == CRM_Core_Action::DISABLE) {
+        $deviceSettings[$_GET['id']]['is_enabled'] = 0;
       }
       try {
         $tsysProcesors = civicrm_api3('Setting', 'create', [
@@ -52,6 +60,8 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
         'isDefault' => TRUE,
       ),
     ));
+    $this->addElement('checkbox', 'is_enabled', E::ts('Is enabled'));
+
     if ($this->_action) {
       if (!empty($_GET['id']) && $this->_action == CRM_Core_Action::UPDATE) {
         if (!empty($deviceSettings[$_GET['id']])) {
@@ -75,11 +85,15 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       'ip',
       'terminalid',
       'processorid',
+      'is_enabled',
     ];
 
     foreach ($fieldsToSave as $key => $fieldName) {
       if (!empty($values[$fieldName])) {
         $deviceDetails[$fieldName] = $values[$fieldName];
+      }
+      elseif ($fieldName == 'is_enabled') {
+        $deviceDetails[$fieldName] = 0;
       }
     }
     $deviceSettings[$deviceDetails['terminalid']] = $deviceDetails;

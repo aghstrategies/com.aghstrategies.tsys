@@ -21,7 +21,7 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
     foreach ($deviceSettings as $key => &$details) {
       $details['id'] = $key;
-      $details['action'] = CRM_Core_Action::formLink(self::links(), NULL,
+      $details['action'] = CRM_Core_Action::formLink(self::links($details['is_enabled']), NULL,
         array('id' => $key),
         E::ts('more'),
         FALSE,
@@ -29,18 +29,9 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
         'TsysDevice',
         $key
       );
-
     }
     $this->assign('devices', $deviceSettings);
 
-    // add form elements
-    $this->add(
-      'select', // field type
-      'favorite_color', // field name
-      'Favorite Color', // field label
-      $this->getColorOptions(), // list of options
-      TRUE // is required
-    );
     $this->addButtons(array(
       array(
         'type' => 'submit',
@@ -56,25 +47,7 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
 
   public function postProcess() {
     $values = $this->exportValues();
-    $options = $this->getColorOptions();
-    CRM_Core_Session::setStatus(E::ts('You picked color "%1"', array(
-      1 => $options[$values['favorite_color']],
-    )));
     parent::postProcess();
-  }
-
-  public function getColorOptions() {
-    $options = array(
-      '' => E::ts('- select -'),
-      '#f00' => E::ts('Red'),
-      '#0f0' => E::ts('Green'),
-      '#00f' => E::ts('Blue'),
-      '#f0f' => E::ts('Purple'),
-    );
-    foreach (array('1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e') as $f) {
-      $options["#{$f}{$f}{$f}"] = E::ts('Grey (%1)', array(1 => $f));
-    }
-    return $options;
   }
 
   /**
@@ -104,7 +77,7 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
   * @return array
   *   (reference) of action links
   */
- public function &links() {
+ public function &links($enabled) {
    if (!(self::$_links)) {
      self::$_links = array(
        CRM_Core_Action::UPDATE => array(
@@ -120,6 +93,22 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
          'title' => E::ts('Delete TSYS Device'),
        ),
      );
+     if ($enabled == 0) {
+       self::$_links[CRM_Core_Action::ENABLE] = array(
+         'name' => E::ts('Enable'),
+         'url' => 'civicrm/tsyssettings/device',
+         'qs' => 'action=enable&id=%%id%%',
+         'title' => ts('Enable this Device'),
+       );
+     }
+     else {
+       self::$_links[CRM_Core_Action::DISABLE] = array(
+         'name' => E::ts('Disable'),
+         'url' => 'civicrm/tsyssettings/device',
+         'qs' => 'action=disable&id=%%id%%',
+         'title' => ts('Disable this Device'),
+       );
+     }
    }
    return self::$_links;
  }
