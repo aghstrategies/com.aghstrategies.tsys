@@ -32,6 +32,14 @@ The status of the Recurring Contribution should be set to Pending and a message 
 
 ## Devices
 This Payment Processor works with TSYS countertop Devices
+New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> Administer -> TSYS Settings):
+
+### TSYS Settings Form
+![screenshot of tsys settings form](/images/TSYSSettings.png)
+
+
+### Add Device Form
+![screenshot of add device form](/images/newDevice.png)
 
 ## Refunds
 This Payment Processor allows the user to refund payments from CiviCRM.
