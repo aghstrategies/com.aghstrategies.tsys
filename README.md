@@ -22,6 +22,8 @@ You will need to enter the following credentials which will be provided on creat
 + Merchant Key
 + Merchant Site
 
+![screenshot of form to configure TSYS payment Processor](/images/screenToConfigureTSYScredentials.png)
+
 ## Installation
 There are no special installation requirements.
 The extension will show up in the extensions browser for automated installation.
@@ -40,6 +42,9 @@ New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> A
 
 ### Add Device Form
 ![screenshot of add device form](/images/newDevice.png)
+
+### Add Payment Via Device Form
+![screenshot of form to add a payment via device](/images/paymentUsingDevice.png)
 
 ## Refunds
 This Payment Processor allows the user to refund payments from CiviCRM.
