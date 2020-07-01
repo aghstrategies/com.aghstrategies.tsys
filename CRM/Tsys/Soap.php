@@ -268,6 +268,31 @@ HEREDOC;
   }
 
   /**
+   * Report Transaction Soap Request using a Tsys Token
+   * @param  array  $tsysCreds     payment processor credentials
+   * @param  int    $amount        transaction amount
+   * @param  int    $invoiceNumber invoice number
+   * @return                       response from tsys
+   */
+  public static function composeReportTransaction($tsysCreds, $transportKey, $is_test = 0) {
+    $soap_request = <<<HEREDOC
+    <?xml version="1.0" encoding="utf-8"?>
+    <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+      <soap12:Body>
+        <DetailsByTransportKey xmlns="http://schemas.merchantwarehouse.com/genius/10/Reporting">
+          <Name>{$tsysCreds['user_name']}</Name>
+          <SiteID>{$tsysCreds['subject']}</SiteID>
+          <Key>{$tsysCreds['signature']}</Key>
+          <TransportKey>$transportKey</TransportKey>
+        </DetailsByTransportKey>
+      </soap12:Body>
+    </soap12:Envelope>
+HEREDOC;
+    $response = self::doSoapRequest($soap_request, $is_test, 2, 1);
+    return $response;
+  }
+
+  /**
    * Execute SOAP Request and Parse Response
    * @param  string  $soap_request Request to be sent to TSYS via SOAP
    * @param  integer $test         is this a test transaction?
@@ -285,6 +310,7 @@ HEREDOC;
     if ($report == 1) {
       $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/TransactionHistory/v4/Reporting.asmx";
     }
+
     $response = "NO RESPONSE";
     $header = array(
       "Content-type: text/xml;charset=\"utf-8\"",
@@ -300,7 +326,13 @@ HEREDOC;
         $endpointURL = "https://certeng-test.getsandbox.com/v4/transportService.asmx";
       }
     }
-
+    if ($terminal == 1 && $report == 2) {
+      $header['SOAPAction'] = "http://schemas.merchantwarehouse.com/genius/10/Reporting/DetailsByTransportKey";
+      $endpointURL = "https://genius.merchantware.net/v1/Reporting.asmx";
+      if ($test == 1) {
+        $endpointURL = "https://certeng-test.getsandbox.com/v1/Reporting.asmx";
+      }
+    }
     $soap_do = curl_init();
     curl_setopt($soap_do, CURLOPT_URL, $endpointURL);
     curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 20);

@@ -105,6 +105,7 @@ CRM.$(function ($) {
       $.ajax({
         url: $transportUrl,
         type: 'get',
+        timeout: 60000,
       })
       .done(function(data) {
 
@@ -115,13 +116,21 @@ CRM.$(function ($) {
           $.ajax({
             url: $create,
             type: 'get',
+            timeout: 600,
           })
           .done(function(response) {
+            console.log('timedout done')
             var createResponse = JSON.stringify(response);
             $('input#tsys_create_response').val(createResponse);
             $('input.validate').unbind('click').click();
           })
-          .fail(ajaxError);
+          .fail(function (xhr,status,error) {
+            CRM.alert(status, error, 'error', []);
+            console.log('timeout a');
+            console.log(data.TransportKey);
+
+            // $('input.validate').unbind('click').click();
+          });
         }
         else {
           CRM.alert("Transport Failed", data.status, 'error', []);
