@@ -29,7 +29,7 @@ CRM.$(function ($) {
   };
 
   // Compile Transport URL
-  function compileTransportURL() {
+  function compileTransportURL(type, transportkey) {
     // compile url parameters
     var $urlParams = '';
 
@@ -50,6 +50,9 @@ CRM.$(function ($) {
         $urlParams = $urlParams + "&" + name + "=" + $(val).val();
       }
     });
+    if (type == 'report') {
+      $urlParams = $urlParams + "&tk=" + transportkey;
+    }
     return CRM.vars.tsys.transport + $urlParams;
   };
 
@@ -101,7 +104,7 @@ CRM.$(function ($) {
       $('span.crm-button-type-submit').hide();
 
       // Compile Transport URL
-      var $transportUrl = compileTransportURL();
+      var $transportUrl = compileTransportURL('stage', '');
       $.ajax({
         url: $transportUrl,
         type: 'get',
@@ -116,7 +119,7 @@ CRM.$(function ($) {
           $.ajax({
             url: $create,
             type: 'get',
-            timeout: 600,
+            timeout: 60000,
           })
           .done(function(response) {
             console.log('timedout done')
@@ -125,11 +128,16 @@ CRM.$(function ($) {
             $('input.validate').unbind('click').click();
           })
           .fail(function (xhr,status,error) {
-            CRM.alert(status, error, 'error', []);
-            console.log('timeout a');
-            console.log(data.TransportKey);
-
-            // $('input.validate').unbind('click').click();
+            var $reportUrl = compileTransportURL('report', data.TransportKey);
+            $.ajax({
+              url: $reportUrl,
+              type: 'get',
+              timeout: 60000,
+            })
+            .done(function(response) {
+              console.log(response);
+            })
+            .fail(ajaxError)
           });
         }
         else {

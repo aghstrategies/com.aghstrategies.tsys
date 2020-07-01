@@ -62,12 +62,11 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
     // Set up cancel transaction while in progress
     $res = CRM_Core_Resources::singleton();
 
-    $reportUrl = $transportUrl = CRM_Utils_System::url('civicrm/tsys/transportkey', NULL, TRUE, NULL, FALSE, FALSE, FALSE);
+    $transportUrl = CRM_Utils_System::url('civicrm/tsys/transportkey', NULL, TRUE, NULL, FALSE, FALSE, FALSE);
 
     $res->addVars('tsys', [
       'ips' => $deviceSettings,
       'transport' => $transportUrl,
-      'report' => $reportUrl,
     ]);
 
     $res->addScriptFile('com.aghstrategies.tsys', 'js/deviceTransact.js');
