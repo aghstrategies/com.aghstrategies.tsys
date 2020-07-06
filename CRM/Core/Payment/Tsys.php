@@ -485,6 +485,20 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $retrieveFromXML['transaction_type'] = 'TransactionType';
       $retrieveFromXML['approval_status'] = 'Status';
     }
+
+    // If timed out then the response will look a little different because
+    // its from the report transaction not the create transaction
+    if ($type == 'initiateFromReport') {
+      $retrieveFromXML['card_type_id'] = 'PaymentType';
+      $retrieveFromXML['pan_truncation'] = 'AccountNumber';
+      // $retrieveFromXML['amount_approved'] = 'AmountApproved';
+      $retrieveFromXML['entry_mode'] = 'EntryMode';
+      $retrieveFromXML['receive_date'] = 'TransactionDate';
+      $retrieveFromXML['transaction_type'] = 'TransactionType';
+      $retrieveFromXML['approval_status'] = 'Status';
+      unset($retrieveFromXML['error_message']);
+      $params['amount_approved'] = (string) $makeTransaction->AmountDetail->AmountApproved;
+    }
     if (isset($makeTransaction->Error)) {
       $makeTransaction = $makeTransaction->Error;
       $params['status'] = "Error";

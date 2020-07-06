@@ -130,19 +130,21 @@ CRM.$(function ($) {
             type: 'get',
             timeout: 60000,
           })
-          .done(function(response) {
-            var createResponse = JSON.stringify(response);
+          .done(function(responseCreate) {
+            var createResponse = JSON.stringify(responseCreate);
             $('input#tsys_create_response').val(createResponse);
             $('input.validate').unbind('click').click();
           })
           .fail(function (xhr,status,error) {
             var $reportUrl = compileTransportURL('report', data.TransportKey);
+            console.log($reportUrl);
             $.ajax({
               url: $reportUrl,
               type: 'get',
               timeout: 60000,
             })
             .done(function(response) {
+              console.log(response);
               if (response.status == 'success') {
                 if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "FAILED") {
                   CRM.alert(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.ErrorMessage,
@@ -153,8 +155,8 @@ CRM.$(function ($) {
                   resetButtons();
                 }
                 else if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "APPROVED") {
-                  var createResponse = JSON.stringify(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult);
-                  $('input#tsys_create_response').val(createResponse);
+                  var reportResponse = JSON.stringify(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult);
+                  $('input#tsys_create_response').val(reportResponse);
                   $('input.validate').unbind('click').click();
                 }
               }

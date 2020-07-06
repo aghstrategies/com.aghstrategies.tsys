@@ -96,7 +96,13 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
       if (!empty($deviceSettings[$values['device_id']])) {
         $deviceWeAreUsing = $deviceSettings[$values['device_id']];
-        $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
+        if (isset($responseFromDevice->PaymentDetails->PaymentDetail)) {
+          $responseFromDevice = $responseFromDevice->PaymentDetails->PaymentDetail;
+          $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiateFromReport');
+        }
+        else {
+          $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
+        }
         if ($responseFromDevice->TransactionType == 'SALE') {
           if ($responseFromDevice->Status == 'APPROVED') {
             // Clean up params so they have the needed items

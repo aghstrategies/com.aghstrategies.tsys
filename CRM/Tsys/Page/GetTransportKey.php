@@ -44,6 +44,7 @@ class CRM_Tsys_Page_GetTransportKey extends CRM_Core_Page {
               $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
             }
             elseif ($soap == 'report') {
+              sleep(20);
               $response = CRM_Tsys_Soap::composeReportTransaction($tsysCreds, $urlParams['tk'], 0);
               $response = (array) $response;
             }
