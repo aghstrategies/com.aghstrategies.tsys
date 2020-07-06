@@ -96,10 +96,15 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
       if (!empty($deviceSettings[$values['device_id']])) {
         $deviceWeAreUsing = $deviceSettings[$values['device_id']];
+
+        // If timed out then the response will look a little different because
+        // its from the report transaction not the create transaction
         if (isset($responseFromDevice->PaymentDetails->PaymentDetail)) {
           $responseFromDevice = $responseFromDevice->PaymentDetails->PaymentDetail;
           $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiateFromReport');
         }
+
+        // response is from create transaction
         else {
           $params = CRM_Core_Payment_Tsys::processResponseFromTsys($values, $responseFromDevice, 'initiate');
         }
