@@ -144,8 +144,10 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
               )));
             }
             parent::postProcess();
-            $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
-            CRM_Utils_System::redirect($viewContribution);
+            if (!empty($order['id'])) {
+              $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$order['id']}&cid={$params['contact_id']}&action=view");
+              CRM_Utils_System::redirect($viewContribution);
+            }
           }
           else {
             CRM_Core_Session::setStatus(

@@ -26,20 +26,6 @@ class CRM_Core_Payment_TsysDevice extends CRM_Core_Payment_Tsys {
    return $transactionDetails;
  }
 
- public static function processReportTransactionResponse($response) {
-   $transactionDetails = [];
-   $paramsToExtract = [
-     'Status',
-     'ErrorMessage',
-   ];
-   foreach ($paramsToExtract as $key => $param) {
-     if (isset($response->Body->DetailsByTransportKeyResponse->DetailsByTransportKeyResult->$param)) {
-       $transactionDetails[$param] = (string) $response->Body->CreateTransactionResponse->DetailsByTransportKeyResult->$param;
-     }
-   }
-   return $transactionDetails;
- }
-
  public static function curlapicall($url) {
     $ch = curl_init();
     //http://php.net/manual/en/function.curl-setopt.php

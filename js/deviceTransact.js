@@ -85,6 +85,15 @@ CRM.$(function ($) {
 
   function ajaxError(xhr,status,error) {
     CRM.alert(status, error, 'error', []);
+    resetButtons();
+  }
+
+  // reset buttons because transaction failed
+  function resetButtons() {
+    $("span.cancelInProgress").hide();
+    $("i.loadingIcon").hide();
+    $('span.crm-button-type-cancel').show();
+    $('span.crm-button-type-submit').show();
   }
 
   function sendInfoToTsys(e) {
@@ -122,7 +131,6 @@ CRM.$(function ($) {
             timeout: 60000,
           })
           .done(function(response) {
-            console.log('timedout done')
             var createResponse = JSON.stringify(response);
             $('input#tsys_create_response').val(createResponse);
             $('input.validate').unbind('click').click();
@@ -135,7 +143,25 @@ CRM.$(function ($) {
               timeout: 60000,
             })
             .done(function(response) {
-              console.log(response);
+              if (response.status == 'success') {
+                if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "FAILED") {
+                  CRM.alert(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.ErrorMessage,
+                    response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status,
+                    'error',
+                    []
+                  );
+                  resetButtons();
+                }
+                else if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "APPROVED") {
+                  var createResponse = JSON.stringify(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult);
+                  $('input#tsys_create_response').val(createResponse);
+                  $('input.validate').unbind('click').click();
+                }
+              }
+              else {
+                CRM.alert("Failed to get transaction details", response.status, 'error', []);
+                resetButtons();
+              }
             })
             .fail(ajaxError)
           });
