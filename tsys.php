@@ -163,8 +163,16 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
       $errors['total_amount'] = E::ts( 'Total Amount must be a positive number' );
     }
   }
-  // If adding a new device ensure the terminal id is unique
+
+  // Device Settings Form Validation
   if ($formName == 'CRM_Tsys_Form_Settings_Device') {
+
+    // Valid IP address
+    if (!filter_var($fields['ip'], FILTER_VALIDATE_IP)) {
+      $errors['ip'] = E::ts('Please enter a valid IP address');
+    }
+
+    // If adding a new device ensure the terminal id is unique
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
     if ($form->_action && $form->_action == CRM_Core_Action::ADD) {
       if (!empty($fields['terminalid']) && !empty($deviceSettings[$fields['terminalid']])) {
