@@ -236,6 +236,27 @@ function tsys_civicrm_check(&$messages) {
     $processors = [];
     foreach ($tsysProcesors['values'] as $key => $processorDets) {
       $processors[] = $processorDets['id'];
+
+      // Check that credentials are good
+      $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($processorDets['id']);
+      $response = CRM_Tsys_Soap::composeReportByDate($tsysCreds);
+      if (isset($response->Body->CurrentBatchSummaryResponse->CurrentBatchSummaryResult->TransactionSummary4->ErrorMessage)) {
+        $messages[] = new CRM_Utils_Check_Message(
+          'failed_genius_creds',
+          E::ts('The Genius Credentials for Payment Processor ID %1 are incorrect please update them <a href=%2>here</a>.', [
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $processorDets['id'],
+            2 => CRM_Utils_System::url('civicrm/admin/paymentProcessor', "action=update&id={$processorDets['id']}&reset=1"),
+
+          ]),
+          E::ts('Invalid Genius Credentials for Payment Processor ID: %1', [
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $processorDets['id'],
+          ]),
+          \Psr\Log\LogLevel::WARNING,
+          'fa-user-times'
+        );
+      }
     }
     if (!empty($processors)) {
       // This adds a System Status message if their are Recurring Contributions that are not processing as expected.

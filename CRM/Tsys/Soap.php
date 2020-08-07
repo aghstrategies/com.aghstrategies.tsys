@@ -292,6 +292,33 @@ HEREDOC;
   }
 
   /**
+   * Report Transaction Soap Request using a Tsys Token
+   * @param  array  $tsysCreds     payment processor credentials
+   * @param  int    $amount        transaction amount
+   * @param  int    $invoiceNumber invoice number
+   * @return                       response from tsys
+   */
+  public static function composeReportByDate($tsysCreds) {
+    $soap_request = <<<HEREDOC
+    <soap:Envelope
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+     xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+      <soap:Body>
+        <CurrentBatchSummary xmlns="http://schemas.merchantwarehouse.com/merchantware/40/Reports/">
+          <merchantName>{$tsysCreds['user_name']}</merchantName>
+          <merchantSiteId>{$tsysCreds['subject']}</merchantSiteId>
+          <merchantKey>{$tsysCreds['signature']}</merchantKey>
+          <cardType>0</cardType>
+        </CurrentBatchSummary>
+      </soap:Body>
+    </soap:Envelope>
+HEREDOC;
+    $response = self::doSoapRequest($soap_request, 0, 3, 0);
+    return $response;
+  }
+
+  /**
    * Execute SOAP Request and Parse Response
    * @param  string  $soap_request Request to be sent via SOAP
    * @param  integer $test         is this a test transaction?
@@ -309,6 +336,10 @@ HEREDOC;
     if ($report == 1) {
       $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/TransactionHistory/v4/Reporting.asmx";
     }
+    if ($report == 3) {
+      $endpointURL = "https://ps1.merchantware.net/Merchantware/ws/TransactionHistory/v4/Reporting.asmx";
+      $header['SOAPAction'] = "http://schemas.merchantwarehouse.com/merchantware/40/Reports/CurrentBatchSummary";
+    }
 
     $response = "NO RESPONSE";
     $header = array(
@@ -325,6 +356,7 @@ HEREDOC;
         $endpointURL = "https://certeng-test.getsandbox.com/v4/transportService.asmx";
       }
     }
+
     if ($terminal == 1 && $report == 2) {
       $header['SOAPAction'] = "http://schemas.merchantwarehouse.com/genius/10/Reporting/DetailsByTransportKey";
       $endpointURL = "https://genius.merchantware.net/v1/Reporting.asmx";
