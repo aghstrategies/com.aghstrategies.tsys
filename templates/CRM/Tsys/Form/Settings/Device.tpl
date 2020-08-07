@@ -1,16 +1,40 @@
 <div class="help">
   <p>
-    {ts}This form is to enter information about a specific TSYS Device. To find the IP address of the device visit the <a href='https://docs.tsysmerchant.com/knowledge-base/faqs'>TSYS Knowledge Base FAQs</a>{/ts}
+    {ts}This form is to enter information about a specific TSYS Device.{/ts}
   </p>
 </div>
 
-{foreach from=$elementNames item=elementName}
-  <div class="crm-section">
-    <div class="label">{$form.$elementName.label}</div>
-    <div class="content">{$form.$elementName.html}</div>
-    <div class="clear"></div>
+<div class="crm-section">
+  <div class="label">{$form.devicename.label}</div>
+  <div class="content">{$form.devicename.html}</div>
+  <div class="clear"></div>
+</div>
+<div class="crm-section">
+  <div class="label">
+    {$form.ip.label}
+    {help id="id-ip" file="CRM/Tsys/Form/Settings/Device.hlp"}
   </div>
-{/foreach}
+  <div class="content">{$form.ip.html}</div>
+  <div class="clear"></div>
+</div>
+<div class="crm-section">
+  <div class="label">
+    {$form.terminalid.label}
+    {help id="id-terminalid" file="CRM/Tsys/Form/Settings/Device.hlp"}
+  </div>
+  <div class="content">{$form.terminalid.html}</div>
+  <div class="clear"></div>
+</div>
+<div class="crm-section">
+  <div class="label">{$form.processorid.label}</div>
+  <div class="content">{$form.processorid.html}</div>
+  <div class="clear"></div>
+</div>
+<div class="crm-section">
+  <div class="label">{$form.is_enabled.label}</div>
+  <div class="content">{$form.is_enabled.html}</div>
+  <div class="clear"></div>
+</div>
 
 {* FOOTER *}
 <div class="crm-submit-buttons">
