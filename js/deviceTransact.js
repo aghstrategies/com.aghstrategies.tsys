@@ -1,7 +1,7 @@
 CRM.$(function ($) {
 
   $(document).ready(function () {
-    // hide fields to save TSYS Responses
+    // hide fields to save Responses
     $("input#tsys_initiate_response").parent().parent().hide();
     $("input#tsys_create_response").parent().parent().hide();
   });

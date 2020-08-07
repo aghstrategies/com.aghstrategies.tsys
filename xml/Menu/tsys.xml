@@ -15,13 +15,13 @@
   <item>
     <path>civicrm/tsyssettings</path>
     <page_callback>CRM_Tsys_Form_Settings</page_callback>
-    <title>Settings - TSYS</title>
+    <title>Settings - Genius</title>
     <access_arguments>administer payment processors</access_arguments>
   </item>
   <item>
     <path>civicrm/tsyssettings/device</path>
     <page_callback>CRM_Tsys_Form_Settings_Device</page_callback>
-    <title>TSYS Device Settings</title>
+    <title>Genius Device Settings</title>
     <access_arguments>administer payment processors</access_arguments>
   </item>
   <item>

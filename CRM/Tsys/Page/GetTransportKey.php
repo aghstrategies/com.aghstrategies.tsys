@@ -30,7 +30,7 @@ class CRM_Tsys_Page_GetTransportKey extends CRM_Core_Page {
       }
     }
 
-    // IF all required fields are present compose SOAP request to TSYS
+    // IF all required fields are present compose SOAP request to Genius
     if ($allRequiredFields == 1) {
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
       if (!empty($deviceSettings[$urlParams['device']])) {

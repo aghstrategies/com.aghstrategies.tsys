@@ -186,7 +186,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       $hash = md5(uniqid(rand(), TRUE));
       $contribution_recur_id = $donation['id'];
       $failure_count = $donation['failure_count'];
-      $source = "TSYS Payments Recurring Contribution (id=$contribution_recur_id)";
+      $source = "Genius Payments Recurring Contribution (id=$contribution_recur_id)";
       $receive_ts = $catchup ? strtotime($donation['next_sched_contribution_date']) : time();
       $receive_date = date("YmdHis", $receive_ts);
       $errors = array();
@@ -286,7 +286,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
             'source_contact_id'   => $contact_id,
             'source_record_id'    => $contribution['id'],
             'assignee_contact_id' => $contact_id,
-            'subject'             => "Attempted TSYS Payments Recurring Contribution for " . $total_amount,
+            'subject'             => "Attempted Genius Payments Recurring Contribution for " . $total_amount,
             'status_id'           => "Completed",
             'activity_date_time'  => date("YmdHis"),
           ]

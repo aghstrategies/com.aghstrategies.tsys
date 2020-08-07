@@ -9,7 +9,7 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
  */
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
-  // Adds a refund link to each payment made thru TSYS with a status of completed
+  // Adds a refund link to each payment made with a status of completed
   // (also known as the payments that can be refunded)
   if ($objectName == 'Payment' && $op == 'Payment.edit.action') {
     if (!empty($values['contribution_id'])) {
@@ -67,7 +67,7 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
  */
 function tsys_civicrm_pageRun( &$page ) {
-  // Adds buttons the the Contribution Summary tab for each TSYS Device
+  // Adds buttons the the Contribution Summary tab for each Device
   if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab' && $page->getVar('_id') == NULL) {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings)) {
@@ -93,21 +93,21 @@ function tsys_civicrm_pageRun( &$page ) {
  */
 function tsys_civicrm_buildForm($formName, &$form) {
   // This adds a warning to the "New Refund" form letting the user know that
-  // submitting this form will not result in a refund in TSYS. The new refund
-  // form can be found when you register for an event using a price set and then
-  // change the selected price to a LOWER price. This will make the
-  // contributions status "Pending Refund" and trigger a "Record Refund" button
-  // to appear. Clicking the record refund button will take you to the "New
-  // Refund" Form.
+  // submitting this form will not result in a refund to the user only a record
+  // in CiviCRM. The new refund form can be found when you register for an event
+  // using a price set and then change the selected price to a LOWER price. This
+  // will make the contributions status "Pending Refund" and trigger a "Record
+  // Refund" button to appear. Clicking the record refund button will take you
+  // to the "New Refund" Form.
 
-  // TODO either make it so submitting this form does result in a refund in TSYS
-  // or filter this message to only show up for contributions that uses a TSYS processor
+  // TODO either make it so submitting this form does result in a refund in the processor
+  // or filter this message to only show up for contributions that uses a Genius processor
   if ($formName == 'CRM_Contribute_Form_AdditionalPayment'
   && $form->getVar('_paymentType') == 'refund') {
     CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
-    NOT result in a refund in TSYS. A refund will be recorded in CiviCRM. If this
-    was a payment made thru a TSYS processor either: refund the payment using the
-    credit card action button OR submit this form and then login to TSYS to process
+    NOT result in a refund of money to the user. A refund will be recorded in CiviCRM. If this
+    was a payment made thru a Genius processor either: refund the payment using the
+    credit card action button OR submit this form and then login to Genius to process
     the refund.'), '', 'no-popup');
   }
 
@@ -126,7 +126,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
 
     // AGH #20367 If street address and zip code fields are on the form add
-    // data-cayan attributes for them too so that data gets sent to TSYS
+    // data-cayan attributes for them too so that data gets sent to the processor
     if (isset($form->_paymentFields)) {
       foreach ($form->_paymentFields as $field => $value) {
         if (substr($field, 0, 22) == 'billing_street_address') {
@@ -216,7 +216,7 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
  * Implementation of hook_civicrm_check().
  */
 function tsys_civicrm_check(&$messages) {
-  // First get the TSYS Processors on this site
+  // First get the Processors on this site
   try {
     $tsysProcesors = civicrm_api3('PaymentProcessor', 'get', [
       'sequential' => 1,
@@ -231,7 +231,7 @@ function tsys_civicrm_check(&$messages) {
       1 => $error,
     )));
   }
-  // If one or more TSYS payment processors are set up
+  // If one or more payment processors are set up
   if (!empty($tsysProcesors['values'])) {
     $processors = [];
     foreach ($tsysProcesors['values'] as $key => $processorDets) {
@@ -274,7 +274,7 @@ function tsys_civicrm_check(&$messages) {
         $messages[] = new CRM_Utils_Check_Message(
           'failed_recurring_contributions_found',
           $details,
-          E::ts('Uncompleted Recurring TSYS Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+          E::ts('Uncompleted Recurring Genius Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
           $warningLevel,
           'fa-user-times'
         );
@@ -331,7 +331,7 @@ function tsys_civicrm_managed(&$entities) {
  */
 function tsys_civicrm_navigationMenu(&$menu) {
   _tsys_civix_insert_navigation_menu($menu, 'Administer', [
-    'label' => E::ts('TSYS Settings'),
+    'label' => E::ts('Genius Settings'),
     'name' => 'tsys-settings',
     'url' => 'civicrm/tsyssettings',
     'permission' => 'administer payment processors',

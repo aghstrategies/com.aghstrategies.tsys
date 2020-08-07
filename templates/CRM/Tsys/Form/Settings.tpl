@@ -8,9 +8,9 @@
  +--------------------------------------------------------------------+
 *}
 
-<h2>TSYS Devices</h2>
+<h2>Devices</h2>
 <div class="help">
-    {ts}Configure TSYS Devices in this section{/ts}
+    {ts}Configure Devices in this section{/ts}
 </div>
 
 <div class="crm-content-block crm-block">
@@ -40,7 +40,7 @@
         </table>
 
         <div class="action-link">
-          {crmButton p="civicrm/tsyssettings/device" q="action=add&reset=1" id="newTSYSDevice" icon="plus-circle"}{ts}Add TSYS Device{/ts}{/crmButton}
+          {crmButton p="civicrm/tsyssettings/device" q="action=add&reset=1" id="newDevice" icon="plus-circle"}{ts}Add Device{/ts}{/crmButton}
         </div>
 
       </div>

@@ -76,7 +76,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     $this->_mode = $mode;
     $this->_islive = ($mode == 'live') ? 1 : 0;
     $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName = E::ts('TSYS');
+    $this->_processorName = E::ts('Genius');
   }
 
   /**
@@ -97,7 +97,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     );
     foreach ($credFields as $name => $label) {
       if (empty($this->_paymentProcessor[$name])) {
-        $error[] = E::ts("The '%1' is not set in the TSYS Payment Processor settings.", array(1 => $label));
+        $error[] = E::ts("The '%1' is not set in the Genius Payment Processor settings.", array(1 => $label));
       }
     }
     if (!empty($error)) {
@@ -150,8 +150,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // Throw an error if credential not found
     foreach ($fields as $key => $field) {
       if (!isset($paymentProcessorDetails[$field])) {
-        CRM_Core_Error::statusBounce(E::ts('Could not find valid TSYS Payment Processor credentials'));
-        Civi::log()->debug("TSYS Credential $field not found.");
+        CRM_Core_Error::statusBounce(E::ts('Could not find valid Genius Payment Processor credentials'));
+        Civi::log()->debug("Genius Credential $field not found.");
       }
     }
     return $paymentProcessorDetails;
@@ -288,8 +288,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // IF currency is not USD throw error and quit
     // Tsys does not accept non USD transactions
     if ($currency == FALSE) {
-      $errorMessage = self::handleErrorNotification('TSYS only works with USD, Contribution not processed', $params['tsys_error_url']);
-      throw new \Civi\Payment\Exception\PaymentProcessorException(' Failed to create TSYS Charge ' . $errorMessage);
+      $errorMessage = self::handleErrorNotification('Genius only works with USD, Contribution not processed', $params['tsys_error_url']);
+      throw new \Civi\Payment\Exception\PaymentProcessorException(' Failed to create Genius Charge ' . $errorMessage);
     }
 
     // Get tsys credentials ($params come from a form)
@@ -304,8 +304,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
 
     // Throw an error if no credentials found
     if (empty($tsysCreds)) {
-      $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found', $params['tsys_error_url']);
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      $errorMessage = self::handleErrorNotification('No valid Genius payment processor credentials found', $params['tsys_error_url']);
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
       // If there is a payment token AND there is not a tsys_token use the payment token to run the transaction
@@ -365,7 +365,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // If no payment token throw an error
     else {
       $errorMessage = self::handleErrorNotification('No Payment Token', $params['tsys_error_url']);
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
     $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
     return $params;
@@ -439,7 +439,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // If transaction fails
     else {
       $params['contribution_status_id'] = $failedStatusId;
-      $errorMessage = 'TSYS rejected card ';
+      $errorMessage = 'Genius rejected card ';
       if (!empty($params['error_message'])) {
         $errorMessage .= $params['error_message'];
       }
@@ -451,7 +451,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         return $params;
       }
       $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url'], $makeTransaction);
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
   }
 
@@ -577,11 +577,11 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * Handle an error and notify the user
    * @param  string $errorMessage Error Message to be displayed to user
    * @param  string $bounceURL    Bounce URL
-   * @param  string $makeTransaction response from TSYS
+   * @param  string $makeTransaction response from Genius
    * @return string               Error Message (or statusbounce if URL is specified)
    */
   public static function handleErrorNotification($errorMessage, $bounceURL = NULL, $makeTransaction = []) {
-    Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
+    Civi::log()->debug('Genius Payment Error: ' . $errorMessage);
     if (!empty($makeTransaction)) {
       CRM_Core_Error::debug_var('makeTransaction', $makeTransaction);
     }
@@ -634,7 +634,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     $requiredParams = ['trxn_id', 'amount'];
     foreach ($requiredParams as $required) {
       if (!isset($params[$required])) {
-        $message = 'TSYS doRefund: Missing mandatory parameter: ' . $required;
+        $message = 'Genius doRefund: Missing mandatory parameter: ' . $required;
         Civi::log()->error($message);
         Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
       }
@@ -695,20 +695,20 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       // If no valid action found throw an error
       else {
         $actionAvailable = 'None';
-        CRM_Core_Error::debug_var('TSYS VOID/REFUND DetailedTransactionByReferenceResponse', $response);
-        $message = 'TSYS doRefund: no valid action found';
+        CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+        $message = 'Genius doRefund: no valid action found';
         Civi::log()->error($message);
         Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
       }
 
-      // Process response from TSYS
+      // Process response from Genius
       $refundParams = self::processResponse($response);
 
       // Return results
       return $refundParams;
     }
     else {
-      $message = 'TSYS doRefund: No Valid Transaction found : ' . $params['trxn_id'];
+      $message = 'Genius doRefund: No Valid Transaction found : ' . $params['trxn_id'];
       Civi::log()->error($message);
       Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
     }

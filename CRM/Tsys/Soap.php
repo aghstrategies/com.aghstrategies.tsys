@@ -293,11 +293,11 @@ HEREDOC;
 
   /**
    * Execute SOAP Request and Parse Response
-   * @param  string  $soap_request Request to be sent to TSYS via SOAP
+   * @param  string  $soap_request Request to be sent via SOAP
    * @param  integer $test         is this a test transaction?
    * @param  integer $report       is this a report transaction?
    * @param  integer $terminal     is this transaction sent from a device?
-   * @return string response from TSYS
+   * @return string response
    */
   public static function doSoapRequest($soap_request, $test = 0, $report = 0, $terminal = 0) {
     if ($test == 0) {

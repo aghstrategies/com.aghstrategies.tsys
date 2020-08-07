@@ -84,13 +84,13 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
          'name' => E::ts('Edit'),
          'url' => 'civicrm/tsyssettings/device',
          'qs' => 'action=update&id=%%id%%&reset=1',
-         'title' => E::ts('Edit TSYS Device'),
+         'title' => E::ts('Edit Genius Device'),
        ),
        CRM_Core_Action::DELETE => array(
          'name' => E::ts('Delete'),
          'url' => 'civicrm/tsyssettings/device',
          'qs' => 'action=delete&id=%%id%%',
-         'title' => E::ts('Delete TSYS Device'),
+         'title' => E::ts('Delete Genius Device'),
        ),
      );
      if ($enabled == 0) {

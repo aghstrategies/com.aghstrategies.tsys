@@ -21,7 +21,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
     $this->_values = civicrm_api3('FinancialTrxn', 'getsingle', ['id' => $this->_id]);
 
-    // If the payment was run thru TSYS check if it should be voided (has not been batched yet) or Refunded (has been batched)
+    // If the payment was run thru Genius check if it should be voided (has not been batched yet) or Refunded (has been batched)
     $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
     if (!empty($this->_values['payment_processor_id']) && !in_array($this->_values['payment_processor_id'], $tsysProcessors)) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($this->_values['payment_processor_id']);
@@ -37,16 +37,16 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         }
         else {
           $this->actionAvailable = 'None';
-          CRM_Core_Error::debug_var('TSYS VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+          CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
         }
       }
       else {
-        CRM_Core_Error::debug_var('TSYS VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+        CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
       }
     }
-    // If the payment was not run thru TSYS bounce
+    // If the payment was not run thru Genius bounce
     else {
-      CRM_Core_Error::statusBounce(E::ts('You cannot update this payment as it is not tied to a TSYS payment processor'));
+      CRM_Core_Error::statusBounce(E::ts('You cannot update this payment as it is not tied to a Genius payment processor'));
     }
   }
 
@@ -79,7 +79,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       if (isset($this->maxRefundAmount)) {
         $this->add('hidden','max_refund_amount', $this->maxRefundAmount);
         $defaults['refund_amount'] = $this->maxRefundAmount|crmMoney;
-        CRM_Core_Session::setStatus(E::ts('Amount Available to Refund for this payment is $%1. Submitting this form will result in a refund being issued from your TSYS payment processor.', array(
+        CRM_Core_Session::setStatus(E::ts('Amount Available to Refund for this payment is $%1. Submitting this form will result in a refund being issued from your Genius payment processor.', array(
           1 => $this->maxRefundAmount,
         )), '', 'no-popup');
       }
@@ -109,7 +109,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       $this->add('hidden','payment_id', $this->_id);
       if (!empty($this->_values['total_amount'])) {
         $defaults['refund_amount'] = $this->_values['total_amount'];
-        CRM_Core_Session::setStatus(E::ts('This transaction has not been settled and so it is recommended that you void the full amount $%1 instead of refunding it. Submitting this form will result in this transaction being voided via your TSYS Payment processor.', array(
+        CRM_Core_Session::setStatus(E::ts('This transaction has not been settled and so it is recommended that you void the full amount $%1 instead of refunding it. Submitting this form will result in this transaction being voided via your Genius Payment processor.', array(
           1 => $this->_values['total_amount'],
         )), '', 'no-popup');
       }
@@ -156,7 +156,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       }
     }
     else {
-      CRM_Core_Error::debug_var('TSYS VOID/REFUND form values to be processed', $values);
+      CRM_Core_Error::debug_var('Genius VOID/REFUND form values to be processed', $values);
     }
     parent::postProcess();
   }
@@ -170,7 +170,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
   public function processResponse($response, $values) {
     // We got a legible response!!
     if (isset($response->ApprovalStatus)) {
-      // Void successful in TSYS so update CiviCRM payment accordingly
+      // Void successful in Genius so update CiviCRM payment accordingly
       if ((string) $response->ApprovalStatus == 'APPROVED') {
         $trxnParams['total_amount'] = -$values['refund_amount'];
         $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
@@ -204,7 +204,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       // failed explicitly so retrieve error
       elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
         $approvalStatus = explode(';', $response->ApprovalStatus);
-        CRM_Core_Error::debug_var('TSYS VOID/REFUND form values', $values);
+        CRM_Core_Error::debug_var('Genius VOID/REFUND form values', $values);
         if (count($approvalStatus) == 3) {
           CRM_Core_Session::setStatus(
             E::ts('Error Code %1, %2', array(
@@ -238,8 +238,8 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         ]),
         'error'
       );
-      CRM_Core_Error::debug_var('TSYS VOID/REFUND response', $response);
-      CRM_Core_Error::debug_var('TSYS VOID/REFUND form submit values', $values);
+      CRM_Core_Error::debug_var('Genius VOID/REFUND response', $response);
+      CRM_Core_Error::debug_var('Genius VOID/REFUND form submit values', $values);
     }
   }
 
@@ -334,7 +334,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       'status_id' => 1,
       'contact_id' => $contributionContact,
       'amount' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['total_amount'],
-      'description' => "TSYS Refund",
+      'description' => "Genius Refund",
       'currency' => "USD",
     ];
 

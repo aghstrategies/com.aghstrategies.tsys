@@ -31,9 +31,9 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
 
     $this->addMoney('total_amount', E::ts("Total Amount"), TRUE, NULL, FALSE, 'currency', 'USD', TRUE);
 
-    // Fields to save response from TSYS
-    $this->add('text', 'tsys_initiate_response', "TSYS Initiate Response", NULL);
-    $this->add('text', 'tsys_create_response', "TSYS Create Response", NULL);
+    // Fields to save response from Genius
+    $this->add('text', 'tsys_initiate_response', "Genius Initiate Response", NULL);
+    $this->add('text', 'tsys_create_response', "Genius Create Response", NULL);
 
     $this->addElement('checkbox', 'is_test', E::ts('Test transaction?'));
 

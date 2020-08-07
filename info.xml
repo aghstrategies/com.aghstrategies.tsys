@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <extension key="com.aghstrategies.tsys" type="module">
   <file>tsys</file>
-  <name>TSYS</name>
-  <description>TSYS Payment Processor Integration</description>
+  <name>Genius Platform by Global Payments Integrated (formerly TSYS)</name>
+  <description>Genius Platform by Global Payments Integrated (formerly TSYS) Payment Processor Integration</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>AGH Strategies</author>
