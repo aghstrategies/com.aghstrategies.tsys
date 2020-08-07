@@ -10,8 +10,9 @@
 
 <h2>Devices</h2>
 <div class="help">
-    {ts}Configure Devices in this section{/ts}
+    {ts}Configure Devices in this section. Genius offers a variety of Devices to accept credit card payments for more information visit: https://www.tsys.com/solutions/products-services/merchant/genius/ {/ts}
 </div>
+
 
 <div class="crm-content-block crm-block">
 {if $devices}
