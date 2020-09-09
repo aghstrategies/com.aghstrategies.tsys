@@ -179,7 +179,19 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
         $errors['terminalid'] = E::ts('Terminal ID must be unique.');
       }
     }
-    // IF the user is updating a device AND changing the terminal id check that it does not already exist
+
+    // Terminal ID validation
+    // Must be a number
+    if (!is_numeric($fields['terminalid'])) {
+      $errors['terminalid'] = E::ts('This Terminal ID must be a number.');
+    }
+
+    // Must be between 1 and 16 characters
+    if (strlen($fields['terminalid']) > 16) {
+      $errors['terminalid'] = E::ts('This Terminal ID must be between 1 and 16 characters long.');
+    }
+
+    // Must be unique
     if ($form->_action == CRM_Core_Action::UPDATE
     && $fields['terminalid'] != $form->_submitValues['prev_id']
     && !empty($deviceSettings[$fields['terminalid']])) {
