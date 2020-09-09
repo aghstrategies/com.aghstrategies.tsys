@@ -172,8 +172,24 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
       $errors['ip'] = E::ts('Please enter a valid IP address');
     }
 
-    // If adding a new device ensure the terminal id is unique
+    // Verify that device settings are unique when creating and updating - terminal id, ip and devicename should be unique
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
+    // If updating ignore the existing record
+    if ($form->_action == CRM_Core_Action::UPDATE && !empty($form->_submitValues['prev_id'])) {
+      unset($deviceSettings[$form->_submitValues['prev_id']]);
+    }
+    $uniqueFields = [
+      'terminalid' => 'Terminal ID',
+      'ip' => 'IP Address',
+      'devicename' => "Device Name",
+    ];
+    foreach ($deviceSettings as $deviceId => $device) {
+      foreach ($uniqueFields as $fieldName => $label) {
+        if ($device[$fieldName] == $fields[$fieldName]) {
+          $errors[$fieldName] = E::ts('%1 must be unique.', [1 => $label]);
+        }
+      }
+    }
     if ($form->_action && $form->_action == CRM_Core_Action::ADD) {
       if (!empty($fields['terminalid']) && !empty($deviceSettings[$fields['terminalid']])) {
         $errors['terminalid'] = E::ts('Terminal ID must be unique.');
@@ -189,13 +205,6 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
     // Must be between 1 and 16 characters
     if (strlen($fields['terminalid']) > 16) {
       $errors['terminalid'] = E::ts('This Terminal ID must be between 1 and 16 characters long.');
-    }
-
-    // Must be unique
-    if ($form->_action == CRM_Core_Action::UPDATE
-    && $fields['terminalid'] != $form->_submitValues['prev_id']
-    && !empty($deviceSettings[$fields['terminalid']])) {
-      $errors['terminalid'] = E::ts('This Terminal ID is taken. Please update the relevant device instead.');
     }
   }
 
