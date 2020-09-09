@@ -31,10 +31,10 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
       CRM_Utils_System::redirect($tsysSettingsForm);
@@ -54,13 +54,13 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       'select' => ['minimumInputLength' => 0],
     ], TRUE);
 
-    $this->addButtons(array(
-      array(
+    $this->addButtons([
+      [
         'type' => 'submit',
         'name' => E::ts('Save'),
         'isDefault' => TRUE,
-      ),
-    ));
+      ],
+    ]);
     $this->addElement('checkbox', 'is_enabled', E::ts('Is enabled'));
 
     if ($this->_action) {
@@ -120,24 +120,24 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if ($tsysDevices['is_error'] == 0) {
-        CRM_Core_Session::setStatus(E::ts('Device %2 (%1) created successfully', array(
+        CRM_Core_Session::setStatus(E::ts('Device %2 (%1) created successfully', [
           1 => $deviceDetails['terminalid'],
           2 => $deviceDetails['devicename']
-        )), E::ts('Device Created'), success);
+        ]), E::ts('Device Created'), success);
         parent::postProcess();
         $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
         CRM_Utils_System::redirect($tsysSettingsForm);
       }
       else {
-        CRM_Core_Session::setStatus(E::ts('Device not created: %1', array(
+        CRM_Core_Session::setStatus(E::ts('Device not created: %1', [
           1 => $error,
-        )));
+        ]));
       }
     }
     else {
@@ -155,7 +155,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
     // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
     // items don't have labels.  We'll identify renderable by filtering on
     // the 'label'.
-    $elementNames = array();
+    $elementNames = [];
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
       $label = $element->getLabel();
