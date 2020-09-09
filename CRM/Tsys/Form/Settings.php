@@ -21,7 +21,10 @@ class CRM_Tsys_Form_Settings extends CRM_Core_Form {
     if ($_GET['action'] == 'test' && !empty($_GET['id']) && !empty($deviceSettings[$_GET['id']])) {
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
       $res = CRM_Core_Resources::singleton();
-      $res->addVars('tsys', ['ip' => $deviceSettings[$_GET['id']]['ip']]);
+      $res->addVars('tsys', [
+        'ip' => $deviceSettings[$_GET['id']]['ip'],
+        'id' => $_GET['id'],
+      ]);
       $res->addScriptFile('com.aghstrategies.tsys', 'js/testDevice.js');
     }
   }

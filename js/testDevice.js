@@ -16,14 +16,14 @@ CRM.$(function ($) {
       type: 'get',
       timeout: 1000,
     }).done(function(data) {
-      CRM.alert('Connection Successful',
-        'Test',
-        'info',
+      CRM.alert('Connection to Device ID: ' + CRM.vars.tsys.id + ' Successful',
+        '',
+        'success',
         []
       );
     }).fail(function (xhr,status,error) {
-      CRM.alert(status,
-        error,
+      CRM.alert('Connection Test to Device ID:' + CRM.vars.tsys.id + ' NOT Successful',
+        '',
         'error',
         []
       );
