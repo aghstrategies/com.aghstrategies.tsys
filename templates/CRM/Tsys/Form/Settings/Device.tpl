@@ -4,6 +4,12 @@
   </p>
 </div>
 
+<div class="crm-section" style="display: none;">
+  <div class="label">{$form.id.label}</div>
+  <div class="content">{$form.id.html}</div>
+  <div class="clear"></div>
+</div>
+
 <div class="crm-section">
   <div class="label">{$form.devicename.label}</div>
   <div class="content">{$form.devicename.html}</div>

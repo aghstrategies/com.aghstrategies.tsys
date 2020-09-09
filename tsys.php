@@ -175,8 +175,8 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
     // Verify that device settings are unique when creating and updating - terminal id, ip and devicename should be unique
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
     // If updating ignore the existing record
-    if ($form->_action == CRM_Core_Action::UPDATE && !empty($form->_submitValues['prev_id'])) {
-      unset($deviceSettings[$form->_submitValues['prev_id']]);
+    if (!empty($form->_submitValues['id'])) {
+      unset($deviceSettings[$form->_submitValues['id']]);
     }
     $uniqueFields = [
       'terminalid' => 'Terminal ID',

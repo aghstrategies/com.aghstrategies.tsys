@@ -44,6 +44,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
   public function buildQuickForm() {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('all');
 
+    $this->add('text', 'id', 'Device ID', []);
     $this->add('text', 'devicename', E::ts("Device Name"), [], TRUE);
     $this->add('text', 'ip', E::ts('IP address of Device'), [], TRUE);
     $this->add('text', 'terminalid', E::ts('Terminal ID for Device'), [], TRUE);
@@ -66,7 +67,6 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       if (!empty($_GET['id']) && $this->_action == CRM_Core_Action::UPDATE) {
         if (!empty($deviceSettings[$_GET['id']])) {
           // add previous id to the form
-          $this->addElement('hidden', 'prev_id', $_GET['id']);
           $this->setDefaults($deviceSettings[$_GET['id']]);
         }
       }
@@ -96,33 +96,52 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
         $deviceDetails[$fieldName] = 0;
       }
     }
-    $deviceSettings[$deviceDetails['terminalid']] = $deviceDetails;
 
-    try {
-      $tsysDevices = civicrm_api3('Setting', 'create', [
-        'tsys_devices' => $deviceSettings,
-      ]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-    if ($tsysDevices['is_error'] == 0) {
-      CRM_Core_Session::setStatus(E::ts('Device %2 (%1) created successfully', array(
-        1 => $deviceDetails['terminalid'],
-        2 => $deviceDetails['devicename']
-      )), E::ts('Device Created'), success);
-      parent::postProcess();
-      $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
-      CRM_Utils_System::redirect($tsysSettingsForm);
+    // Set device Id
+    $deviceId = NULL;
+    if (!empty($values['id'])) {
+      $deviceId = $values['id'];
     }
     else {
-      CRM_Core_Session::setStatus(E::ts('Device not created: %1', array(
-        1 => $error,
-      )));
+      if (empty($deviceSettings)) {
+        $deviceId = 1;
+      }
+      else {
+        $deviceId = $this->generateUniqueId($deviceSettings);
+      }
+    }
+    if ($deviceId != NULL) {
+      $deviceDetails['id'] = $deviceId;
+      $deviceSettings[$deviceId] = $deviceDetails;
+      try {
+        $tsysDevices = civicrm_api3('Setting', 'create', [
+          'tsys_devices' => $deviceSettings,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      if ($tsysDevices['is_error'] == 0) {
+        CRM_Core_Session::setStatus(E::ts('Device %2 (%1) created successfully', array(
+          1 => $deviceDetails['terminalid'],
+          2 => $deviceDetails['devicename']
+        )), E::ts('Device Created'), success);
+        parent::postProcess();
+        $tsysSettingsForm = CRM_Utils_System::url('civicrm/tsyssettings');
+        CRM_Utils_System::redirect($tsysSettingsForm);
+      }
+      else {
+        CRM_Core_Session::setStatus(E::ts('Device not created: %1', array(
+          1 => $error,
+        )));
+      }
+    }
+    else {
+      CRM_Core_Session::setStatus(E::ts('Not saved because no valid device id was found.'));
     }
   }
 
@@ -145,6 +164,14 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
       }
     }
     return $elementNames;
+  }
+
+  public function generateUniqueId($deviceIds) {
+    $deviceId = 1;
+    while (array_key_exists($deviceId, $deviceIds)) {
+      $deviceId++;
+    }
+    return $deviceId;
   }
 
 }
