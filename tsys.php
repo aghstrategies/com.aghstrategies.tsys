@@ -13,7 +13,6 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
   if ($op == 'contribution.selector.row' && $objectName == 'Contribution') {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings)) {
-    // DO NOT show refund link for payments that have failed or already been refunded.
       try {
         $contribDetails = civicrm_api3('Contribution', 'getsingle', [
           'id' => $objectId,
@@ -28,13 +27,13 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
       }
       $statusesToShowDeviceLinks = ['Pending', 'Partially paid'];
       if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], $statusesToShowDeviceLinks)) {
-        foreach ($deviceSettings as $key => $values) {
-          if (!empty($values['devicename']) && !empty($values['ip'])) {
+        foreach ($deviceSettings as $key => $device) {
+          if (!empty($device['devicename']) && !empty($device['ip'])) {
             $links[] = [
-              'name' => "Record Payment via Device: {$values['devicename']}",
+              'name' => "Record Payment via Device: {$device['devicename']}",
               'url' => 'civicrm/tsysdevicepayment',
               'qs' => "reset=1&deviceid={$key}&contribid={$objectId}",
-              'title' => "Record Payment via Device: {$values['devicename']}",
+              'title' => "Record Payment via Device: {$device['devicename']}",
             ];
           }
         }
