@@ -30,4 +30,10 @@
     <title>GetTransportKey</title>
     <access_arguments>1</access_arguments>
   </item>
+  <item>
+    <path>civicrm/tsysdevicepayment</path>
+    <page_callback>CRM_Tsys_Form_Tsysdevicepayment</page_callback>
+    <title>Tsysdevicepayment</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>

@@ -4,18 +4,29 @@ CRM.$(function ($) {
     // hide fields to save Responses
     $("input#tsys_initiate_response").parent().parent().hide();
     $("input#tsys_create_response").parent().parent().hide();
+    $("input#contribution_id").parent().parent().hide();
   });
 
   // Function to ensure the required fields are populated before submit
   var validateForm = function() {
     // validate form
     var allData = 1;
-    $.each({
-      amount: 'input#total_amount',
-      device: 'select#device_id',
-      fintype: 'input#financial_type_id',
-      contact: 'input[name="contact_id"]',
-    }, function(name, val) {
+    if ($('input#contribution_id').length == 1) {
+      var fields = {
+        amount: 'input#total_amount',
+        device: 'select#device_id',
+        contribution: 'input#contribution_id',
+      };
+    }
+    else {
+      var fields = {
+        amount: 'input#total_amount',
+        device: 'select#device_id',
+        fintype: 'input#financial_type_id',
+        contact: 'input[name="contact_id"]',
+      };
+    }
+    $.each(fields, function(name, val) {
       if ($(val).val() == undefined || $(val).val() == '') {
         $(val).crmError(ts('is a required field'));
         allData = 0;

@@ -9,6 +9,39 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
  */
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
+
+  if ($op == 'contribution.selector.row' && $objectName == 'Contribution') {
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+    if (!empty($deviceSettings)) {
+    // DO NOT show refund link for payments that have failed or already been refunded.
+      try {
+        $contribDetails = civicrm_api3('Contribution', 'getsingle', [
+          'id' => $objectId,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        $error = $e->getMessage();
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          'domain' => 'com.aghstrategies.tsys',
+          1 => $error,
+        )));
+      }
+      $statusesToShowDeviceLinks = ['Pending', 'Partially paid'];
+      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], $statusesToShowDeviceLinks)) {
+        foreach ($deviceSettings as $key => $values) {
+          if (!empty($values['devicename']) && !empty($values['ip'])) {
+            $links[] = [
+              'name' => "Record Payment via Device: {$values['devicename']}",
+              'url' => 'civicrm/tsysdevicepayment',
+              'qs' => "reset=1&deviceid={$key}&contribid={$objectId}",
+              'title' => "Record Payment via Device: {$values['devicename']}",
+            ];
+          }
+        }
+      }
+    }
+  }
+
   // Adds a refund link to each payment made with a status of completed
   // (also known as the payments that can be refunded)
   if ($objectName == 'Payment' && $op == 'Payment.edit.action') {
