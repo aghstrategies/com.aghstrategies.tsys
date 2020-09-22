@@ -123,36 +123,42 @@ function tsys_civicrm_pageRun( &$page ) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
-  // This adds a warning to the "New Refund" form letting the user know that
-  // submitting this form will not result in a refund to the user only a record
-  // in CiviCRM. The new refund form can be found when you register for an event
-  // using a price set and then change the selected price to a LOWER price. This
-  // will make the contributions status "Pending Refund" and trigger a "Record
-  // Refund" button to appear. Clicking the record refund button will take you
-  // to the "New Refund" Form.
 
-  // TODO either make it so submitting this form does result in a refund in the processor
-  // or filter this message to only show up for contributions that uses a Genius processor
-  if ($formName == 'CRM_Contribute_Form_ContributionView' || $formName == 'CRM_Contribute_Form_Contribution' || $formName == 'CRM_Contribute_Form_AdditionalPayment') {
-    // add submit swipe link to record payment form
-    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
-    $deviceButtons = [];
-    foreach ($deviceSettings as $key => $device) {
-      if (!empty($device['id'])) {
-        $deviceButtons[] = [
-          'url' => CRM_Utils_System::url('civicrm/tsysdevicepayment', "reset=1&deviceid={$device['id']}&contribid={$form->_id}"),
-          'label' => $device['devicename'],
-        ];
+  // add Device links
+  if ($formName == 'CRM_Contribute_Form_ContributionView'
+  || $formName == 'CRM_Contribute_Form_Contribution'
+  || $formName == 'CRM_Contribute_Form_AdditionalPayment') {
+    if (!empty($form->_id)) {
+      $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+      if (!empty($deviceSettings)) {
+        $deviceButtons = [];
+        foreach ($deviceSettings as $key => $device) {
+          if (!empty($device['id'])) {
+            $deviceButtons[] = [
+              'url' => CRM_Utils_System::url('civicrm/tsysdevicepayment', "reset=1&deviceid={$device['id']}&contribid={$form->_id}"),
+              'label' => $device['devicename'],
+            ];
+          }
+        }
+        $form->assign('swipedevices', $deviceButtons);
+        $templatePath = realpath(dirname(__FILE__) . "/templates");
+        CRM_Core_Region::instance('form-body')->add([
+          'template' => "{$templatePath}/CRM/Contribute/Form/swipedevices.tpl",
+        ]);
+        CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/moveButton.js');
       }
     }
-    $form->assign('swipedevices', $deviceButtons);
-    $templatePath = realpath(dirname(__FILE__) . "/templates");
-    CRM_Core_Region::instance('form-body')->add([
-      'template' => "{$templatePath}/CRM/Contribute/Form/swipedevices.tpl",
-    ]);
-    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/moveButton.js');
   }
   if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
+
+    // This adds a warning to the "New Refund" form letting the user know that
+    // submitting this form will not result in a refund to the user only a record
+    // in CiviCRM. The new refund form can be found when you register for an event
+    // using a price set and then change the selected price to a LOWER price. This
+    // will make the contributions status "Pending Refund" and trigger a "Record
+    // Refund" button to appear. Clicking the record refund button will take you
+    // to the "New Refund" Form.
+
     // TODO either make it so submitting this form does result in a refund in the processor
     // or filter this message to only show up for contributions that uses a Genius processor
     if ($form->getVar('_paymentType') == 'refund') {
