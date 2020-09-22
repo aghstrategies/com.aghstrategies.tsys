@@ -133,14 +133,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
 
   // TODO either make it so submitting this form does result in a refund in the processor
   // or filter this message to only show up for contributions that uses a Genius processor
-  if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
-    if ($form->getVar('_paymentType') == 'refund') {
-      CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
-      NOT result in a refund of money to the user. A refund will be recorded in CiviCRM. If this
-      was a payment made thru a Genius processor either: refund the payment using the
-      credit card action button OR submit this form and then login to Genius to process
-      the refund.'), '', 'no-popup');
-    }
+  if ($formName == 'CRM_Contribute_Form_ContributionView' || $formName == 'CRM_Contribute_Form_Contribution' || $formName == 'CRM_Contribute_Form_AdditionalPayment') {
     // add submit swipe link to record payment form
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     $deviceButtons = [];
@@ -152,8 +145,23 @@ function tsys_civicrm_buildForm($formName, &$form) {
         ];
       }
     }
-    $form->assign('devices', $deviceButtons);
+    $form->assign('swipedevices', $deviceButtons);
+    $templatePath = realpath(dirname(__FILE__) . "/templates");
+    CRM_Core_Region::instance('form-body')->add([
+      'template' => "{$templatePath}/CRM/Contribute/Form/swipedevices.tpl",
+    ]);
     CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/moveButton.js');
+  }
+  if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
+    // TODO either make it so submitting this form does result in a refund in the processor
+    // or filter this message to only show up for contributions that uses a Genius processor
+    if ($form->getVar('_paymentType') == 'refund') {
+      CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
+      NOT result in a refund of money to the user. A refund will be recorded in CiviCRM. If this
+      was a payment made thru a Genius processor either: refund the payment using the
+      credit card action button OR submit this form and then login to Genius to process
+      the refund.'), '', 'no-popup');
+    }
   }
 
   // Load stripe.js on all civi forms per stripe requirements
