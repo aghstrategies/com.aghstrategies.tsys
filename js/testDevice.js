@@ -1,7 +1,5 @@
 CRM.$(function ($) {
 
-  console.log(CRM.vars.tsys.ip);
-
   $(document).ready(function () {
 
     if (window.location.protocol == 'https:') {

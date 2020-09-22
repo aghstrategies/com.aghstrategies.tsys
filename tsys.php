@@ -9,7 +9,6 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
  */
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
-
   if ($op == 'contribution.selector.row' && $objectName == 'Contribution') {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings)) {
@@ -134,13 +133,27 @@ function tsys_civicrm_buildForm($formName, &$form) {
 
   // TODO either make it so submitting this form does result in a refund in the processor
   // or filter this message to only show up for contributions that uses a Genius processor
-  if ($formName == 'CRM_Contribute_Form_AdditionalPayment'
-  && $form->getVar('_paymentType') == 'refund') {
-    CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
-    NOT result in a refund of money to the user. A refund will be recorded in CiviCRM. If this
-    was a payment made thru a Genius processor either: refund the payment using the
-    credit card action button OR submit this form and then login to Genius to process
-    the refund.'), '', 'no-popup');
+  if ($formName == 'CRM_Contribute_Form_AdditionalPayment') {
+    if ($form->getVar('_paymentType') == 'refund') {
+      CRM_Core_Session::setStatus(E::ts('Submitting this refund form will
+      NOT result in a refund of money to the user. A refund will be recorded in CiviCRM. If this
+      was a payment made thru a Genius processor either: refund the payment using the
+      credit card action button OR submit this form and then login to Genius to process
+      the refund.'), '', 'no-popup');
+    }
+    // add submit swipe link to record payment form
+    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
+    $deviceButtons = [];
+    foreach ($deviceSettings as $key => $device) {
+      if (!empty($device['id'])) {
+        $deviceButtons[] = [
+          'url' => CRM_Utils_System::url('civicrm/tsysdevicepayment', "reset=1&deviceid={$device['id']}&contribid={$form->_id}"),
+          'label' => $device['devicename'],
+        ];
+      }
+    }
+    $form->assign('devices', $deviceButtons);
+    CRM_Core_Resources::singleton()->addScriptFile('com.aghstrategies.tsys', 'js/moveButton.js');
   }
 
   // Load stripe.js on all civi forms per stripe requirements
