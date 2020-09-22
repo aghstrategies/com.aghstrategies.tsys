@@ -1,6 +1,6 @@
 site_name: TSYS
 repo_url: https://github.com/aghstrategies/com.aghstrategies.tsys
-theme:  
+theme: 
   name: material
 
 nav:
