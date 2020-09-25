@@ -10,7 +10,7 @@ CRM.$(function ($) {
     $.ajax({
       url: $testUrl,
       type: 'get',
-      timeout: 1000,
+      timeout: 5000,
     }).done(function(data) {
       CRM.alert('Connection to Device ID: ' + CRM.vars.tsys.id + ' Successful',
         '',
