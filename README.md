@@ -42,6 +42,9 @@ New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> A
 ### Add Device Form
 ![screenshot of add device form](/images/newDevice.png)
 
+### Genius Root Certificates
+NOTE when using a device with a site that has https set up you must set up a Genius Root Certificate on a per browser basis. More details on how to do this can be found in the [TSYS Knowlege Base](https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate).
+
 ### Add Payment Via Device Form
 Once configured Payments can be made using the devices one of two ways:
 1. A simple contribution can be made (with a payment for the full amount) thru the "Submit Credit Card Contribution Via Device" Form (CiviCRM Admin Menu -> Contributions -> Submit Credit Card Contribution Via Device).
