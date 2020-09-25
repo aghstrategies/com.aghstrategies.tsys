@@ -13,10 +13,10 @@
     <url desc="Documentation">https://docs.civicrm.org/tsys/en/latest/</url>
   </urls>
   <releaseDate>2019-01-10</releaseDate>
-  <version>1.2.1</version>
+  <version>2.0.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.25</ver>
+    <ver>5.27</ver>
   </compatibility>
   <civix>
     <namespace>CRM/Tsys</namespace>
