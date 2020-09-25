@@ -10,7 +10,7 @@
 
 <h2>Devices</h2>
 <div class="help">
-    {ts}Configure Devices in this section. Genius offers a variety of Devices to accept credit card payments for more information visit: https://www.tsys.com/solutions/products-services/merchant/genius/ {/ts}
+    {ts}Configure Devices in this section. Genius offers a variety of Devices to accept credit card payments for more information visit: <a href="https://www.tsys.com/solutions/products-services/merchant/genius/">https://www.tsys.com/solutions/products-services/merchant/genius/</a> {/ts}
 </div>
 
 
@@ -39,12 +39,9 @@
         </tr>
         {/foreach}
         </table>
-
-        <div class="action-link">
-          {crmButton p="civicrm/tsyssettings/device" q="action=add&reset=1" id="newDevice" icon="plus-circle"}{ts}Add Device{/ts}{/crmButton}
-        </div>
-
       </div>
+      {/if}
+  <div class="action-link">
+    {crmButton p="civicrm/tsyssettings/device" q="action=add&reset=1" id="newDevice" icon="plus-circle"}{ts}Add Device{/ts}{/crmButton}
+  </div>
 </div>
-
-{/if}
