@@ -8,6 +8,8 @@ use CRM_Tsys_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
  */
 class CRM_Tsys_Form_Tsysdevicepayment extends CRM_Core_Form {
+  // Form to submit a TSYS PAYMENT via a device
+  // This code assumes that you are making a payment against an existing contribution
   public function buildQuickForm() {
 
     // TODO send receipt checkbox?

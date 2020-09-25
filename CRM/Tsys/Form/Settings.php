@@ -8,6 +8,8 @@ use CRM_Tsys_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
  */
 class CRM_Tsys_Form_Settings extends CRM_Core_Form {
+  // Settings form for setting up TSYS devices. Other TSYS settings could be
+  // added here later down the line.
 
   /**
    * The action links that we need to display for the browse screen.

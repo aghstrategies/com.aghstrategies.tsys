@@ -1,5 +1,5 @@
 CRM.$(function ($) {
-
+  // JS to process a transaction via a Device
   $(document).ready(function () {
     // hide fields to save Responses
     $("input#tsys_initiate_response").parent().parent().hide();

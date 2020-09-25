@@ -9,23 +9,6 @@ use CRM_Tsys_ExtensionUtil as E;
  */
 class CRM_Core_Payment_TsysDevice extends CRM_Core_Payment_Tsys {
 
- public static function processStageTransactionResponse($response) {
-   $transactionDetails = [];
-   $paramsToExtract = [
-     'TransportKey',
-     'ValidationKey',
-   ];
-   foreach ($paramsToExtract as $key => $param) {
-     if (isset($response->Body->CreateTransactionResponse->CreateTransactionResult->$param)) {
-       $transactionDetails[$param] = (string) $response->Body->CreateTransactionResponse->CreateTransactionResult->$param;
-     }
-     if (isset($response->Body->CreateTransactionResponse->CreateTransactionResult->Messages)) {
-       $transactionDetails['Messages'] = $response->Body->CreateTransactionResponse->CreateTransactionResult->Messages;
-     }
-   }
-   return $transactionDetails;
- }
-
  public static function curlapicall($url) {
     $ch = curl_init();
     //http://php.net/manual/en/function.curl-setopt.php

@@ -8,7 +8,7 @@ use CRM_Tsys_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
  */
 class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
-
+  // Settings Form for a TSYS device
   public function preProcess() {
     // DELETE Device
     if ($this->_action && !empty($_GET['id']) && in_array($this->_action, [CRM_Core_Action::DISABLE, CRM_Core_Action::DELETE, CRM_Core_Action::ENABLE])) {

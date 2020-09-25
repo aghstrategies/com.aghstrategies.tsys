@@ -8,6 +8,8 @@ use CRM_Tsys_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
  */
 class CRM_Tsys_Form_Device extends CRM_Core_Form {
+  // FORM to create a simple contribution and record a payment for it via a
+  // TSYS device at the same time.
   public function buildQuickForm() {
 
     // set up device select field

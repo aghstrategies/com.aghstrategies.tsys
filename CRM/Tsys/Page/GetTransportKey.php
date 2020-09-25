@@ -3,6 +3,7 @@ use CRM_Tsys_ExtensionUtil as E;
 
 class CRM_Tsys_Page_GetTransportKey extends CRM_Core_Page {
 
+  // AJAX code when submitting a transaction via a device
   public function run() {
     // If we have a transport key
     if (isset($_GET['tk'])) {
@@ -41,7 +42,7 @@ class CRM_Tsys_Page_GetTransportKey extends CRM_Core_Page {
             if ($soap == 'stage') {
               $loggedInUser = CRM_Core_Session::singleton()->getLoggedInContactID();
               $response = CRM_Tsys_Soap::composeStageTransaction($tsysCreds, $urlParams['amount'], $loggedInUser, $deviceWeAreUsing['terminalid'], 0, $urlParams['test']);
-              $response = CRM_Core_Payment_TsysDevice::processStageTransactionResponse($response);
+              $response = CRM_Core_Payment_Tsys::processStageTransactionResponse($response);
             }
             elseif ($soap == 'report') {
               sleep(20);

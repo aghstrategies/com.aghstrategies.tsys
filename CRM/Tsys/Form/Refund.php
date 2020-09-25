@@ -8,7 +8,8 @@ use CRM_Tsys_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
  */
 class CRM_Tsys_Form_Refund extends CRM_Core_Form {
-
+  // Form to submit a refund to TSYS
+  
   /**
    * Set variables up before form is built.
    */
