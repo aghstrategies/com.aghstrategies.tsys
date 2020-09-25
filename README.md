@@ -33,11 +33,13 @@ Otherwise, download and install as you would for any other CiviCRM extension.
 The status of the Recurring Contribution should be set to Pending and a message should appear on the System Status page.
 
 ## Devices
-This Payment Processor works with TSYS countertop Devices
-New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> Administer -> TSYS Settings):
+This Payment Processor works with TSYS countertop Devices.
 
-### TSYS Settings Form
-![screenshot of tsys settings form](/images/TSYSSettings.png)
+### Genius Settings Form
+New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> Administer -> Genius Settings).
+
+This form allows you to see all configured TSYS devices and to test the connections to each device.
+![screenshot of tsys settings form](/images/testDevice.png)
 
 ### Add Device Form
 ![screenshot of add device form](/images/newDevice.png)

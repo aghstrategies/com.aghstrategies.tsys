@@ -18,8 +18,8 @@ CRM.$(function ($) {
         []
       );
     }).fail(function (xhr,status,error) {
-      CRM.alert('Connection Test to Device ID:' + CRM.vars.tsys.id + ' NOT Successful',
-        '',
+      CRM.alert('<p>Connection Test to Device ID:' + CRM.vars.tsys.id + ' NOT Successful.</p><p>There are a variety of reasons this may be the case including but not limited to:</p><ul><li>You may need to install a <a href="https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate">root certificate</a> for your browser.</li><li>The device settings may be incorrect.</li></ul>',
+        'Connection NOT Successful',
         'error',
         []
       );
