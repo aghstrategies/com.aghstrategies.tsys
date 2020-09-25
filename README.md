@@ -1,4 +1,4 @@
-# CiviCRM Tsys Payment Processor
+# CiviCRM Genius Platform by Global Payments Integrated (formerly TSYS) Processor
 
 Integrates the [TSYS®](https://www.tsys.com/) payment processor (for Credit/Debit cards) into CiviCRM so it can be used it to accept Credit / Debit card payments on your site.
 
@@ -39,15 +39,24 @@ New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> A
 ### TSYS Settings Form
 ![screenshot of tsys settings form](/images/TSYSSettings.png)
 
-
 ### Add Device Form
 ![screenshot of add device form](/images/newDevice.png)
 
 ### Add Payment Via Device Form
-![screenshot of form to add a payment via device](/images/paymentUsingDevice.png)
+Once configured Payments can be made using the devices one of two ways:
+1. A simple contribution can be made (with a payment for the full amount) thru the "Submit Credit Card Contribution Via Device" Form (CiviCRM Admin Menu -> Contributions -> Submit Credit Card Contribution Via Device).
+2. A payment can be made against an existing contribution using the "» Submit payment via {deviceName} device" links which can be found when viewing or editing eligible Contributions (contributions with the status "Pending" or "Partially Paid") and on the Record Additional Payment Form.
+![screenshot of record payment from device link on view contribution](/images/view.png)
 
 ## Refunds
-This Payment Processor allows the user to refund payments from CiviCRM.
+This Payment Processor allows the user to refund payments made thru GPI from CiviCRM by:
+1. going to a contribution in View or Edit mode
+2. Clicking the Refund Link  
+![screenshot of refund link](/images/refundLink.png)
+3. Entering the amount to refund (this will be prepopulated as the total payment amount).
+4. Clicking Issue Refund
+
+NOTE CiviCRM has other Refund workflows which will result in the Contribution in CiviCRM to be updated to the status Refunded but not update TSYS.
 
 ## Testing
 [Credit Card Numbers to test with](https://docs.tsysmerchant.com/knowledge-base/testing-certification-tools/test-processor)
@@ -57,3 +66,9 @@ $ env CIVICRM_UF=UnitTests TSYS_user_name='name' TSYS_password="webApiKey" TSYS_
 
 ## Versioning
 v.MAJOR.MINOR.PATCH
+
+## Wishlist Features
++ Process device payments from the Create Contribution Form
++ Process device payments from the Create Event Registration Form
++ Add a system check for if the Root Certificate is installed correctly
++ Refund a Contribution (not just individual payments)

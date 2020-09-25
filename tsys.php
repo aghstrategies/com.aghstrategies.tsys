@@ -108,7 +108,11 @@ function tsys_civicrm_buildForm($formName, &$form) {
   if ($formName == 'CRM_Contribute_Form_ContributionView'
   || $formName == 'CRM_Contribute_Form_Contribution'
   || $formName == 'CRM_Contribute_Form_AdditionalPayment') {
-    if (!empty($form->_id)) {
+    $contributionId = CRM_Utils_Request::retrieve('id', 'Integer');
+    if ($contributionId == NULL && isset($form->_id)) {
+      $contributionId = $form->_id;
+    }
+    if ($contributionId > 0) {
       $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
       if (!empty($deviceSettings)) {
         $deviceButtons = [];
@@ -277,6 +281,10 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
  * Implementation of hook_civicrm_check().
  */
 function tsys_civicrm_check(&$messages) {
+
+  // TODO add a system check to see if the root certificate is installed
+  // https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate
+
   // First get the Processors on this site
   try {
     $tsysProcesors = civicrm_api3('PaymentProcessor', 'get', [
@@ -422,7 +430,7 @@ function tsys_civicrm_navigationMenu(&$menu) {
     'separator' => 1,
   ]);
   _tsys_civix_insert_navigation_menu($menu, 'Contributions', [
-    'label' => E::ts('Submit Credit Card Payment Via Device'),
+    'label' => E::ts('Submit Credit Card Contribution Via Device'),
     'name' => 'tsys-device',
     'url' => 'civicrm/tsysdevice',
     'permission' => 'administer payment processors',
