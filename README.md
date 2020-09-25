@@ -11,7 +11,12 @@ For bug reports / feature requests for this extension please use the issue queue
 For more information visit: https://docs.civicrm.org/tsys/en/latest/
 
 ## Sign Up
-To open an account with TSYS, [click here to fill out the referral form](https://asnp.secure.force.com/appref?partnerId=a0F0y00000yu14J). TSYS has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
+To open an account with GPI, [click here to fill out the referral form](https://asnp.secure.force.com/appref?partnerId=a0F0y00000yu14J). GPI has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
+
+### Helpful Definitions
++ Genius Platform - The platform used to process transactions
++ Global Payments Integrated (GPI) - The company that owns the Genius platform
++ TSYS - The company that owned the Genius Platform before GPI but was bought and absorbed into GPI.
 
 ## Configuration
 All configuration is in the standard Payment Processors settings area in CiviCRM admin
@@ -22,7 +27,7 @@ You will need to enter the following credentials which will be provided on creat
 + Merchant Key
 + Merchant Site
 
-![screenshot of form to configure TSYS payment Processor](/images/screenToConfigureTSYScredentials.png)
+![screenshot of form to configure Genius payment Processor](/images/screenToConfigureTSYScredentials.png)
 
 ## Installation
 There are no special installation requirements.
@@ -33,12 +38,12 @@ Otherwise, download and install as you would for any other CiviCRM extension.
 The status of the Recurring Contribution should be set to Pending and a message should appear on the System Status page.
 
 ## Devices
-This Payment Processor works with TSYS countertop Devices.
+This Payment Processor works with Genius countertop Devices.
 
 ### Genius Settings Form
-New Devices can be configured on the TSYS Settings Form (CiviCRM Admin Menu -> Administer -> Genius Settings).
+New Devices can be configured on the Genius Settings Form (CiviCRM Admin Menu -> Administer -> Genius Settings).
 
-This form allows you to see all configured TSYS devices and to test the connections to each device.
+This form allows you to see all configured Genius devices, add new devices and test the connections to each device.
 ![screenshot of tsys settings form](/images/testDevice.png)
 
 ### Add Device Form
@@ -48,7 +53,7 @@ This form allows you to see all configured TSYS devices and to test the connecti
 NOTE when using a device with a site that has https set up you must set up a Genius Root Certificate on a per browser basis. More details on how to do this can be found in the [TSYS Knowlege Base](https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate).
 
 ### Add Payment Via Device Form
-Once configured Payments can be made using the devices one of two ways:
+Once a device has been configured, payments can be made using the device one of two ways:
 1. A simple contribution can be made (with a payment for the full amount) thru the "Submit Credit Card Contribution Via Device" Form (CiviCRM Admin Menu -> Contributions -> Submit Credit Card Contribution Via Device).
 2. A payment can be made against an existing contribution using the "» Submit payment via {deviceName} device" links which can be found when viewing or editing eligible Contributions (contributions with the status "Pending" or "Partially Paid") and on the Record Additional Payment Form.
 ![screenshot of record payment from device link on view contribution](/images/view.png)
@@ -61,7 +66,7 @@ This Payment Processor allows the user to refund payments made thru GPI from Civ
 3. Entering the amount to refund (this will be prepopulated as the total payment amount).
 4. Clicking Issue Refund
 
-NOTE CiviCRM has other Refund workflows which will result in the Contribution in CiviCRM to be updated to the status Refunded but not update TSYS.
+NOTE CiviCRM has other Refund workflows which will result in the Contribution in CiviCRM to be updated to the status Refunded but not update GPI.
 
 ## Testing
 [Credit Card Numbers to test with](https://docs.tsysmerchant.com/knowledge-base/testing-certification-tools/test-processor)
