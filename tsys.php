@@ -9,6 +9,8 @@ use CRM_Tsys_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_links
  */
 function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
+
+  // Adds links to process payments by device to Contribution Actions for Pending/Partially Paid Payments
   if ($op == 'contribution.selector.row' && $objectName == 'Contribution') {
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     if (!empty($deviceSettings)) {
@@ -25,7 +27,8 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
         )));
       }
       $statusesToShowDeviceLinks = ['Pending', 'Partially paid'];
-      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], $statusesToShowDeviceLinks)) {
+      if (!empty($contribDetails['contribution_status'])
+      && in_array($contribDetails['contribution_status'], $statusesToShowDeviceLinks)) {
         foreach ($deviceSettings as $key => $device) {
           if (!empty($device['devicename']) && !empty($device['ip'])) {
             $links[] = [
@@ -58,7 +61,8 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
           1 => $error,
         )));
       }
-      if (!empty($contribDetails['contribution_status']) && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending refund'])) {
+      if (!empty($contribDetails['contribution_status'])
+      && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending refund'])) {
         try {
           $trxnDetails = civicrm_api3('FinancialTrxn', 'getsingle', [
             'return' => "payment_processor_id, status_id, trxn_id",
@@ -93,38 +97,14 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
 }
 
 /**
- * Implements hook_civicrm_pageRun().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_pageRun
- */
-function tsys_civicrm_pageRun( &$page ) {
-  // Adds buttons the the Contribution Summary tab for each Device
-  if ($page->getVar('_name') == 'CRM_Contribute_Page_Tab' && $page->getVar('_id') == NULL) {
-    $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
-    if (!empty($deviceSettings)) {
-      foreach ($deviceSettings as $key => $values) {
-        if (!empty($values['devicename']) && !empty($values['ip'])) {
-          $cid = $page->getVar('_contactId');
-          $deviceUrl = CRM_Utils_System::url('civicrm/tsysdevice', "reset=1&deviceid={$key}&cid={$cid}");
-          $devices[] = [
-            'label' => $values['devicename'],
-            'url' => $deviceUrl,
-          ];
-          $page->assign('devices', $devices);
-        }
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_civicrm_buildForm().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function tsys_civicrm_buildForm($formName, &$form) {
 
-  // add Device links
+  // add link to make a payment via a Device:
+  // When viewing or editing a contribution or a payment
   if ($formName == 'CRM_Contribute_Form_ContributionView'
   || $formName == 'CRM_Contribute_Form_Contribution'
   || $formName == 'CRM_Contribute_Form_AdditionalPayment') {
@@ -197,7 +177,8 @@ function tsys_civicrm_buildForm($formName, &$form) {
       }
     }
 
-    // Don't use \Civi::resources()->addScriptFile etc as they often don't work on AJAX loaded forms (eg. participant backend registration)
+    // Don't use \Civi::resources()->addScriptFile etc as they often don't
+    // work on AJAX loaded forms (eg. participant backend registration)
     \Civi::resources()->addVars('tsys', [
       'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
       'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
@@ -311,13 +292,14 @@ function tsys_civicrm_check(&$messages) {
       1 => $error,
     )));
   }
+
   // If one or more payment processors are set up
   if (!empty($tsysProcesors['values'])) {
     $processors = [];
     foreach ($tsysProcesors['values'] as $key => $processorDets) {
       $processors[] = $processorDets['id'];
 
-      // Check that credentials are good
+      // Check for if Credentials are Good
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($processorDets['id']);
       $response = CRM_Tsys_Soap::composeReportByDate($tsysCreds);
       if (isset($response->Body->CurrentBatchSummaryResponse->CurrentBatchSummaryResult->TransactionSummary4->ErrorMessage)) {
