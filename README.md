@@ -13,13 +13,8 @@ For more information visit: https://docs.civicrm.org/tsys/en/latest/
 ## Sign Up
 To open an account with GPI, [click here to fill out the referral form](https://asnp.secure.force.com/appref?partnerId=a0F0y00000yu14J). GPI has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
 
-### Helpful Definitions
-+ Genius Platform - The platform used to process transactions
-+ Global Payments Integrated (GPI) - The company that owns the Genius platform
-+ TSYS - The company that owned the Genius Platform before GPI but was bought and absorbed into GPI.
-
 ## Configuration
-All configuration is in the standard Payment Processors settings area in CiviCRM admin
+Configuration is in the standard Payment Processors settings area in CiviCRM admin
 You will need to enter the following credentials which will be provided on creation of your Tsys Account:
 
 + Merchant Name
@@ -82,3 +77,8 @@ v.MAJOR.MINOR.PATCH
 + Process device payments from the Create Event Registration Form
 + Add a system check for if the Root Certificate is installed correctly
 + Refund a Contribution (not just individual payments)
+
+## Glossary
++ Genius Platform - The platform used to process transactions
++ Global Payments Integrated (GPI) - The company that owns the Genius platform
++ TSYS - The company that owned the Genius Platform before GPI but was bought and absorbed into GPI.
