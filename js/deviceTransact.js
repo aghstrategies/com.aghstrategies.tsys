@@ -5,6 +5,26 @@ CRM.$(function ($) {
     $("input#tsys_initiate_response").parent().parent().hide();
     $("input#tsys_create_response").parent().parent().hide();
     $("input#contribution_id").parent().parent().hide();
+
+    // Test connection
+    if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
+      var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
+      var $statusUrl = "http://" + $ip + ":8080/v1/pos?Action=Status&Format=JSON";
+
+      // if https use https version of cancel url
+      if (window.location.protocol == 'https:') {
+        var $statusUrl = "https://" + $ip + ":8443/v1/pos?Action=Status&Format=JSON";
+      }
+      $.ajax({
+        url: $statusUrl,
+        type: 'get',
+      }).done(function(data) {
+        if (data.Status != 'Online') {
+          console.log(data)
+        }
+      })
+      .fail(ajaxError);
+    }
   });
 
   // Function to ensure the required fields are populated before submit
