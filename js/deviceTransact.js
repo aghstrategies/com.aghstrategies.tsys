@@ -117,85 +117,84 @@ CRM.$(function ($) {
       // prevent form submit until ajax calls are done
       e.preventDefault();
 
-      // Test connection to device
-      var $statusUrl = compileDeviceUrl('Status');
-      console.log($statusUrl);
-      $.ajax({
-        url: $statusUrl,
-        type: 'get',
-        timeout: 7000,
-      }).done()
-      .fail(function(xhr,status,error) {
-        ajaxError(xhr, 'Error connecting to device. <p>There are a variety of reasons this may be the case including but not limited to:</p><ul><li>You may need to install a <a href="https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate">root certificate</a> for your browser.</li><li>The device settings may be incorrect.</li><li>Your Device must be on the same network as computer you are issuing the request from.</li></ul>', 'error')
-      });
-
       // hide submit and cancel buttons and show loading icon/cancel in progress transaction button
       $(".cancelInProgress").show();
       $("i.loadingIcon").show();
       $('span.crm-button-type-cancel').hide();
       $('span.crm-button-type-submit').hide();
 
-      // Compile Transport URL
-      var $transportUrl = compileTransportURL('stage', '');
+      // Test connection to device
+      var $statusUrl = compileDeviceUrl('Status');
       $.ajax({
-        url: $transportUrl,
+        url: $statusUrl,
         type: 'get',
-        timeout: 60000,
-      })
-      .done(function(data) {
+        timeout: 7000,
+      }).done( function() {
+        // Compile Transport URL
+        var $transportUrl = compileTransportURL('stage', '');
+        $.ajax({
+          url: $transportUrl,
+          type: 'get',
+          timeout: 60000,
+        })
+        .done(function(data) {
 
-        var initiateResponse = JSON.stringify(data);
-        $('input#tsys_initiate_response').val(initiateResponse);
-        if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
-          $create = compileCreateTransactionURL(data);
-          $.ajax({
-            url: $create,
-            type: 'get',
-            timeout: 60000,
-          })
-          .done(function(responseCreate) {
-            var createResponse = JSON.stringify(responseCreate);
-            $('input#tsys_create_response').val(createResponse);
-            $('input.validate').unbind('click').click();
-          })
-          .fail(function (xhr,status,error) {
-            var $reportUrl = compileTransportURL('report', data.TransportKey);
-            console.log($reportUrl);
+          var initiateResponse = JSON.stringify(data);
+          $('input#tsys_initiate_response').val(initiateResponse);
+          if (data.TransportKey.length > 0 && data.status == 'success' && CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
+            $create = compileCreateTransactionURL(data);
             $.ajax({
-              url: $reportUrl,
+              url: $create,
               type: 'get',
               timeout: 60000,
             })
-            .done(function(response) {
-              console.log(response);
-              if (response.status == 'success') {
-                if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "FAILED") {
-                  CRM.alert(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.ErrorMessage,
-                    response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status,
-                    'error',
-                    []
-                  );
+            .done(function(responseCreate) {
+              var createResponse = JSON.stringify(responseCreate);
+              $('input#tsys_create_response').val(createResponse);
+              $('input.validate').unbind('click').click();
+            })
+            .fail(function (xhr,status,error) {
+              var $reportUrl = compileTransportURL('report', data.TransportKey);
+              console.log($reportUrl);
+              $.ajax({
+                url: $reportUrl,
+                type: 'get',
+                timeout: 60000,
+              })
+              .done(function(response) {
+                console.log(response);
+                if (response.status == 'success') {
+                  if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "FAILED") {
+                    CRM.alert(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.ErrorMessage,
+                      response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status,
+                      'error',
+                      []
+                    );
+                    resetButtons();
+                  }
+                  else if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "APPROVED") {
+                    var reportResponse = JSON.stringify(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult);
+                    $('input#tsys_create_response').val(reportResponse);
+                    $('input.validate').unbind('click').click();
+                  }
+                }
+                else {
+                  CRM.alert("Failed to get transaction details", response.status, 'error', []);
                   resetButtons();
                 }
-                else if (response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult.Status == "APPROVED") {
-                  var reportResponse = JSON.stringify(response.Body.DetailsByTransportKeyResponse.DetailsByTransportKeyResult);
-                  $('input#tsys_create_response').val(reportResponse);
-                  $('input.validate').unbind('click').click();
-                }
-              }
-              else {
-                CRM.alert("Failed to get transaction details", response.status, 'error', []);
-                resetButtons();
-              }
-            })
-            .fail(ajaxError)
-          });
-        }
-        else {
-          CRM.alert("Transport Failed", data.status, 'error', []);
-        }
+              })
+              .fail(ajaxError)
+            });
+          }
+          else {
+            CRM.alert("Transport Failed", data.status, 'error', []);
+          }
+        })
+        .fail(ajaxError);
       })
-      .fail(ajaxError)
+      .fail(function(xhr,status,error) {
+        ajaxError(xhr, 'Error connecting to device. <p>There are a variety of reasons this may be the case including but not limited to:</p><ul><li>You may need to install a <a href="https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate">root certificate</a> for your browser.</li><li>The device settings may be incorrect.</li><li>Your Device must be on the same network as computer you are issuing the request from.</li></ul>', 'error')
+      });
     }
   }
 
