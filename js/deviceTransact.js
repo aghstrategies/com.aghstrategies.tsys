@@ -5,26 +5,6 @@ CRM.$(function ($) {
     $("input#tsys_initiate_response").parent().parent().hide();
     $("input#tsys_create_response").parent().parent().hide();
     $("input#contribution_id").parent().parent().hide();
-
-    // Test connection
-    if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
-      var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
-      var $statusUrl = "http://" + $ip + ":8080/v1/pos?Action=Status&Format=JSON";
-
-      // if https use https version of cancel url
-      if (window.location.protocol == 'https:') {
-        var $statusUrl = "https://" + $ip + ":8443/v1/pos?Action=Status&Format=JSON";
-      }
-      $.ajax({
-        url: $statusUrl,
-        type: 'get',
-      }).done(function(data) {
-        if (data.Status != 'Online') {
-          console.log(data)
-        }
-      })
-      .fail(ajaxError);
-    }
   });
 
   // Function to ensure the required fields are populated before submit
@@ -115,13 +95,13 @@ CRM.$(function ($) {
   }
 
   function ajaxError(xhr,status,error) {
-    CRM.alert(status, error, 'error', []);
+    CRM.alert(status, 'error', error, []);
     resetButtons();
   }
 
   // reset buttons because transaction failed
   function resetButtons() {
-    $("span.cancelInProgress").hide();
+    $(".cancelInProgress").hide();
     $("i.loadingIcon").hide();
     $('span.crm-button-type-cancel').show();
     $('span.crm-button-type-submit').show();
@@ -137,8 +117,20 @@ CRM.$(function ($) {
       // prevent form submit until ajax calls are done
       e.preventDefault();
 
+      // Test connection to device
+      var $statusUrl = compileDeviceUrl('Status');
+      console.log($statusUrl);
+      $.ajax({
+        url: $statusUrl,
+        type: 'get',
+        timeout: 7000,
+      }).done()
+      .fail(function(xhr,status,error) {
+        ajaxError(xhr, 'Error connecting to device. <p>There are a variety of reasons this may be the case including but not limited to:</p><ul><li>You may need to install a <a href="https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate">root certificate</a> for your browser.</li><li>The device settings may be incorrect.</li><li>Your Device must be on the same network as computer you are issuing the request from.</li></ul>', 'error')
+      });
+
       // hide submit and cancel buttons and show loading icon/cancel in progress transaction button
-      $("span.cancelInProgress").show();
+      $(".cancelInProgress").show();
       $("i.loadingIcon").show();
       $('span.crm-button-type-cancel').hide();
       $('span.crm-button-type-submit').hide();
@@ -210,22 +202,27 @@ CRM.$(function ($) {
   $('input.validate').on('click', sendInfoToTsys);
 
   // If the cancel in progress transaction button is clicked, cancel the transaction
-  $("input.cancelInProgress").click(function() {
+  $(".cancelInProgress").on('click', function() {
+    var $cancelUrl = compileDeviceUrl('Cancel');
+    $.ajax({
+      url: $cancelUrl,
+      type: 'get',
+    }).done(cancelSuccess)
+    .fail(ajaxError);
+  });
+
+  function compileDeviceUrl(action) {
     if (CRM.vars.tsys.ips[$('select#device_id').val()].ip.length > 0) {
       var $ip = CRM.vars.tsys.ips[$('select#device_id').val()].ip;
-      var $cancelUrl = "http://" + $ip + ":8080/v1/pos?Action=Cancel&Format=JSON";
+      var $url = "http://" + $ip + ":8080/v1/pos?Action=" + action + "&Format=JSON";
 
       // if https use https version of cancel url
       if (window.location.protocol == 'https:') {
-        var $cancelUrl = "https://" + $ip + ":8443/v1/pos?Action=Cancel&Format=JSON";
+        var $url = "https://" + $ip + ":8443/v1/pos?Action=" + action + "&Format=JSON";
       }
-      $.ajax({
-        url: $cancelUrl,
-        type: 'get',
-      }).done(cancelSuccess)
-      .fail(ajaxError);
     }
-  });
+    return $url;
+  }
 
   function cancelSuccess(data) {
     if (data.Status == "Denied") {

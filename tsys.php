@@ -119,7 +119,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
         foreach ($deviceSettings as $key => $device) {
           if (!empty($device['id'])) {
             $deviceButtons[] = [
-              'url' => CRM_Utils_System::url('civicrm/tsysdevicepayment', "reset=1&deviceid={$device['id']}&contribid={$form->_id}"),
+              'url' => CRM_Utils_System::url('civicrm/tsysdevicepayment', "reset=1&deviceid={$device['id']}&contribid={$contributionId}"),
               'label' => $device['devicename'],
             ];
           }
