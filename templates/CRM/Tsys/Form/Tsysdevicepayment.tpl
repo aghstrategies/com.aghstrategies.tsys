@@ -13,11 +13,10 @@
   </div>
 {/foreach}
 
-<div class="crm-submit-buttons">
-  {include file="CRM/common/formButtons.tpl" location="bottom"}
+{include file="CRM/common/formButtons.tpl" location="bottom"}
+
   <i style="display: none;" class="loadingIcon crm-i fa-spinner fa-pulse fa-2x fa-fw"></i>
   <span style="display: none;" class='crm-button crm-i-button cancelInProgress'>
     <i class='crm-i fa-times'></i>
     <input type="button" id="cancelInProgress" crm-icon='fa-times' class='crm-form-submit cancelInProgress crm-button cancel' value='Cancel In Progress Transaction'>
   </span>
-</div>
