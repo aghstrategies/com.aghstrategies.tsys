@@ -201,13 +201,14 @@ CRM.$(function ($) {
   $('input.validate').on('click', sendInfoToTsys);
 
   // If the cancel in progress transaction button is clicked, cancel the transaction
-  $(".cancelInProgress").on('click', function() {
+  $("#cancelInProgress").on('click', function() {
     var $cancelUrl = compileDeviceUrl('Cancel');
     $.ajax({
       url: $cancelUrl,
       type: 'get',
+      timeout: 5000,
     }).done(cancelSuccess)
-    .fail(ajaxError);
+    // .fail(ajaxError);
   });
 
   function compileDeviceUrl(action) {
