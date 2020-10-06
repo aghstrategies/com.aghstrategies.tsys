@@ -30,7 +30,7 @@ class CRM_Tsys_Form_Tsysdevicepayment extends CRM_Core_Form {
     // Fields to save response from Genius
     $this->add('text', 'tsys_initiate_response', "Genius Initiate Response", NULL);
     $this->add('text', 'tsys_create_response', "Genius Create Response", NULL);
-    $this->add('text', 'contribution_id', "Contribution ID", NULL, TRUE);
+    $this->add('text', 'contribution_id', "Contribution ID", ['class' => 'device'], TRUE);
 
     $this->addElement('checkbox', 'is_test', E::ts('Test transaction?'));
 

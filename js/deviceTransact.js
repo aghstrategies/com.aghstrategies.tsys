@@ -4,18 +4,18 @@ CRM.$(function ($) {
     // hide fields to save Responses
     $("input#tsys_initiate_response").parent().parent().hide();
     $("input#tsys_create_response").parent().parent().hide();
-    $("input#contribution_id").parent().parent().hide();
+    $("input#contribution_id.device").parent().parent().hide();
   });
 
   // Function to ensure the required fields are populated before submit
   var validateForm = function() {
     // validate form
     var allData = 1;
-    if ($('input#contribution_id').length == 1) {
+    if ($('input#contribution_id.device').length == 1) {
       var fields = {
         amount: 'input#total_amount',
         device: 'select#device_id',
-        contribution: 'input#contribution_id',
+        contribution: 'input#contribution_id.device',
       };
     }
     else {
@@ -28,7 +28,7 @@ CRM.$(function ($) {
     }
     $.each(fields, function(name, val) {
       if ($(val).val() == undefined || $(val).val() == '') {
-        $(val).crmError(ts('is a required field'));
+        $(val).crmError(ts('required fields are missing'));
         allData = 0;
       }
       if (name == 'amount' && !$.isNumeric($(val).val())) {
