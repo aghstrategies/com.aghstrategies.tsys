@@ -94,8 +94,8 @@ CRM.$(function ($) {
     return $create;
   }
 
-  function ajaxError(xhr,status,error) {
-    CRM.alert(status, 'error', error, []);
+  function ajaxError(xhr, status, error) {
+    CRM.alert('<p>Status: 'status + '</p><p>Error: ' + error + '</p>', 'error', 'error');
     resetButtons();
   }
 
