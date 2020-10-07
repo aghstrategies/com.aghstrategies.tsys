@@ -396,7 +396,7 @@ CRM.$(function ($) {
     var $billingForm = $('input#payment_token').closest('form');
     if (!$billingForm.length && getIsWebform()) {
       // If we are in a webform
-      // TODO Can we distinguish that this is a webform w/ a payment in case
+      // Can we distinguish that this is a webform w/ a payment in case
       // there's another webform in the sidebar?
       $billingForm = $('.webform-client-form');
     }

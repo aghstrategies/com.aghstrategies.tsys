@@ -83,7 +83,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   $dao = CRM_Tsys_Recur::getInstallmentsDone('dates');
   while ($dao->fetch()) {
     // Check for end dates that should be unset because I haven't finished
-    // at least one more installment todo.
+    // at least one more installment left.
     if ($dao->installments_done < $dao->installments) {
       // Unset the end_date.
       if (($dao->end_date > 0) && ($dao->end_date <= $dao->test_now)) {

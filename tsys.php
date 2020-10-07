@@ -282,9 +282,6 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
  */
 function tsys_civicrm_check(&$messages) {
 
-  // TODO add a system check to see if the root certificate is installed
-  // https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate
-
   // First get the Processors on this site
   try {
     $tsysProcesors = civicrm_api3('PaymentProcessor', 'get', [

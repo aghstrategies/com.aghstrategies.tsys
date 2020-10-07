@@ -77,6 +77,7 @@ v.MAJOR.MINOR.PATCH
 + Process device payments from the Create Event Registration Form
 + Add a system check for if the Root Certificate is installed correctly
 + Refund a Contribution (not just individual payments)
++ Add a system check to see if the root certificate is installed: https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate
 
 ## Glossary
 + Genius Platform - The platform used to process transactions

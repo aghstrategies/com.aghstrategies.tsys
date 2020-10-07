@@ -467,7 +467,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       'pan_truncation' => 'CardNumber',
       'card_type_id' => 'CardType',
       'tsys_token'  => 'Token',
-      // NOTE the trxn_result coe is not saved
+      // NOTE the trxn_result code is not saved
       // TODO fix core so that the trxn_result_code can be saved to the civicrm_finacial_trxn table using the api
       'trxn_result_code' => 'AuthorizationCode',
 
@@ -517,7 +517,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       'MASTERCARD' => 'MasterCard',
       'AMEX' => 'Amex',
       'DISCOVER' => 'Discover',
-      // TODO there are other payment types... do we need to deal with these
+      // NOTE there are other payment types... do we need to deal with these
       // https://docs.tsysmerchant.com/genius/transactions#stage
     ];
     foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
