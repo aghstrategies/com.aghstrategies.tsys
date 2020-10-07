@@ -12,8 +12,6 @@ class CRM_Tsys_Form_Tsysdevicepayment extends CRM_Core_Form {
   // This code assumes that you are making a payment against an existing contribution
   public function buildQuickForm() {
 
-    // TODO send receipt checkbox?
-
     // set up device select field
     $deviceSettings = CRM_Core_Payment_Tsys::getDeviceSettings('buttons');
     $deviceOptions = CRM_Tsys_Form_Device::getDeviceOptions($deviceSettings);

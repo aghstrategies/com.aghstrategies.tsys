@@ -78,6 +78,7 @@ v.MAJOR.MINOR.PATCH
 + Add a system check for if the Root Certificate is installed correctly
 + Refund a Contribution (not just individual payments)
 + Add a system check to see if the root certificate is installed: https://docs.tsysmerchant.com/knowledge-base/faqs/how-do-i-install-the-genius-root-certificate
++ Add send receipt checkbox to device payment form
 
 ## Glossary
 + Genius Platform - The platform used to process transactions
