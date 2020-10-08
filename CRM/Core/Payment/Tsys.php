@@ -601,22 +601,6 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   }
 
   /**
-   * Get the currency for the transaction.
-   *
-   * Handle any inconsistency about how it is passed in here.
-   *
-   * @param array $params
-   *
-   * @return string
-   */
-  public function getAmount($params = []): string {
-    $amount = number_format((float) $params['amount'] ?? 0.0, CRM_Utils_Money::getCurrencyPrecision($this->getCurrency($params)), '.', '');
-    // Stripe amount required in cents.
-    $amount = preg_replace('/[^\d]/', '', strval($amount));
-    return $amount;
-  }
-
-  /**
    * Submit a refund payment
    *
    * @param array $params
@@ -639,9 +623,6 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
       }
     }
-
-    // Get Refund Amount
-    $refundAmount = $this->getAmount($params);
 
     // Get amount of original payment
     try {
@@ -670,7 +651,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         $response->SupportedActions->RefundMaxAmount > 0
       ) {
         $maxRefundAmount = $response->SupportedActions->RefundMaxAmount;
-        $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($params['trxn_id'], $refundAmount, $tsysCreds);
+        $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($params['trxn_id'], $params['amount'], $tsysCreds);
         $response = $runRefund->Body->RefundResponse->RefundResult;
         // TODO Process response
       }
