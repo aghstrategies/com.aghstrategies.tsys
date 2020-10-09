@@ -599,9 +599,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     CRM_Core_Session::setStatus($userAlert, E::ts('Warning'), 'alert');
     return TRUE;
   }
+  
 
   /**
-   * Submit a refund payment
+   * Submit a refund to TSYS
    *
    * @param array $params
    *   Assoc array of input parameters for this transaction.

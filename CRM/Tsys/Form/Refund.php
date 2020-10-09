@@ -171,7 +171,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
   public function processResponse($response, $values) {
     // We got a legible response!!
     if (isset($response->ApprovalStatus)) {
-      // Void successful in Genius so update CiviCRM payment accordingly
+      // pull out refund info so we can save the refund details in CiviCRM
       if ((string) $response->ApprovalStatus == 'APPROVED') {
         $trxnParams['total_amount'] = -$values['refund_amount'];
         $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
@@ -265,6 +265,11 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     return $elementNames;
   }
 
+  /**
+   * Record refund payment in CiviCRM
+   * @param  array $trxnParams refund transaction details
+   * @param  array $values     form values
+   */
   public function createRefundInCivi($trxnParams, $values) {
 
     // Create Payment
