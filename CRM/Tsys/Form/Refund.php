@@ -179,6 +179,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
           $trxnParams['trxn_date'] = (string) $response->TransactionDate;
         }
 
+        // record refund payment in CiviCRM 
         $refund = self::createRefundInCivi($trxnParams, $values);
 
         // Update the user everything went well
