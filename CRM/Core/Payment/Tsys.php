@@ -612,7 +612,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   public function doRefund(&$params) {
     // NOTE this is based off of Stripes doRefund function: https://lab.civicrm.org/extensions/stripe/blob/master/CRM/Core/Payment/Stripe.php#L737
     // Currently it is called when one does a PaymentProcessor.refund API call
-    // It does not handle any of the logic to create the refund payment/update the contribution status
+    // It does not handle any of the logic to create the refund payment/update the contribution status it only issues a refund in TSYS (just like Stripe)
 
     $refResult = NULL;
     $refundParams = [];
