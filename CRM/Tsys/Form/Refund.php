@@ -130,109 +130,43 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     if (!empty($values['payment_processor_id'])
       && !empty($values['refund_amount'])
       && !empty($values['trxn_id']
-      && !empty($values['formaction']))
-    ) {
+      // && !empty($values['formaction'])
+    )) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($values['payment_processor_id']);
       if (!empty($tsysCreds)) {
-        if ($values['formaction'] == 'Refund') {
-          $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($values['trxn_id'], $values['refund_amount'], $tsysCreds);
-          $response = $runRefund->Body->RefundResponse->RefundResult;
-          self::processResponse($response, $values);
+
+        // Create Payment
+        try {
+          $doRefund = civicrm_api3('PaymentProcessor', 'refund', [
+            'currency' => 'USD',
+            'trxn_id' => $values['trxn_id'],
+            'amount' => $values['refund_amount'],
+            'payment_processor_id' => $values['payment_processor_id'],
+            'create_payment' => TRUE,
+          ]);
         }
-        elseif ($values['formaction'] == 'Void') {
-          $voidResponse = CRM_Tsys_Soap::composeVoidSoapRequest($values['trxn_id'], $tsysCreds);
-          $response = $voidResponse->Body->VoidResponse->VoidResult;
-          self::processResponse($response, $values);
+        catch (CiviCRM_API3_Exception $e) {
+          $error = $e->getMessage();
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+            'domain' => 'com.aghstrategies.tsys',
+            1 => $error,
+          )));
+          CRM_Core_Error::debug_var('Genius VOID/REFUND form values to be processed', $values);
+          CRM_Core_Session::setStatus(E::ts('Refund Failed'), '', 'error');
         }
+        if (empty($doRefund['error'])) {
+          CRM_Core_Session::setStatus(E::ts('Refund issued'), '', 'success');
+        }
+      }
+      else {
+        CRM_Core_Session::setStatus(E::ts('No credentials for this processor in TSYS'), '', 'error');
       }
     }
     else {
+      CRM_Core_Session::setStatus(E::ts('Missing data to process refund'), '', 'error');
       CRM_Core_Error::debug_var('Genius VOID/REFUND form values to be processed', $values);
     }
     parent::postProcess();
-  }
-
-  /**
-   * Process Refund Response - Update user and payment/contribution status
-   * @param  object $runRefund Response from Tsys
-   * @param  array  $values    form values
-   * @return
-   */
-  public function processResponse($response, $values) {
-    // We got a legible response!!
-    if (isset($response->ApprovalStatus)) {
-      // pull out refund info so we can save the refund details in CiviCRM
-      if ((string) $response->ApprovalStatus == 'APPROVED') {
-        $trxnParams['total_amount'] = -$values['refund_amount'];
-        $trxnParams['payment_processor_id'] = $values['payment_processor_id'];
-        $trxnParams['contribution_id'] = $values['contribution_id'];
-        $trxnParams['card_type_id'] = $values['card_type_id'];
-        $trxnParams['pan_truncation'] = $values['pan_truncation'];
-
-        if (isset($response->Token)) {
-          $trxnParams['trxn_id'] = (string) $response->Token;
-        }
-        if (isset($response->AuthorizationCode)) {
-          $trxnParams['trxn_result_code'] = (string) $response->AuthorizationCode;
-        }
-        if (isset($response->TransactionDate)) {
-          $trxnParams['trxn_date'] = (string) $response->TransactionDate;
-        }
-
-        // record refund payment in CiviCRM 
-        $refund = self::createRefundInCivi($trxnParams, $values);
-
-        // Update the user everything went well
-        CRM_Core_Session::setStatus(
-          E::ts('%1 of payment approved', [
-            1 => $values['formaction']
-          ]),
-          E::ts('%1 Approved', [
-            1 => $values['formaction']
-          ]),
-          'success'
-        );
-      }
-      // failed explicitly so retrieve error
-      elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
-        $approvalStatus = explode(';', $response->ApprovalStatus);
-        CRM_Core_Error::debug_var('Genius VOID/REFUND form values', $values);
-        if (count($approvalStatus) == 3) {
-          CRM_Core_Session::setStatus(
-            E::ts('Error Code %1, %2', array(
-              1 => $approvalStatus[1],
-              2 => $approvalStatus[2],
-            )),
-            E::ts('%1 Failed', [
-              1 => $values['formaction'],
-            ]),
-            'error'
-          );
-        } else {
-          CRM_Core_Session::setStatus(
-            $approvalStatus,
-            E::ts('%1 Failed', [
-              1 => $values['formaction'],
-            ]),
-            'error'
-          );
-        }
-      }
-    }
-    // We did not get a legible response
-    else {
-      CRM_Core_Session::setStatus(
-        E::ts('%1 Response could not be found see logs for more details.', [
-          1 => $values['formaction'],
-        ]),
-        E::ts('%1 Failed', [
-          1 => $values['formaction'],
-        ]),
-        'error'
-      );
-      CRM_Core_Error::debug_var('Genius VOID/REFUND response', $response);
-      CRM_Core_Error::debug_var('Genius VOID/REFUND form submit values', $values);
-    }
   }
 
   /**
@@ -256,111 +190,4 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     return $elementNames;
   }
 
-  /**
-   * Record refund payment in CiviCRM
-   * @param  array $trxnParams refund transaction details
-   * @param  array $values     form values
-   */
-  public function createRefundInCivi($trxnParams, $values) {
-
-    // Create Payment
-    try {
-      $updateTrxnStatus = civicrm_api3('Payment', 'create', $trxnParams);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-
-    // BECAUSE payment.create does not create a Financial Item we need to create
-    // a Financial Item so that the Financial Type shows up properly for more
-    // details see: https://lab.civicrm.org/dev/financial/issues/87
-
-    // Get Contribution Contact (because we need it to create the financial item)
-    try {
-      $contributionContact = civicrm_api3('Contribution', 'getvalue', [
-        'return' => "contact_id",
-        'id' => $trxnParams['contribution_id'],
-      ]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-
-    // Get Financial Type (because we need it to create the financial item)
-    try {
-      $eft = civicrm_api3('EntityFinancialTrxn', 'getsingle', [
-        'financial_trxn_id' => $values['og_fin_trxn'],
-        'entity_table' => "civicrm_financial_item",
-        'api.FinancialItem.get' => ['id' => "\$value.entity_id"],
-      ]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-
-    try {
-      $fi = civicrm_api3('FinancialItem', 'getsingle', [
-        'id' => $eft['entity_id'],
-      ]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-
-    $finItemParams = [
-      'entity_table' => "civicrm_financial_trxn",
-      'transaction_date' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['trxn_date'],
-      'entity_id' => $updateTrxnStatus['id'],
-      'financial_account_id' => $fi['financial_account_id'],
-      'status_id' => 1,
-      'contact_id' => $contributionContact,
-      'amount' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['total_amount'],
-      'description' => "Genius Refund",
-      'currency' => "USD",
-    ];
-
-    try {
-      $createFinItem = civicrm_api3('FinancialItem', 'create', $finItemParams);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-
-    // And connect the Financial Item to the trxn using Entity Financial Trxn
-    try {
-      $entityFinTrxn = civicrm_api3('EntityFinancialTrxn', 'create', [
-        'entity_table' => "civicrm_financial_item",
-        'entity_id' => $createFinItem['id'],
-        'financial_trxn_id' => $updateTrxnStatus['id'],
-        'amount' => $updateTrxnStatus['values'][$updateTrxnStatus['id']]['total_amount'],
-      ]);
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
-        'domain' => 'com.aghstrategies.tsys',
-        1 => $error,
-      )));
-    }
-  }
 }
