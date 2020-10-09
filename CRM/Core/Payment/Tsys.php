@@ -599,7 +599,38 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     CRM_Core_Session::setStatus($userAlert, E::ts('Warning'), 'alert');
     return TRUE;
   }
-  
+
+  /**
+   * Determine if a transaction should be refunded or voided
+   * @param  array $tsysCreds  Tsys Credentials
+   * @param  int $trxnId       payment transaction id
+   * @return array             array with two items ActionAvailable and maxRefundAmount
+   */
+  public static function determineAvailableActions($tsysCreds, $trxnId) {
+    $actionInfo = [];
+    $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($trxnId, $tsysCreds);
+    $response = $tsysInfo->Body->DetailedTransactionByReferenceResponse->DetailedTransactionByReferenceResult;
+
+    if ((string) $response->ApprovalStatus == 'APPROVED') {
+      if (isset($response->SupportedActions->RefundToken) && (string) $response->SupportedActions->RefundToken != '' && $response->SupportedActions->RefundMaxAmount > 0) {
+        $actionInfo['actionAvailable'] = 'Refund';
+        $actionInfo['maxRefundAmount'] = $response->SupportedActions->RefundMaxAmount;
+      }
+      elseif (isset($response->SupportedActions->VoidToken) && (string) $response->SupportedActions->VoidToken != '') {
+        $actionInfo['actionAvailable'] = 'Void';
+      }
+      else {
+        $actionInfo['actionAvailable'] = 'None';
+        CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+      }
+    }
+    else {
+      $actionInfo['actionAvailable'] = 'Not Approved';
+      CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+    }
+
+    return $actionInfo;
+  }
 
   /**
    * Submit a refund to TSYS
@@ -646,51 +677,33 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id']);
 
     // Decide whether to refund, void or adjust amount
-    $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($params['trxn_id'], $tsysCreds);
-    $report = $tsysInfo->Body->DetailedTransactionByReferenceResponse->DetailedTransactionByReferenceResult;
+    $actionInfo = self::determineAvailableActions($tsysCreds, $params['trxn_id']);
 
-    if ((string) $report->ApprovalStatus == 'APPROVED') {
-
-      // If a refund token is available Refund
-      if (isset($report->SupportedActions->RefundToken) &&
-        (string) $report->SupportedActions->RefundToken != '' &&
-        $report->SupportedActions->RefundMaxAmount >= 0
-      ) {
-        $maxRefundAmount = $report->SupportedActions->RefundMaxAmount;
+    // Do refund or void
+    if ($actionInfo['actionAvailable'] == 'Refund') {
+      if ($actionInfo['maxRefundAmount'] >= $params['amount']) {
         $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($params['trxn_id'], $params['amount'], $tsysCreds);
         $refResult = $runRefund->Body->RefundResponse->RefundResult;
       }
-      // If a void token is available and we are negating the FULL payment void
-      elseif (isset($report->SupportedActions->VoidToken) &&
-        (string) $report->SupportedActions->VoidToken != '' &&
-        $OGtrxn['total_amount'] == $params['amount']
-      ) {
+      else {
+        $refundParams['error'] = 'The amount entered is greater than the amount available to refund.';
+      }
+    }
+    elseif ($actionInfo['actionAvailable'] == 'Void') {
+      if ($OGtrxn['total_amount'] == $params['amount']) {
         $voidResponse = CRM_Tsys_Soap::composeVoidSoapRequest($params['trxn_id'], $tsysCreds);
         $refResult = $voidResponse->Body->VoidResponse->VoidResult;
       }
-
-      // If the payment has not yet been batched AND the refund request is for a partial refund throw an error.
-      elseif (isset($report->SupportedActions->AdjustmentToken) &&
-        (string) $report->SupportedActions->AdjustmentToken != '' &&
-        $OGtrxn['total_amount'] != $params['amount']
-      ) {
-        $actionAvailable = 'Adjust';
-        $refundParams['error'] = 'This payment has not been batched so is not eligible for a partial refund. Void the payment and create a new one.';
-      }
-
-      // If no valid action found throw an error
       else {
-        $actionAvailable = 'None';
-        CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $report);
-        $message = 'Genius doRefund: no valid action found';
-        Civi::log()->error($message);
-        Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+        $refundParams['error'] = 'This payment has not yet been batched, it must be voided in full.';
       }
+    }
+    else {
+      $refundParams['error'] = 'Genius: no valid action found';
+    }
 
-      // Process response from Genius
-      if ($refResult != NULL) {
-        $refundParams = self::processResponse($refResult);
-      }
+    if ($refResult != NULL) {
+      $refundParams = self::processResponse($refResult);
     }
     else {
       $message = 'Genius doRefund: No Valid Transaction found : ' . $params['trxn_id'];

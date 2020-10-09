@@ -22,27 +22,17 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
     $this->_values = civicrm_api3('FinancialTrxn', 'getsingle', ['id' => $this->_id]);
 
-    // If the payment was run thru Genius check if it should be voided (has not been batched yet) or Refunded (has been batched)
     $tsysProcessors = CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors();
+
     if (!empty($this->_values['payment_processor_id']) && !in_array($this->_values['payment_processor_id'], $tsysProcessors)) {
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($this->_values['payment_processor_id']);
-      $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($this->_values['trxn_id'], $tsysCreds);
-      $response = $tsysInfo->Body->DetailedTransactionByReferenceResponse->DetailedTransactionByReferenceResult;
-      if ((string) $response->ApprovalStatus == 'APPROVED') {
-        if (isset($response->SupportedActions->RefundToken) && (string) $response->SupportedActions->RefundToken != '' && $response->SupportedActions->RefundMaxAmount > 0) {
-          $this->actionAvailable = 'Refund';
-          $this->maxRefundAmount = $response->SupportedActions->RefundMaxAmount;
-        }
-        elseif (isset($response->SupportedActions->VoidToken) && (string) $response->SupportedActions->VoidToken != '') {
-          $this->actionAvailable = 'Void';
-        }
-        else {
-          $this->actionAvailable = 'None';
-          CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
-        }
+      $actionInfo = CRM_Core_Payment_Tsys::determineAvailableActions($tsysCreds, $this->_values['trxn_id']);
+
+      if (!empty($actionInfo['actionAvailable'])) {
+        $this->actionAvailable = $actionInfo['actionAvailable'];
       }
-      else {
-        CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+      if (!empty($actionInfo['maxRefundAmount'])) {
+        $this->maxRefundAmount = $actionInfo['maxRefundAmount'];
       }
     }
     // If the payment was not run thru Genius bounce
