@@ -9,7 +9,7 @@ use CRM_Tsys_ExtensionUtil as E;
  */
 class CRM_Tsys_Form_Refund extends CRM_Core_Form {
   // Form to submit a refund to TSYS
-  
+
   /**
    * Set variables up before form is built.
    */
@@ -367,5 +367,4 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       )));
     }
   }
-
 }
