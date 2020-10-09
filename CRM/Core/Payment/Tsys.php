@@ -673,6 +673,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         1 => $error,
       )));
     }
+
     // Get Payment Processor Settings
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id']);
 
@@ -706,11 +707,13 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $refundParams = self::processResponse($refResult);
     }
     else {
-      $message = 'Genius doRefund: No Valid Transaction found : ' . $params['trxn_id'];
-      Civi::log()->error($message);
-      Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
-      $refundParams['error'] = $message;
+      if (empty($refundParams['error'])) {
+        $refundParams['error'] = 'Genius Refund: No Valid Transaction found : ' . $params['trxn_id'];
+      }
+      Civi::log()->error($refundParams['error']);
+      Throw new \Civi\Payment\Exception\PaymentProcessorException($refundParams['error']);
     }
+
     // Return results
     return $refundParams;
   }
