@@ -307,17 +307,6 @@ CRM.$(function ($) {
         }
       }
 
-      // This is ONLY triggered in the following circumstances on a CiviCRM contribution page:
-      // - With a priceset that allows a 0 amount to be selected.
-      // - When tsys is the ONLY payment processor configured on the page.
-      if (typeof calculateTotalFee == 'function') {
-        var totalFee = calculateTotalFee();
-        if (totalFee == '0') {
-          debugging('Total amount is 0');
-          return true;
-        }
-      }
-
       // If there's no credit card field, no use in continuing (probably wrong
       // context anyway)
       if (!$form.find('#credit_card_number').length) {
