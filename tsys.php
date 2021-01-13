@@ -310,7 +310,8 @@ function tsys_civicrm_check(&$messages) {
       // Check for if Credentials are Good
       $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($processorDets['id']);
       $response = CRM_Tsys_Soap::composeReportByDate($tsysCreds);
-      if (isset($response->Body->CurrentBatchSummaryResponse->CurrentBatchSummaryResult->TransactionSummary4->ErrorMessage)) {
+      if (isset($response->Body->CurrentBatchSummaryResponse->CurrentBatchSummaryResult->TransactionSummary4->ErrorMessage)
+      && !empty($response->Body->CurrentBatchSummaryResponse->CurrentBatchSummaryResult->TransactionSummary4->ErrorMessage)) {
         $messages[] = new CRM_Utils_Check_Message(
           'failed_genius_creds',
           E::ts('The Genius Credentials for Payment Processor ID %1 are incorrect please update them <a href=%2>here</a>.', [
