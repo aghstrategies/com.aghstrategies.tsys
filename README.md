@@ -11,7 +11,7 @@ For bug reports / feature requests for this extension please use the issue queue
 For more information visit: https://docs.civicrm.org/tsys/en/latest/
 
 ## Sign Up
-To open an account with TSYS, [click here to fill out the referral form](https://asnp.secure.force.com/appref?partnerId=a0F0y00000yu14J). TSYS has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
+To open an account with TSYS, [click here to fill out the referral form](https://lp.globalpaymentsintegrated.com/referrals/aghstrategies/). TSYS has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
 
 ## Configuration
 All configuration is in the standard Payment Processors settings area in CiviCRM admin
