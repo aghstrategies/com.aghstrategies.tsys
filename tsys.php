@@ -348,28 +348,46 @@ function tsys_civicrm_check(&$messages) {
       if (!empty($failedContributions['values']) && $failedContributions['count'] > 0) {
         $recurContributionToLookInto = [];
         foreach ($failedContributions['values'] as $key => $value) {
-          $recurContributionToLookInto[] = $value['id'];
+          // check that there is atleast one successful transaction for the recurring contribution
+          try {
+            $payments = civicrm_api3('Contribution', 'get', [
+              'contribution_recur_id' => $value['id'],
+              'contribution_status_id' => "Completed",
+            ]);
+          }
+          catch (CiviCRM_API3_Exception $e) {
+            $error = $e->getMessage();
+            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+              'domain' => 'com.aghstrategies.tsys',
+              1 => $error,
+            )));
+          }
+          if (!empty($payments['count']) && $payments['count'] > 0) {
+            $recurContributionToLookInto[] = $value['id'];
+          }
         }
-        $recurContributionToLookInto = implode(', ', $recurContributionToLookInto);
-        $warningLevel = \Psr\Log\LogLevel::NOTICE;
-        if ($failedContributions['count'] > 3) {
-          $warningLevel = \Psr\Log\LogLevel::WARNING;
+        if (!empty($recurContributionToLookInto)) {
+          $recurContributionToLookInto = implode(', ', $recurContributionToLookInto);
+          $warningLevel = \Psr\Log\LogLevel::NOTICE;
+          if ($failedContributions['count'] > 3) {
+            $warningLevel = \Psr\Log\LogLevel::WARNING;
+          }
+          if ($failedContributions['count'] > 5) {
+            $warningLevel = \Psr\Log\LogLevel::ERROR;
+          }
+          $tsParams = array(
+            1 => $failedContributions['count'],
+            2 => $recurContributionToLookInto,
+          );
+          $details = E::ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
+          $messages[] = new CRM_Utils_Check_Message(
+            'failed_recurring_contributions_found',
+            $details,
+            E::ts('Uncompleted Recurring Genius Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+            $warningLevel,
+            'fa-user-times'
+          );
         }
-        if ($failedContributions['count'] > 5) {
-          $warningLevel = \Psr\Log\LogLevel::ERROR;
-        }
-        $tsParams = array(
-          1 => $failedContributions['count'],
-          2 => $recurContributionToLookInto,
-        );
-        $details = E::ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
-        $messages[] = new CRM_Utils_Check_Message(
-          'failed_recurring_contributions_found',
-          $details,
-          E::ts('Uncompleted Recurring Genius Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
-          $warningLevel,
-          'fa-user-times'
-        );
       }
     }
   }
