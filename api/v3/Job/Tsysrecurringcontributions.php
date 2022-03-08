@@ -1,4 +1,7 @@
 <?php
+require_once 'tsys.civix.php';
+use CRM_Tsys_ExtensionUtil as E;
+
 /**
  * @file
  */
