@@ -450,7 +450,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       if (isset($params['unit_test']) && $params['unit_test'] == 1) {
         return $params;
       }
-      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url'], $makeTransaction);
+      $errorMessage = self::handleErrorNotification($errorMessage, NULL, $makeTransaction);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
   }
