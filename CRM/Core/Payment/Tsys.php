@@ -49,7 +49,15 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @return bool
    */
   public function supportsEditRecurringContribution() {
-    return FALSE;
+    return TRUE;
+  }
+
+  /**
+   * can edit amount for recurring contributions
+   * @return bool
+   */
+  public function changeSubscriptionAmount() {
+    return TRUE;
   }
 
   /**
