@@ -758,7 +758,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     return $trxnParams;
   }
 
-  public function getDeviceSettings($format = 'settings', $processorId = NULL) {
+  public static function getDeviceSettings($format = 'settings', $processorId = NULL) {
     $deviceSettings = [];
     try {
        $result = civicrm_api3('Setting', 'get', ['return' => 'tsys_devices']);
