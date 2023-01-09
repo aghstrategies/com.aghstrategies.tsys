@@ -11,7 +11,7 @@ For bug reports / feature requests for this extension please use the issue queue
 For more information visit: https://docs.civicrm.org/tsys/en/latest/
 
 ## Sign Up
-To open an account with TSYS, [click here to fill out the referral form](https://asnp.secure.force.com/appref?partnerId=a0F0y00000yu14J). TSYS has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
+To open an account with TSYS, [click here to fill out the referral form](https://lp.globalpaymentsintegrated.com/referrals/aghstrategies/). TSYS has staff dedicated to supporting CiviCRM, and one of them will follow up to discuss processing rates.
 
 ## Configuration
 All configuration is in the standard Payment Processors settings area in CiviCRM admin
@@ -59,7 +59,7 @@ This Payment Processor allows the user to refund payments made thru GPI from Civ
 NOTE CiviCRM has other Refund workflows which will result in the Contribution in CiviCRM to be updated to the status Refunded but not update TSYS.
 
 ## Testing
-[Credit Card Numbers to test with](https://docs.tsysmerchant.com/knowledge-base/testing-certification-tools/test-processor)
+[Credit Card Numbers to test with](https://developer.globalpay.com/resources/test-card-numbers)
 
 ### To Run phpunit tests:
 $ env CIVICRM_UF=UnitTests TSYS_user_name='name' TSYS_password="webApiKey" TSYS_signature="Key" TSYS_subject="siteId" phpunit5 ./tests/phpunit/CRM/Tsys/OneTimeContributionTsysTest.php
