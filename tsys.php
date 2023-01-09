@@ -430,7 +430,7 @@ function tsys_civicrm_managed(&$entities) {
       'payment_fields' => ['payment_token'],
     ),
   );
-  return _tsys_civix_civicrm_managed($entities);
+  return;
 }
 
 /**
@@ -523,51 +523,6 @@ function tsys_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
- */
-function tsys_civicrm_xmlMenu(&$files) {
-  _tsys_civix_civicrm_xmlMenu($files);
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function tsys_civicrm_caseTypes(&$caseTypes) {
-  _tsys_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
- */
-function tsys_civicrm_angularModules(&$angularModules) {
-  _tsys_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
- */
-function tsys_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _tsys_civix_civicrm_alterSettingsFolders($metaDataFolders);
-}
-
-/**
  * Implements hook_civicrm_entityTypes().
  *
  * Declare entity types provided by this module.
@@ -585,6 +540,5 @@ function tsys_civicrm_entityTypes(&$entityTypes) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
  *
-function tsys_civicrm_preProcess($formName, &$form) {
 
-} // */
+ // */

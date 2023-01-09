@@ -8,7 +8,7 @@ use Civi\Test\TransactionalInterface;
 /**
  * Sets up a BaseTest class used by Tsys tests
  */
-class CRM_Tsys_BaseTest extends \PHPUnit_Framework_TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class CRM_Tsys_BaseTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
   protected $_contributionID;
   protected $_invoiceID = 'in_19WvbKAwDouDdbFCkOnSwAN7';
