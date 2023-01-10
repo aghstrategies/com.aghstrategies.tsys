@@ -14,8 +14,8 @@ return array(
     'params' =>
     array(
       'version' => 3,
-      'name' => 'TSYS Payments Recurring Contributions',
-      'description' => 'Trigger + Generate recurring contributions for TSYS Payments',
+      'name' => 'Genius Payments Recurring Contributions',
+      'description' => 'Trigger + Generate recurring contributions for Genius Payments',
       'run_frequency' => 'Daily',
       'api_entity' => 'Job',
       'api_action' => 'tsysrecurringcontributions',

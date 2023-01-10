@@ -1,4 +1,7 @@
 <?php
+require_once 'tsys.civix.php';
+use CRM_Tsys_ExtensionUtil as E;
+
 /**
  * @file
  */
@@ -61,7 +64,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   // Running this job in parallel could generate bad duplicate contributions.
   $lock = new CRM_Core_Lock('civicrm.job.TsysRecurringContributions');
   if (!$lock->acquire()) {
-    return civicrm_api3_create_success(ts('Failed to acquire lock. No contribution records were processed.'));
+    return civicrm_api3_create_success(E::ts('Failed to acquire lock. No contribution records were processed.'));
   }
   $catchup = !empty($params['catchup']);
   unset($params['catchup']);
@@ -96,7 +99,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -118,7 +121,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -163,7 +166,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   }
   catch (CiviCRM_API3_Exception $e) {
     $error = $e->getMessage();
-    CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+    CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
       'domain' => 'com.aghstrategies.tsys',
       1 => $error,
     )));
@@ -186,7 +189,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       $hash = md5(uniqid(rand(), TRUE));
       $contribution_recur_id = $donation['id'];
       $failure_count = $donation['failure_count'];
-      $source = "TSYS Payments Recurring Contribution (id=$contribution_recur_id)";
+      $source = "Genius Payments Recurring Contribution (id=$contribution_recur_id)";
       $receive_ts = $catchup ? strtotime($donation['next_sched_contribution_date']) : time();
       $receive_date = date("YmdHis", $receive_ts);
       $errors = array();
@@ -232,7 +235,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -274,7 +277,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -286,7 +289,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
             'source_contact_id'   => $contact_id,
             'source_record_id'    => $contribution['id'],
             'assignee_contact_id' => $contact_id,
-            'subject'             => "Attempted TSYS Payments Recurring Contribution for " . $total_amount,
+            'subject'             => "Attempted Genius Payments Recurring Contribution for " . $total_amount,
             'status_id'           => "Completed",
             'activity_date_time'  => date("YmdHis"),
           ]
@@ -294,13 +297,13 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
       }
       if ($result['is_error']) {
-        $output[] = ts(
+        $output[] = E::ts(
           'An error occurred while creating activity record for contact id %1: %2',
           array(
             1 => $contact_id,
@@ -310,7 +313,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         ++$error_count;
       }
       else {
-        $output[] = ts('Created activity record for contact id %1', array(1 => $contact_id));
+        $output[] = E::ts('Created activity record for contact id %1', array(1 => $contact_id));
       }
       ++$counter;
     }
@@ -333,7 +336,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -345,7 +348,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   // If errors ..
   if ($error_count > 0) {
     return civicrm_api3_create_error(
-      ts("Completed, but with %1 errors. %2 records processed.",
+      E::ts("Completed, but with %1 errors. %2 records processed.",
         array(
           1 => $error_count,
           2 => $counter,
@@ -356,7 +359,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   // If no errors and records processed ..
   if ($counter) {
     return civicrm_api3_create_success(
-      ts(
+      E::ts(
         '%1 contribution record(s) were processed.',
         array(
           1 => $counter,
@@ -365,5 +368,5 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     );
   }
   // No records processed.
-  return civicrm_api3_create_success(ts('No contribution records were processed.'));
+  return civicrm_api3_create_success(E::ts('No contribution records were processed.'));
 }

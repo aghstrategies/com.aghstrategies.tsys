@@ -1,4 +1,7 @@
 <?php
+require_once 'tsys.civix.php';
+use CRM_Tsys_ExtensionUtil as E;
+
 /*
  * Payment Processor class for Recurring Tsys Transactions
  */
@@ -30,7 +33,7 @@ class CRM_Tsys_Recur {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -41,9 +44,9 @@ class CRM_Tsys_Recur {
     }
     // IF no payment token throw an error and quit
     else {
-      // CRM_Core_Error::statusBounce(ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
-      Civi::log()->debug('TSYS token was not passed!  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
-      return ts('no payment token found for recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
+      // CRM_Core_Error::statusBounce(E::ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
+      Civi::log()->debug('Genius token was not passed!  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
+      return E::ts('no payment token found for recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
 
     // Get tsys credentials.
@@ -53,9 +56,9 @@ class CRM_Tsys_Recur {
 
     // Throw an error if no credentials found.
     if (empty($tsysCreds)) {
-      CRM_Core_Error::statusBounce(ts('No valid payment processor credentials found'));
-      Civi::log()->debug('No valid TSYS credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
-      return ts('no TSYS Credentials found for payment processor id: %1 ', array(1 => $contribution['payment_processor']));
+      CRM_Core_Error::statusBounce(E::ts('No valid payment processor credentials found'));
+      Civi::log()->debug('No valid Genius credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
+      return E::ts('no Genius Credentials found for payment processor id: %1 ', array(1 => $contribution['payment_processor']));
     }
 
     // Use the payment token to make the transaction
@@ -69,7 +72,7 @@ class CRM_Tsys_Recur {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -87,7 +90,7 @@ class CRM_Tsys_Recur {
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -107,7 +110,7 @@ class CRM_Tsys_Recur {
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -116,10 +119,10 @@ class CRM_Tsys_Recur {
     }
     // Now return the appropriate message.
     if ($contribution['contribution_status_id'] == $completedStatusId && $contributionResult['is_error'] == 0) {
-      return ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
+      return E::ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
     else {
-      return ts('Failed to process recurring contribution id %1: ', array(1 => $contribution['contribution_recur_id']));
+      return E::ts('Failed to process recurring contribution id %1: ', array(1 => $contribution['contribution_recur_id']));
     }
   }
 
@@ -143,7 +146,7 @@ class CRM_Tsys_Recur {
     );
 
     // add relevant information from the tsys response
-    $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction);
+    $contribution = CRM_Core_Payment_Tsys::processResponseFromTsys($contribution, $makeTransaction->Body->SaleResponse->SaleResult, 'sale');
 
     // If transaction approved.
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus) && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED") {
@@ -155,10 +158,10 @@ class CRM_Tsys_Recur {
     // If transaction fails.
     else {
       if (!empty($contribution['approval_status'])) {
-        Civi::log()->debug('Credit Card not processed - TSYS Approval Status: ' . print_r($contribution['approval_status'], TRUE));
+        Civi::log()->debug('Credit Card not processed - Genius Approval Status: ' . print_r($contribution['approval_status'], TRUE));
       }
       if (!empty($contribution['error_message'])) {
-        Civi::log()->debug('Credit Card not processed - TSYS Error Message: ' . print_r($contribution['error_message'], TRUE));
+        Civi::log()->debug('Credit Card not processed - Genius Error Message: ' . print_r($contribution['error_message'], TRUE));
       }
       // Record Failed Transaction
       $contribution['contribution_status_id'] = $failedStatusId;
@@ -187,7 +190,7 @@ class CRM_Tsys_Recur {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -206,7 +209,7 @@ class CRM_Tsys_Recur {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -299,7 +302,7 @@ class CRM_Tsys_Recur {
    */
   public static function boardCard($recur_id, $token, $tsysCreds, $contactId, $paymentProcessor) {
     $paymentTokenId = NULL;
-    // Board Card (save card) with TSYS
+    // Board Card (save card)
     $boardCard = CRM_Tsys_Soap::composeBoardCardSoapRequest(
       $token,
       $tsysCreds
@@ -317,7 +320,7 @@ class CRM_Tsys_Recur {
       }
       catch (CiviCRM_API3_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
         )));
@@ -332,7 +335,7 @@ class CRM_Tsys_Recur {
         }
         catch (CiviCRM_API3_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
           )));
@@ -340,13 +343,13 @@ class CRM_Tsys_Recur {
         $paymentTokenId = $paymentToken['id'];
       }
       if ($paymentToken['is_error'] == 1) {
-        CRM_Core_Error::statusBounce(ts('Error saving payment token to database'));
+        CRM_Core_Error::statusBounce(E::ts('Error saving payment token to database'));
       }
     }
     // If no vault token record Error
     else {
-      // CRM_Core_Error::statusBounce(ts('Card not saved for future use'));
-      Civi::log()->debug('Credit Card not boarded to TSYS Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
+      // CRM_Core_Error::statusBounce(E::ts('Card not saved for future use'));
+      Civi::log()->debug('Credit Card not boarded Error Message: ' . print_r($boardCard->Body->BoardCardResponse->BoardCardResult->ErrorMessage, TRUE));
     }
     return $paymentTokenId;
   }

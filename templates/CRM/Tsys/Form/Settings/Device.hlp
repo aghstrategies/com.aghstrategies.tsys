@@ -1,0 +1,6 @@
+{htxt id="id-ip"}
+  {ts}To find the IP address of the device visit the <a href='https://docs.tsysmerchant.com/knowledge-base/faqs'>TSYS Knowledge Base FAQs</a>{/ts}
+{/htxt}
+{htxt id="id-terminalid"}
+  {ts}Terminal ID is used to uniquely identify the terminal to the processor. The terminal ID must contain all numeric characters. For more information about the TID value that should be used, take a look at this article <a href="https://docs.tsysmerchant.com/knowledge-base/best-practices/mastercard-terminal-id-handling-best-practices">MasterCard Terminal ID Handling Best Practices.</a>{/ts}
+{/htxt}

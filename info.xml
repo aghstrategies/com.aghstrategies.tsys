@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <extension key="com.aghstrategies.tsys" type="module">
   <file>tsys</file>
-  <name>TSYS</name>
-  <description>TSYS Payment Processor Integration</description>
+  <name>Genius Platform by Global Payments Integrated (formerly TSYS)</name>
+  <description>Genius Platform by Global Payments Integrated (formerly TSYS) Payment Processor Integration</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>AGH Strategies</author>
@@ -13,12 +13,18 @@
     <url desc="Documentation">https://docs.civicrm.org/tsys/en/latest/</url>
   </urls>
   <releaseDate>2019-01-10</releaseDate>
-  <version>1.2.1</version>
+  <version>2.0.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.50</ver>
+    <ver>5.57.0</ver>
   </compatibility>
   <civix>
     <namespace>CRM/Tsys</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>menu-xml@1.0.0</mixin>
+    <mixin>mgd-php@1.0.0</mixin>
+    <mixin>setting-php@1.0.0</mixin>
+  </mixins>
 </extension>

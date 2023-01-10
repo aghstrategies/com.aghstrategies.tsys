@@ -33,7 +33,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   private $_islive = FALSE;
 
   /**
-   * We can use the smartdebit processor on the backend
+   * can use the smartdebit processor on the backend
    * @return bool
    */
   public function supportsBackOffice() {
@@ -43,6 +43,32 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   public function supportsRecurring() {
     return TRUE;
   }
+
+  /**
+   * can edit smartdebit recurring contributions
+   * @return bool
+   */
+  public function supportsEditRecurringContribution() {
+    return TRUE;
+  }
+
+  /**
+   * can edit amount for recurring contributions
+   * @return bool
+   */
+  public function changeSubscriptionAmount() {
+    return TRUE;
+  }
+
+  /**
+   * Does this payment processor support refund?
+   *
+   * @return bool
+   */
+  public function supportsRefund() {
+    return TRUE;
+  }
+
 
   /**
    * Constructor
@@ -58,7 +84,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     $this->_mode = $mode;
     $this->_islive = ($mode == 'live') ? 1 : 0;
     $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName = ts('TSYS');
+    $this->_processorName = E::ts('Genius');
   }
 
   /**
@@ -79,7 +105,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     );
     foreach ($credFields as $name => $label) {
       if (empty($this->_paymentProcessor[$name])) {
-        $error[] = ts("The '%1' is not set in the TSYS Payment Processor settings.", array(1 => $label));
+        $error[] = E::ts("The '%1' is not set in the Genius Payment Processor settings.", array(1 => $label));
       }
     }
     if (!empty($error)) {
@@ -122,7 +148,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -132,8 +158,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // Throw an error if credential not found
     foreach ($fields as $key => $field) {
       if (!isset($paymentProcessorDetails[$field])) {
-        CRM_Core_Error::statusBounce(ts('Could not find valid TSYS Payment Processor credentials'));
-        Civi::log()->debug("TSYS Credential $field not found.");
+        CRM_Core_Error::statusBounce(E::ts('Could not find valid Genius Payment Processor credentials'));
+        Civi::log()->debug("Genius Credential $field not found.");
       }
     }
     return $paymentProcessorDetails;
@@ -156,7 +182,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -211,7 +237,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -270,8 +296,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // IF currency is not USD throw error and quit
     // Tsys does not accept non USD transactions
     if ($currency == FALSE) {
-      $errorMessage = self::handleErrorNotification('TSYS only works with USD, Contribution not processed', $params['tsys_error_url']);
-      throw new \Civi\Payment\Exception\PaymentProcessorException(' Failed to create TSYS Charge ' . $errorMessage);
+      $errorMessage = self::handleErrorNotification('Genius only works with USD, Contribution not processed', $params['tsys_error_url']);
+      throw new \Civi\Payment\Exception\PaymentProcessorException(' Failed to create Genius Charge ' . $errorMessage);
     }
 
     // Get tsys credentials ($params come from a form)
@@ -286,8 +312,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
 
     // Throw an error if no credentials found
     if (empty($tsysCreds)) {
-      $errorMessage = self::handleErrorNotification('No valid TSYS payment processor credentials found', $params['tsys_error_url']);
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      $errorMessage = self::handleErrorNotification('No valid Genius payment processor credentials found', $params['tsys_error_url']);
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
     if (!empty($params['payment_token']) && $params['payment_token'] != "Authorization token") {
       // If there is a payment token AND there is not a tsys_token use the payment token to run the transaction
@@ -347,7 +373,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // If no payment token throw an error
     else {
       $errorMessage = self::handleErrorNotification('No Payment Token', $params['tsys_error_url']);
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
     $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
     return $params;
@@ -369,7 +395,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
       )));
@@ -394,7 +420,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     if (!empty($makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus)
     && $makeTransaction->Body->SaleResponse->SaleResult->ApprovalStatus == "APPROVED"
     && !empty($makeTransaction->Body->SaleResponse->SaleResult->Token)) {
-      $params = self::processResponseFromTsys($params, $makeTransaction);
+      $params = self::processResponseFromTsys($params, $makeTransaction->Body->SaleResponse->SaleResult, 'sale');
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
@@ -421,7 +447,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // If transaction fails
     else {
       $params['contribution_status_id'] = $failedStatusId;
-      $errorMessage = 'TSYS rejected card ';
+      $errorMessage = 'Genius rejected card ';
       if (!empty($params['error_message'])) {
         $errorMessage .= $params['error_message'];
       }
@@ -432,8 +458,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       if (isset($params['unit_test']) && $params['unit_test'] == 1) {
         return $params;
       }
-      $errorMessage = self::handleErrorNotification($errorMessage, $params['tsys_error_url'], $makeTransaction);
-      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create TSYS Charge: ' . $errorMessage);
+      $errorMessage = self::handleErrorNotification($errorMessage, NULL, $makeTransaction);
+      throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
   }
 
@@ -443,7 +469,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @param  string $makeTransaction response from Tsys
    * @return array $params           updated params
    */
-  public static function processResponseFromTsys(&$params, $makeTransaction) {
+  public static function processResponseFromTsys(&$params, $makeTransaction, $type = 'sale') {
     $retrieveFromXML = [
       'trxn_id' => 'Token',
       'pan_truncation' => 'CardNumber',
@@ -458,6 +484,36 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       'error_message' => 'ErrorMessage',
 
     ];
+    if ($type == 'initiate') {
+      $retrieveFromXML['card_type_id'] = 'PaymentType';
+      $retrieveFromXML['pan_truncation'] = 'AccountNumber';
+      $retrieveFromXML['amount_approved'] = 'AmountApproved';
+      $retrieveFromXML['entry_mode'] = 'EntryMode';
+      $retrieveFromXML['receive_date'] = 'TransactionDate';
+      $retrieveFromXML['transaction_type'] = 'TransactionType';
+      $retrieveFromXML['approval_status'] = 'Status';
+    }
+
+    // If timed out then the response will look a little different because
+    // its from the report transaction not the create transaction
+    if ($type == 'initiateFromReport') {
+      $retrieveFromXML['card_type_id'] = 'PaymentType';
+      $retrieveFromXML['pan_truncation'] = 'AccountNumber';
+      // $retrieveFromXML['amount_approved'] = 'AmountApproved';
+      $retrieveFromXML['entry_mode'] = 'EntryMode';
+      $retrieveFromXML['receive_date'] = 'TransactionDate';
+      $retrieveFromXML['transaction_type'] = 'TransactionType';
+      $retrieveFromXML['approval_status'] = 'Status';
+      unset($retrieveFromXML['error_message']);
+      $params['amount_approved'] = (string) $makeTransaction->AmountDetail->AmountApproved;
+    }
+    if (isset($makeTransaction->Error)) {
+      $makeTransaction = $makeTransaction->Error;
+      $params['status'] = "Error";
+      $retrieveFromXML['message'] = 'Message';
+      $retrieveFromXML['error_code'] = 'ErrorCode';
+    }
+
 
     // CardTypes as defined by tsys: https://docs.cayan.com/merchantware-4-5/credit#sale
     $tsysCardTypes = [
@@ -465,12 +521,23 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       3 => 'MasterCard',
       1 => 'Amex',
       2 => 'Discover',
+      'VISA' => 'Visa',
+      'MASTERCARD' => 'MasterCard',
+      'AMEX' => 'Amex',
+      'DISCOVER' => 'Discover',
+      // TODO there are other payment types... do we need to deal with these
+      // https://docs.tsysmerchant.com/genius/transactions#stage
     ];
     foreach ($retrieveFromXML as $fieldInCivi => $fieldInXML) {
-      if (isset($makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML)) {
-        $XMLvalueAsString = (string) $makeTransaction->Body->SaleResponse->SaleResult->$fieldInXML;
+      if (isset($makeTransaction->$fieldInXML)) {
+        $XMLvalueAsString = (string) $makeTransaction->$fieldInXML;
+        trim($fieldInXML);
         switch ($fieldInXML) {
           case 'CardType':
+          case 'PaymentType':
+            if ($XMLvalueAsString == 'DEBIT') {
+              $params['payment_instrument_id'] = "Debit Card";
+            }
             if (!empty($tsysCardTypes[$XMLvalueAsString])) {
               try {
                 $cardType = civicrm_api3('OptionValue', 'getsingle', [
@@ -482,7 +549,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
               }
               catch (CiviCRM_API3_Exception $e) {
                 $error = $e->getMessage();
-                CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+                CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
                   'domain' => 'com.aghstrategies.tsys',
                   1 => $error,
                 )));
@@ -490,9 +557,11 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
             }
             if (!empty($cardType['value'])) {
               $params[$fieldInCivi] = $cardType['value'];
+              $params['payment_instrument_id'] = "Credit Card";
             }
             break;
 
+          case 'AccountNumber':
           case 'CardNumber':
             $params[$fieldInCivi] = substr($XMLvalueAsString, -4);
             break;
@@ -503,7 +572,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         }
       }
       else {
-        CRM_Core_Error::debug_log_message(ts('Error retrieving %1 from XML', array(
+        CRM_Core_Error::debug_log_message(E::ts('Error retrieving %1 from XML', array(
           'domain' => 'com.aghstrategies.tsys',
           1 => $fieldInXML,
         )));
@@ -516,11 +585,11 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * Handle an error and notify the user
    * @param  string $errorMessage Error Message to be displayed to user
    * @param  string $bounceURL    Bounce URL
-   * @param  string $makeTransaction response from TSYS
+   * @param  string $makeTransaction response from Genius
    * @return string               Error Message (or statusbounce if URL is specified)
    */
   public static function handleErrorNotification($errorMessage, $bounceURL = NULL, $makeTransaction = []) {
-    Civi::log()->debug('TSYS Payment Error: ' . $errorMessage);
+    Civi::log()->debug('Genius Payment Error: ' . $errorMessage);
     if (!empty($makeTransaction)) {
       CRM_Core_Error::debug_var('makeTransaction', $makeTransaction);
     }
@@ -534,9 +603,202 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * support corresponding CiviCRM method
    */
   public function cancelSubscription(&$message = '', $params = array()) {
-    $userAlert = ts('You have cancelled this recurring contribution.');
-    CRM_Core_Session::setStatus($userAlert, ts('Warning'), 'alert');
+    $userAlert = E::ts('You have cancelled this recurring contribution.');
+    CRM_Core_Session::setStatus($userAlert, E::ts('Warning'), 'alert');
     return TRUE;
+  }
+
+  /**
+   * Get the currency for the transaction.
+   *
+   * Handle any inconsistency about how it is passed in here.
+   *
+   * @param array $params
+   *
+   * @return string
+   */
+  public function getAmount($params = []): string {
+    $amount = number_format((float) $params['amount'] ?? 0.0, CRM_Utils_Money::getCurrencyPrecision($this->getCurrency($params)), '.', '');
+    // Stripe amount required in cents.
+    $amount = preg_replace('/[^\d]/', '', strval($amount));
+    return $amount;
+  }
+
+  /**
+   * Submit a refund payment
+   *
+   * @param array $params
+   *   Assoc array of input parameters for this transaction.
+   *
+   * @return array
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   */
+  public function doRefund(&$params) {
+    // NOTE this is based off of Stripes doRefund function: https://lab.civicrm.org/extensions/stripe/blob/master/CRM/Core/Payment/Stripe.php#L737
+    // Currently it is called when one does a PaymentProcessor.refund API call
+    // It does not handle any of the logic to create the refund payment/update the contribution status
+
+    // Ensure all required params have been sent
+    $requiredParams = ['trxn_id', 'amount'];
+    foreach ($requiredParams as $required) {
+      if (!isset($params[$required])) {
+        $message = 'Genius doRefund: Missing mandatory parameter: ' . $required;
+        Civi::log()->error($message);
+        Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+      }
+    }
+
+    // Get Refund Amount
+    $refundAmount = $this->getAmount($params);
+
+    // Get amount of original payment
+    try {
+      $OGtrxn = civicrm_api3('FinancialTrxn', 'getsingle', [
+        'return' => ["total_amount"],
+        'trxn_id' => $params['trxn_id'],
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        'domain' => 'com.aghstrategies.tsys',
+        1 => $error,
+      )));
+    }
+    // Get Payment Processor Settings
+    $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id']);
+
+    // Decide whether to refund, void or adjust amount
+    $tsysInfo = CRM_Tsys_Soap::composeCheckBalanceSoapRequest($params['trxn_id'], $tsysCreds);
+    $response = $tsysInfo->Body->DetailedTransactionByReferenceResponse->DetailedTransactionByReferenceResult;
+    if ((string) $response->ApprovalStatus == 'APPROVED') {
+      // If a refund token is available Refund
+      if (isset($response->SupportedActions->RefundToken) &&
+        (string) $response->SupportedActions->RefundToken != '' &&
+        $response->SupportedActions->RefundMaxAmount > 0
+      ) {
+        $maxRefundAmount = $response->SupportedActions->RefundMaxAmount;
+        $runRefund = CRM_Tsys_Soap::composeRefundCardSoapRequest($params['trxn_id'], $refundAmount, $tsysCreds);
+        $response = $runRefund->Body->RefundResponse->RefundResult;
+        // TODO Process response
+      }
+      // If a void token is available and we are negating the FULL payment void
+      elseif (isset($response->SupportedActions->VoidToken) &&
+        (string) $response->SupportedActions->VoidToken != '' &&
+        $OGtrxn['total_amount'] == $refundParams['amount']
+      ) {
+        $voidResponse = CRM_Tsys_Soap::composeVoidSoapRequest($params['trxn_id'], $tsysCreds);
+        $response = $voidResponse->Body->VoidResponse->VoidResult;
+        // TODO Process response
+      }
+      // IF we are only refunding part of a payment and it has not been
+      // batched yet so we need to Adjust the amount instead of Refund it
+      elseif (isset($response->SupportedActions->AdjustmentToken) &&
+        (string) $response->SupportedActions->AdjustmentToken != '' &&
+        $OGtrxn['total_amount'] != $refundParams['amount']
+      ) {
+        // TODO write soap action to adjust
+        $actionAvailable = 'Adjust';
+      }
+      // If no valid action found throw an error
+      else {
+        $actionAvailable = 'None';
+        CRM_Core_Error::debug_var('Genius VOID/REFUND DetailedTransactionByReferenceResponse', $response);
+        $message = 'Genius doRefund: no valid action found';
+        Civi::log()->error($message);
+        Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+      }
+
+      // Process response from Genius
+      $refundParams = self::processResponse($response);
+
+      // Return results
+      return $refundParams;
+    }
+    else {
+      $message = 'Genius doRefund: No Valid Transaction found : ' . $params['trxn_id'];
+      Civi::log()->error($message);
+      Throw new \Civi\Payment\Exception\PaymentProcessorException($message);
+    }
+
+  }
+
+  /**
+   * Process Refund Response - Update user and payment/contribution status
+   * @param  object $runRefund Response from Tsys
+   * @return
+   */
+  public function processResponse($response) {
+    $trxnParams = [];
+    // We got a legible response!!
+    if (isset($response->ApprovalStatus)) {
+      $paramsToExtract = [
+        'refund_trxn_id' => 'Token',
+        'trxn_result_code' => 'AuthorizationCode',
+        'trxn_date' => 'TransactionDate',
+      ];
+      foreach ($paramsToExtract as $fieldInCivi => $fieldInResponse) {
+        if (isset($response->$fieldInResponse)) {
+          $trxnParams[$fieldInCivi] = (string) $response->$fieldInResponse;
+        }
+      }
+      // Refund successful
+      if ((string) $response->ApprovalStatus == 'APPROVED') {
+        $trxnParams['refund_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+      }
+      // Refund failed
+      elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
+        $trxnParams['refund_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+      }
+    }
+    // We did not get a legible response
+    else {
+      $trxnParams['refund_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Failed');
+    }
+    return $trxnParams;
+  }
+
+  public static function getDeviceSettings($format = 'settings', $processorId = NULL) {
+    $deviceSettings = [];
+    try {
+       $result = civicrm_api3('Setting', 'get', ['return' => 'tsys_devices']);
+     }
+     catch (CiviCRM_API3_Exception $e) {
+       $error = $e->getMessage();
+       CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+         'domain' => 'com.aghstrategies.tsys',
+         1 => $error,
+       )));
+     }
+     if (!empty($result['values'][1]['tsys_devices'])) {
+       foreach ($result['values'][1]['tsys_devices'] as $key => &$value) {
+         if ($value['is_enabled'] == 0) {
+           $value['class'] = 'disabled';
+         }
+         else {
+           $value['class'] = 'enabled';
+         }
+       }
+       $deviceSettings = $result['values'][1]['tsys_devices'];
+     }
+     return $deviceSettings;
+  }
+
+  public static function processStageTransactionResponse($response) {
+    $transactionDetails = [];
+    $paramsToExtract = [
+      'TransportKey',
+      'ValidationKey',
+    ];
+    foreach ($paramsToExtract as $key => $param) {
+      if (isset($response->Body->CreateTransactionResponse->CreateTransactionResult->$param)) {
+        $transactionDetails[$param] = (string) $response->Body->CreateTransactionResponse->CreateTransactionResult->$param;
+      }
+      if (isset($response->Body->CreateTransactionResponse->CreateTransactionResult->Messages)) {
+        $transactionDetails['Messages'] = $response->Body->CreateTransactionResponse->CreateTransactionResult->Messages;
+      }
+    }
+    return $transactionDetails;
   }
 
 }
