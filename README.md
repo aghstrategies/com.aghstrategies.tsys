@@ -72,3 +72,4 @@ v.MAJOR.MINOR.PATCH
 + Process device payments from the Create Event Registration Form
 + Add a system check for if the Root Certificate is installed correctly
 + Refund a Contribution (not just individual payments)
++ Rebase unit tests onto newer core methods
