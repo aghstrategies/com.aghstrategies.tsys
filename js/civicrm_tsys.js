@@ -121,6 +121,8 @@ CRM.$(function ($) {
   });
 
   function loadtsysBillingBlock() {
+    // NOTE this SHOULD be removed when this issue gets fixed: https://lab.civicrm.org/dev/core/-/issues/1797
+    $('input#credit_card_number').removeClass('creditcard');
 
     // Get api key
     if (typeof CRM.vars.tsys.pp === 'undefined') {
