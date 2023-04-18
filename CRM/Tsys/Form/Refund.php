@@ -9,7 +9,7 @@ use CRM_Tsys_ExtensionUtil as E;
  */
 class CRM_Tsys_Form_Refund extends CRM_Core_Form {
   // Form to submit a refund to TSYS
-  
+
   /**
    * Set variables up before form is built.
    */
@@ -202,45 +202,37 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
           'success'
         );
       }
-      // failed explicitly so retrieve error
-      elseif (substr($response->ApprovalStatus, 0, 6 ) == "FAILED") {
+      // Explicitly failed or declined so retrieve and throw error
+      elseif (substr($response->ApprovalStatus, 0, 8) == "DECLINED" || substr($response->ApprovalStatus, 0, 6) == "FAILED") {
         $approvalStatus = explode(';', $response->ApprovalStatus);
         CRM_Core_Error::debug_var('Genius VOID/REFUND form values', $values);
+        $errorTitle =   E::ts('%1 Failed', [
+          1 => $values['formaction'],
+        ]);
         if (count($approvalStatus) == 3) {
-          CRM_Core_Session::setStatus(
-            E::ts('Error Code %1, %2', array(
-              1 => $approvalStatus[1],
-              2 => $approvalStatus[2],
-            )),
-            E::ts('%1 Failed', [
-              1 => $values['formaction'],
-            ]),
-            'error'
-          );
+          $errorMessage =   E::ts('Error Code %1, %2', [
+            1 => $approvalStatus[1],
+            2 => $approvalStatus[2],
+          ]);
         } else {
-          CRM_Core_Session::setStatus(
-            $approvalStatus,
-            E::ts('%1 Failed', [
-              1 => $values['formaction'],
-            ]),
-            'error'
-          );
+          $errorMessage = $approvalStatus;
         }
+        if (isset($response->ErrorMessage)) {
+          $errorMessage .= "; $response->ErrorMessage";
+        }
+        CRM_Core_Session::setStatus(
+          $errorMessage,
+          $errorTitle,
+          'error'
+        );
+      }
+      else {
+        self::refundError($response, $values);
       }
     }
     // We did not get a legible response
     else {
-      CRM_Core_Session::setStatus(
-        E::ts('%1 Response could not be found see logs for more details.', [
-          1 => $values['formaction'],
-        ]),
-        E::ts('%1 Failed', [
-          1 => $values['formaction'],
-        ]),
-        'error'
-      );
-      CRM_Core_Error::debug_var('Genius VOID/REFUND response', $response);
-      CRM_Core_Error::debug_var('Genius VOID/REFUND form submit values', $values);
+      self::refundError($response, $values);
     }
   }
 
@@ -263,6 +255,20 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
       }
     }
     return $elementNames;
+  }
+
+  public function refundError($response, $values) {
+    CRM_Core_Session::setStatus(
+      E::ts('%1 Response could not be found see logs for more details.', [
+        1 => $values['formaction'],
+      ]),
+      E::ts('%1 Failed', [
+        1 => $values['formaction'],
+      ]),
+      'error'
+    );
+    CRM_Core_Error::debug_var('Genius VOID/REFUND response', $response);
+    CRM_Core_Error::debug_var('Genius VOID/REFUND form submit values', $values);
   }
 
   public function createRefundInCivi($trxnParams, $values) {
