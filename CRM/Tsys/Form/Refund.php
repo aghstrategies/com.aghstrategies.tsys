@@ -218,7 +218,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
           $errorMessage = $approvalStatus;
         }
         if (isset($response->ErrorMessage)) {
-          $errorMessage .= " $response->ErrorMessage";
+          $errorMessage .= "; $response->ErrorMessage";
         }
         CRM_Core_Session::setStatus(
           $errorMessage,
