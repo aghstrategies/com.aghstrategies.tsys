@@ -79,7 +79,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
 
       if (isset($this->maxRefundAmount)) {
         $this->add('hidden','max_refund_amount', $this->maxRefundAmount);
-        $defaults['refund_amount'] = $this->maxRefundAmount|crmMoney;
+        $defaults['refund_amount'] = $this->maxRefundAmount;
         CRM_Core_Session::setStatus(E::ts('Amount Available to Refund for this payment is $%1. Submitting this form will result in a refund being issued from your Genius payment processor.', array(
           1 => $this->maxRefundAmount,
         )), '', 'no-popup');
