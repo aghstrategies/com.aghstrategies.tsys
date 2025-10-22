@@ -125,7 +125,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     // Don't use \Civi::resources()->addScriptFile etc as they often don't work on AJAX loaded forms (eg. participant backend registration)
     \Civi::resources()->addVars('tsys', [
       'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
-      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+      'pp' => $form->_paymentProcessor['id'] ?? NULL,
     ]);
     CRM_Core_Region::instance('billing-block')->add([
       'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
@@ -430,7 +430,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $savedTokens = self::checkForSavedVaultToken($params['payment_processor_id'], $previousTransactionToken);
 
       // If transaction is recurring AND there is not an existing vault token saved, create a boarded card and save it
-      if (CRM_Utils_Array::value('is_recur', $params)
+      if (!empty($params['is_recur'])
       && $savedTokens == 0
       && !empty($params['contributionRecurID'])) {
         $paymentTokenId = CRM_Tsys_Recur::boardCard(

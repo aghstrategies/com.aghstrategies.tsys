@@ -79,7 +79,7 @@ class CRM_Tsys_Recur {
     }
     if (!empty($contributionResult)) {
       // Pass back the created id indirectly since I'm calling by reference.
-      $contribution['id'] = CRM_Utils_Array::value('id', $contributionResult);
+      $contribution['id'] = $contributionResult['id'] ?? NULL;
       // Connect to a membership if requested.
       if (!empty($options['membership_id'])) {
         try {
