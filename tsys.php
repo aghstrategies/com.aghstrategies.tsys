@@ -185,7 +185,7 @@ function tsys_civicrm_buildForm($formName, &$form) {
     // work on AJAX loaded forms (eg. participant backend registration)
     \Civi::resources()->addVars('tsys', [
       'allApiKeys' => CRM_Core_Payment_Tsys::getAllTsysPaymentProcessors(),
-      'pp' => CRM_Utils_Array::value('id', $form->_paymentProcessor),
+      'pp' => $form->_paymentProcessor['id'] ?? NULL,
     ]);
     CRM_Core_Region::instance('billing-block')->add([
       'scriptUrl' => \Civi::resources()->getUrl(E::LONG_NAME, "js/civicrm_tsys.js"),
@@ -202,7 +202,7 @@ function tsys_civicrm_validateForm($formName, &$fields, &$files, &$form, &$error
 
   // ensure total amount is a positive number
   if ($formName == 'CRM_Tsys_Form_Device') {
-    $total = CRM_Utils_Array::value('total_amount', $fields );
+    $total = $fields['total_amount'] ?? NULL;
     if ($total < 0) {
       $errors['total_amount'] = E::ts( 'Total Amount must be a positive number' );
     }
