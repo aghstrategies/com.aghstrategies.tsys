@@ -31,7 +31,7 @@ class CRM_Tsys_Recur {
         'id' => $contribution['contribution_recur_id'],
       ]);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
       CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
@@ -70,7 +70,7 @@ class CRM_Tsys_Recur {
     try {
       $contributionResult = civicrm_api3('contribution', 'create', $contribution);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
       CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
@@ -88,7 +88,7 @@ class CRM_Tsys_Recur {
            'membership_id' => $options['membership_id']
          ));
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
           CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
@@ -108,7 +108,7 @@ class CRM_Tsys_Recur {
         try {
          $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
           CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
@@ -188,7 +188,7 @@ class CRM_Tsys_Recur {
     try {
       $ogContribution = civicrm_api3('contribution', 'get', $get);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
       CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
         'domain' => 'com.aghstrategies.tsys',
@@ -207,7 +207,7 @@ class CRM_Tsys_Recur {
       try {
         $lineItem = civicrm_api3('LineItem', 'get', $get);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
@@ -318,7 +318,7 @@ class CRM_Tsys_Recur {
           'token' => $vaultToken,
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
@@ -333,7 +333,7 @@ class CRM_Tsys_Recur {
             'processor_id' => $paymentProcessor,
           ]);
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
           CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',

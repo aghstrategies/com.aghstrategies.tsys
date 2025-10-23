@@ -128,7 +128,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
             try {
               $order = civicrm_api3('Order', 'create', $params);
             }
-            catch (CiviCRM_API3_Exception $e) {
+            catch (CRM_Core_Exception $e) {
               $error = $e->getMessage();
               CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
                 'domain' => 'com.aghstrategies.tsys',
@@ -149,7 +149,7 @@ class CRM_Tsys_Form_Device extends CRM_Core_Form {
                 'card_type_id' => $params['card_type_id'],
               ]);
             }
-            catch (CiviCRM_API3_Exception $e) {
+            catch (CRM_Core_Exception $e) {
               $error = $e->getMessage();
               CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
                 'domain' => 'com.aghstrategies.tsys',
