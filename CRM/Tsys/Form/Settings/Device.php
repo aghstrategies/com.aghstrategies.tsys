@@ -29,7 +29,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
           'tsys_devices' => $deviceSettings,
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
@@ -118,7 +118,7 @@ class CRM_Tsys_Form_Settings_Device extends CRM_Core_Form {
           'tsys_devices' => $deviceSettings,
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',

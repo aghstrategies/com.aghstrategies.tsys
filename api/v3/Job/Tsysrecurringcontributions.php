@@ -58,7 +58,7 @@ function _civicrm_api3_job_tsysrecurringcontributions_spec(&$spec) {
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
  *
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_job_tsysrecurringcontributions($params) {
   // Running this job in parallel could generate bad duplicate contributions.
@@ -97,7 +97,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
             'id' => $dao->id,
           ]);
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
           CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
@@ -119,7 +119,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
             'id' => $dao->id,
           ]);
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
           CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
@@ -164,7 +164,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   try {
     $recurringDonations = civicrm_api3('ContributionRecur', 'get', $recurParams);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     $error = $e->getMessage();
     CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
       'domain' => 'com.aghstrategies.tsys',
@@ -233,7 +233,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
             $options['membership_id'] = $membership_payment['membership_id'];
           }
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
           CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
             'domain' => 'com.aghstrategies.tsys',
@@ -275,7 +275,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       try {
         $recurUpdate = civicrm_api3('ContributionRecur', 'create', $contribution_recur_set);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
@@ -295,7 +295,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           ]
         );
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
@@ -334,7 +334,7 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
           'id' => $dao->id,
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
         CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
           'domain' => 'com.aghstrategies.tsys',
