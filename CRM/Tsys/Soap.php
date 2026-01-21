@@ -378,12 +378,10 @@ HEREDOC;
 
     if ($response === false) {
       $err = 'Curl error: ' . curl_error($soap_do);
-      curl_close($soap_do);
       // print $err;
       $xml = $err;
     }
     else {
-      curl_close($soap_do);
       $response = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $response);
       $xml = simplexml_load_string($response);
     }
