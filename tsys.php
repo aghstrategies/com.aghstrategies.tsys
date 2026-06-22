@@ -161,9 +161,15 @@ function tsys_civicrm_buildForm($formName, &$form) {
   }
 
   // If on a form with a Tsys Payment Processor
-  if (!empty($form->_paymentProcessor['api.payment_processor_type.getsingle']['name'])
-    && $form->_paymentProcessor['api.payment_processor_type.getsingle']['name'] == 'TSYS') {
-
+  $tsysProcessorOnPage = FALSE;
+  if (!empty($form->_paymentProcessors)) {
+    foreach ($form->_paymentProcessors as $ppId => $ppDetails) {
+      if ($ppDetails['class_name'] == 'Payment_Tsys') {
+        $tsysProcessorOnPage = TRUE;
+      }
+    }
+  }
+  if ($tsysProcessorOnPage) {
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
     $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
     $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
