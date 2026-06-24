@@ -16,7 +16,7 @@
   <version>2.0.3</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>6.15.4</ver>
+    <ver>6.15</ver>
   </compatibility>
   <civix>
     <namespace>CRM/Tsys</namespace>
