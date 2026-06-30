@@ -162,8 +162,8 @@ function tsys_civicrm_buildForm($formName, &$form) {
 
   // If on a form with a Tsys Payment Processor
   $tsysProcessorOnPage = FALSE;
-  if (!empty($form->_paymentProcessors)) {
-    foreach ($form->_paymentProcessors as $ppId => $ppDetails) {
+  if (!empty($form->getVar('_paymentProcessors'))) {
+    foreach ($form->getVar('_paymentProcessors') as $ppId => $ppDetails) {
       if ($ppDetails['class_name'] == 'Payment_Tsys') {
         $tsysProcessorOnPage = TRUE;
       }
