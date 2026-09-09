@@ -88,7 +88,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit\Framework\TestCase implements HeadlessI
       'contact_type' => 'Individual',
       'first_name' => 'Jose',
       'last_name' => 'Lopez'
-    ));;
+    ));
     $this->_contactID = $results['id'];
     $this->contact = (Object) array_pop($results['values']);
 
@@ -323,7 +323,7 @@ class CRM_Tsys_BaseTest extends \PHPUnit\Framework\TestCase implements HeadlessI
     $results = civicrm_api3('Contact', 'create', array(
       'contact_type' => 'Organization',
       'organization_name' => 'My Great Group'
-    ));;
+    ));
     $this->_orgID = $results['id'];
   }
 
