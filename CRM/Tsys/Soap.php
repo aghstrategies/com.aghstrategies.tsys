@@ -342,13 +342,13 @@ HEREDOC;
     }
 
     $response = "NO RESPONSE";
-    $header = array(
+    $header = [
       "Content-type: text/xml;charset=\"utf-8\"",
       "Accept: text/xml",
       "Cache-Control: no-cache",
       "Pragma: no-cache",
       "Content-length: " . strlen($soap_request),
-    );
+    ];
     if ($terminal == 1) {
       $header['SOAPAction'] = "http://transport.merchantware.net/v4/CreateTransaction";
       $endpointURL = "https://transport.merchantware.net/v4/transportService.asmx";

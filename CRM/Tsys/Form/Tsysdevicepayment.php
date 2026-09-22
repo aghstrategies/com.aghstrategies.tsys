@@ -127,10 +127,10 @@ class CRM_Tsys_Form_Tsysdevicepayment extends CRM_Core_Form {
             }
             catch (CRM_Core_Exception $e) {
               $error = $e->getMessage();
-              CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+              CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
                 'domain' => 'com.aghstrategies.tsys',
                 1 => $error,
-              )));
+              ]));
             }
             parent::postProcess();
             $viewContribution = CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$values['contribution_id']}&cid={$params['contact_id']}&action=view");
@@ -199,7 +199,7 @@ class CRM_Tsys_Form_Tsysdevicepayment extends CRM_Core_Form {
     // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
     // items don't have labels.  We'll identify renderable by filtering on
     // the 'label'.
-    $elementNames = array();
+    $elementNames = [];
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
       $label = $element->getLabel();

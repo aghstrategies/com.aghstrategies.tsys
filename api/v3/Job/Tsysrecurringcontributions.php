@@ -20,32 +20,32 @@ use CRM_Tsys_ExtensionUtil as E;
  *
  */
 function _civicrm_api3_job_tsysrecurringcontributions_spec(&$spec) {
-  $spec['recur_id'] = array(
+  $spec['recur_id'] = [
     'name' => 'recur_id',
     'title' => 'Recurring payment id',
     'api.required' => 0,
     'type' => 1,
-  );
-  $spec['cycle_day'] = array(
+  ];
+  $spec['cycle_day'] = [
     'name' => 'cycle_day',
     'title' => 'Only contributions that match a specific cycle day.',
     'api.required' => 0,
     'type' => 1,
-  );
-  $spec['failure_count'] = array(
+  ];
+  $spec['failure_count'] = [
     'name' => 'failure_count',
     'title' => 'Filter by number of failure counts',
     'api.required' => 0,
     'type' => 1,
-  );
-  $spec['catchup'] = array(
+  ];
+  $spec['catchup'] = [
     'title' => 'Process as if in the past to catch up.',
     'api.required' => 0,
-  );
-  $spec['ignoremembership'] = array(
+  ];
+  $spec['ignoremembership'] = [
     'title' => 'Ignore memberships',
     'api.required' => 0,
-  );
+  ];
 }
 
 /**
@@ -99,10 +99,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
       }
     }
@@ -121,10 +121,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
       }
     }
@@ -166,16 +166,16 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   }
   catch (CRM_Core_Exception $e) {
     $error = $e->getMessage();
-    CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+    CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
       'domain' => 'com.aghstrategies.tsys',
       1 => $error,
-    )));
+    ]));
   }
 
   // get set up to start processing
   $counter = 0;
   $error_count  = 0;
-  $output  = array();
+  $output  = [];
 
   // By default, after 3 failures move the next scheduled contribution date forward.
   $failure_threshhold = 3;
@@ -192,14 +192,14 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       $source = "Genius Payments Recurring Contribution (id=$contribution_recur_id)";
       $receive_ts = $catchup ? strtotime($donation['next_sched_contribution_date']) : time();
       $receive_date = date("YmdHis", $receive_ts);
-      $errors = array();
+      $errors = [];
 
       $contribution_template = CRM_Tsys_Recur::getContributionTemplate([
         'contribution_recur_id' => $donation['id'],
         'total_amount' => $donation['amount'],
       ]);
 
-      $contribution = array(
+      $contribution = [
         'contact_id'             => $contact_id,
         'receive_date'           => $receive_date,
         'total_amount'           => $total_amount,
@@ -214,8 +214,8 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         'payment_processor'      => $donation['payment_processor_id'],
         'is_test'                => $donation['is_test'],
         'financial_type_id'      => $donation['financial_type_id'],
-      );
-      $get_from_template = array('campaign_id', 'amount_level', 'tax_amount');
+      ];
+      $get_from_template = ['campaign_id', 'amount_level', 'tax_amount'];
       foreach ($get_from_template as $field) {
         if (isset($contribution_template[$field])) {
           $contribution[$field] = is_array($contribution_template[$field]) ? implode(', ', $contribution_template[$field]) : $contribution_template[$field];
@@ -235,10 +235,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
       }
       // Before talking to tsys, advance the next collection date now so that in case of partial server failure I don't try to take money again.
@@ -247,10 +247,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       // calculate the next collection date, based on the recieve date (note effect of catchup mode, above)
       $next_collection_date = date('Y-m-d H:i:s', strtotime("+{$donation['frequency_interval']} {$donation['frequency_unit']}", $receive_ts));
       // advance to the next scheduled date
-      $contribution_recur_set = array(
+      $contribution_recur_set = [
         'id' => $contribution['contribution_recur_id'],
         'next_sched_contribution_date' => $next_collection_date,
-      );
+      ];
 
       // Process Recurring Contribution Payment
       $result = CRM_Tsys_Recur::processContributionPayment($contribution, $options, $contribution_template['original_contribution_id']);
@@ -277,10 +277,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       try {
         $result = civicrm_api3('Activity', 'create',
@@ -297,23 +297,23 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if ($result['is_error']) {
         $output[] = E::ts(
           'An error occurred while creating activity record for contact id %1: %2',
-          array(
+          [
             1 => $contact_id,
             2 => $result['error_message'],
-          )
+          ]
         );
         ++$error_count;
       }
       else {
-        $output[] = E::ts('Created activity record for contact id %1', array(1 => $contact_id));
+        $output[] = E::ts('Created activity record for contact id %1', [1 => $contact_id]);
       }
       ++$counter;
     }
@@ -336,10 +336,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
     }
   }
@@ -349,10 +349,10 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
   if ($error_count > 0) {
     return civicrm_api3_create_error(
       E::ts("Completed, but with %1 errors. %2 records processed.",
-        array(
+        [
           1 => $error_count,
           2 => $counter,
-        )
+        ]
       ) . "<br />" . implode("<br />", $output)
     );
   }
@@ -361,9 +361,9 @@ function civicrm_api3_job_tsysrecurringcontributions($params) {
     return civicrm_api3_create_success(
       E::ts(
         '%1 contribution record(s) were processed.',
-        array(
+        [
           1 => $counter,
-        )
+        ]
       ) . "<br />" . implode("<br />", $output)
     );
   }

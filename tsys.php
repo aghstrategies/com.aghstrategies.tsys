@@ -21,10 +21,10 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       $statusesToShowDeviceLinks = ['Pending', 'Partially paid'];
       if (!empty($contribDetails['contribution_status'])
@@ -56,10 +56,10 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if (!empty($contribDetails['contribution_status'])
       && in_array($contribDetails['contribution_status'], ['Completed', 'Partially Paid', 'Pending refund'])) {
@@ -72,10 +72,10 @@ function tsys_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$valu
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
         $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
         if (!empty($trxnDetails['status_id']) && $trxnDetails['status_id'] == $completedStatusId) {
@@ -171,18 +171,18 @@ function tsys_civicrm_buildForm($formName, &$form) {
   }
   if ($tsysProcessorOnPage) {
     // Add data-cayan attributes to credit card fields so CayanCheckoutPlus script can find them:
-    $form->updateElementAttr('credit_card_number', array('data-cayan' => 'cardnumber'));
-    $form->updateElementAttr('cvv2', array('data-cayan' => 'cvv'));
+    $form->updateElementAttr('credit_card_number', ['data-cayan' => 'cardnumber']);
+    $form->updateElementAttr('cvv2', ['data-cayan' => 'cvv']);
 
     // AGH #20367 If street address and zip code fields are on the form add
     // data-cayan attributes for them too so that data gets sent to the processor
     if (isset($form->_paymentFields)) {
       foreach ($form->_paymentFields as $field => $value) {
         if (substr($field, 0, 22) == 'billing_street_address') {
-          $form->updateElementAttr($field, array('data-cayan' => 'streetaddress'));
+          $form->updateElementAttr($field, ['data-cayan' => 'streetaddress']);
         }
         if (substr($field, 0, 19) == 'billing_postal_code') {
-          $form->updateElementAttr($field, array('data-cayan' => 'zipcode'));
+          $form->updateElementAttr($field, ['data-cayan' => 'zipcode']);
         }
       }
     }
@@ -301,10 +301,10 @@ function tsys_civicrm_check(&$messages) {
   }
   catch (CRM_Core_Exception $e) {
     $error = $e->getMessage();
-    CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+    CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
       'domain' => 'com.aghstrategies.tsys',
       1 => $error,
-    )));
+    ]));
   }
 
   // If one or more payment processors are set up
@@ -346,10 +346,10 @@ function tsys_civicrm_check(&$messages) {
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if (!empty($failedContributions['values']) && $failedContributions['count'] > 0) {
         $recurContributionToLookInto = [];
@@ -363,10 +363,10 @@ function tsys_civicrm_check(&$messages) {
           }
           catch (CRM_Core_Exception $e) {
             $error = $e->getMessage();
-            CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+            CRM_Core_Error::debug_log_message(ts('API Error %1', [
               'domain' => 'com.aghstrategies.tsys',
               1 => $error,
-            )));
+            ]));
           }
           if (!empty($payments['count']) && $payments['count'] > 0) {
             $recurContributionToLookInto[] = $value['id'];
@@ -381,15 +381,15 @@ function tsys_civicrm_check(&$messages) {
           if ($failedContributions['count'] > 5) {
             $warningLevel = \Psr\Log\LogLevel::ERROR;
           }
-          $tsParams = array(
+          $tsParams = [
             1 => $failedContributions['count'],
             2 => $recurContributionToLookInto,
-          );
+          ];
           $details = E::ts('%1 Recurring Contribution(s) not successfully processed including the following recurring contribution(s): %2. <br></br> For more information run a "Recurring Contributions" report and filter for "Contribution Status" of "Pending"', $tsParams);
           $messages[] = new CRM_Utils_Check_Message(
             'failed_recurring_contributions_found',
             $details,
-            E::ts('Uncompleted Recurring Genius Contributions Found', array('domain' => 'com.aghstrategies.tsys')),
+            E::ts('Uncompleted Recurring Genius Contributions Found', ['domain' => 'com.aghstrategies.tsys']),
             $warningLevel,
             'fa-user-times'
           );
@@ -409,11 +409,11 @@ function tsys_civicrm_check(&$messages) {
  */
 function tsys_civicrm_managed(&$entities) {
   // Creates the payment processor entity for the Tsys Payment Processor
-  $entities[] = array(
+  $entities[] = [
     'module' => 'com.aghstrategies.tsys',
     'name' => 'TSYS',
     'entity' => 'PaymentProcessorType',
-    'params' => array(
+    'params' => [
       'version' => 3,
       'name' => 'TSYS',
       'title' => 'TSYS',
@@ -430,12 +430,12 @@ function tsys_civicrm_managed(&$entities) {
       'url_recur_test_default' => 'https://cayan.accessaccountdetails.com/',
       'is_recur' => 1,
       'payment_type' => 1,
-    ),
-    'metadata' => array(
+    ],
+    'metadata' => [
       'suppress_submit_button' => 1,
       'payment_fields' => ['payment_token'],
-    ),
-  );
+    ],
+  ];
   return;
 }
 

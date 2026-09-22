@@ -84,10 +84,10 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
         'params' => [
           'total_amount' => 1.01,
           'credit_card_number' => '4012000033330026',
-          'credit_card_exp_date' => array(
+          'credit_card_exp_date' => [
             'M' => '09',
             'Y' => '2000',
-          ),
+          ],
         ],
       ],
       // Field Format Error Failure Test
@@ -155,10 +155,10 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if (!empty($contribution['values'][0]['contribution_status_id'])) {
         foreach ($testDetails['assertions'] as $field => $expectedValue) {
@@ -181,17 +181,17 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
     $form->_mode = 'Live';
     $error = FALSE;
     try {
-      $form->testSubmit(array(
+      $form->testSubmit([
         'total_amount' => 1.01,
         'financial_type_id' => 1,
         'contact_id' => $this->_contactID,
         'contribution_status_id' => 2,
         'credit_card_number' => 4012000033330026,
         'cvv2' => 123,
-        'credit_card_exp_date' => array(
+        'credit_card_exp_date' => [
           'M' => 10,
           'Y' => 2025,
-        ),
+        ],
         'credit_card_type' => 'Visa',
         'billing_first_name' => 'Junko',
         'billing_middle_name' => '',
@@ -214,21 +214,21 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
         'currency' => 'USD',
         'source' => 'bob sled race',
         'unit_test' => 1,
-      ), CRM_Core_Action::ADD, 'live');
+      ], CRM_Core_Action::ADD, 'live');
     }
     catch (Civi\Payment\Exception\PaymentProcessorException $e) {
       $error = TRUE;
     }
 
-    $contribution = civicrm_api3('Contribution', 'get', array(
+    $contribution = civicrm_api3('Contribution', 'get', [
       'contact_id' => $this->_contactID,
       // 'contribution_status_id' => 'Completed',
-    ));
+    ]);
     // print_r($contribution); die();
     $this->assertEquals(1, $contribution["count"], "Contribution count should be one.");
     $this->assertTrue(!empty($contribution["values"][$contribution["id"]]["receipt_date"]), "Receipt date should not be blank.");
 
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->_contactID));
+    $contact = civicrm_api3('Contact', 'getsingle', ['id' => $this->_contactID]);
     $this->assertTrue(empty($contact['source']));
     if (!$error) {
       $msgs = $mut->getAllMessages();
@@ -250,17 +250,17 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
     $form->_mode = 'Live';
     $error = FALSE;
     try {
-      $form->testSubmit(array(
+      $form->testSubmit([
         'total_amount' => 50,
         'financial_type_id' => 1,
         'contact_id' => $this->_contactID,
         'contribution_status_id' => 1,
         'credit_card_number' => 4444333322221111,
         'cvv2' => 123,
-        'credit_card_exp_date' => array(
+        'credit_card_exp_date' => [
           'M' => 9,
           'Y' => 2012,
-        ),
+        ],
         'credit_card_type' => 'Visa',
         'billing_first_name' => 'Junko',
         'billing_middle_name' => '',
@@ -282,21 +282,21 @@ class CRM_Tsys_OneTimeContributionTsysTest extends CRM_Tsys_BaseTest {
         'payment_processor_id' => $this->_paymentProcessorID,
         'currency' => 'USD',
         'source' => 'bob sled race',
-      ), CRM_Core_Action::ADD);
+      ], CRM_Core_Action::ADD);
     }
     catch (Civi\Payment\Exception\PaymentProcessorException $e) {
       $error = TRUE;
     }
 
-    $contribution = civicrm_api3('Contribution', 'get', array(
+    $contribution = civicrm_api3('Contribution', 'get', [
       'contact_id' => $this->_contactID,
       'contribution_status_id' => 'Failed',
-    ));
+    ]);
 
     $this->assertEquals(1, $contribution["count"], "Contribution count should be one.");
     $this->assertTrue(!empty($contribution["values"][$contribution["id"]]["receipt_date"]), "Receipt date should not be blank.");
 
-    $contact = civicrm_api3('Contact', 'getsingle', array('id' => $this->_contactID));
+    $contact = civicrm_api3('Contact', 'getsingle', ['id' => $this->_contactID]);
     $this->assertTrue(empty($contact['source']));
     if (!$error) {
       $msgs = $mut->getAllMessages();

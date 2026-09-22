@@ -69,20 +69,20 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         FALSE
       );
 
-      $this->addButtons(array(
-        array(
+      $this->addButtons([
+        [
           'type' => 'submit',
           'name' => E::ts('Issue Refund'),
           'isDefault' => TRUE,
-        ),
-      ));
+        ],
+      ]);
 
       if (isset($this->maxRefundAmount)) {
         $this->add('hidden','max_refund_amount', $this->maxRefundAmount);
         $defaults['refund_amount'] = $this->maxRefundAmount;
-        CRM_Core_Session::setStatus(E::ts('Amount Available to Refund for this payment is $%1. Submitting this form will result in a refund being issued from your Genius payment processor.', array(
+        CRM_Core_Session::setStatus(E::ts('Amount Available to Refund for this payment is $%1. Submitting this form will result in a refund being issued from your Genius payment processor.', [
           1 => $this->maxRefundAmount,
-        )), '', 'no-popup');
+        ]), '', 'no-popup');
       }
     }
     // If payment has not been batched and thus should be voided
@@ -99,20 +99,20 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
         FALSE
       );
 
-      $this->addButtons(array(
-        array(
+      $this->addButtons([
+        [
           'type' => 'submit',
           'name' => E::ts('Void Payment'),
           'isDefault' => TRUE,
-        ),
-      ));
+        ],
+      ]);
 
       $this->add('hidden','payment_id', $this->_id);
       if (!empty($this->_values['total_amount'])) {
         $defaults['refund_amount'] = $this->_values['total_amount'];
-        CRM_Core_Session::setStatus(E::ts('This transaction has not been settled and so it is recommended that you void the full amount $%1 instead of refunding it. Submitting this form will result in this transaction being voided via your Genius Payment processor.', array(
+        CRM_Core_Session::setStatus(E::ts('This transaction has not been settled and so it is recommended that you void the full amount $%1 instead of refunding it. Submitting this form will result in this transaction being voided via your Genius Payment processor.', [
           1 => $this->_values['total_amount'],
-        )), '', 'no-popup');
+        ]), '', 'no-popup');
       }
     }
     else {
@@ -246,7 +246,7 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
     // items don't have labels.  We'll identify renderable by filtering on
     // the 'label'.
-    $elementNames = array();
+    $elementNames = [];
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
       $label = $element->getLabel();
@@ -279,10 +279,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
 
     // BECAUSE payment.create does not create a Financial Item we need to create
@@ -298,10 +298,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
 
     // Get Financial Type (because we need it to create the financial item)
@@ -314,10 +314,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
 
     try {
@@ -327,10 +327,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
 
     $finItemParams = [
@@ -350,10 +350,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
 
     // And connect the Financial Item to the trxn using Entity Financial Trxn
@@ -367,10 +367,10 @@ class CRM_Tsys_Form_Refund extends CRM_Core_Form {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
   }
 
