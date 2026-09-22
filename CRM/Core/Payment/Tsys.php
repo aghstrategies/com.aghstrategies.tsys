@@ -96,16 +96,16 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @public
    */
   public function checkConfig() {
-    $error = array();
-    $credFields = array(
+    $error = [];
+    $credFields = [
       'user_name' => 'Merchant Name',
       'password' => 'Web API Key',
       'signature' => 'Merchant Site Key',
       'subject' => 'Merchant Site ID',
-    );
+    ];
     foreach ($credFields as $name => $label) {
       if (empty($this->_paymentProcessor[$name])) {
-        $error[] = E::ts("The '%1' is not set in the Genius Payment Processor settings.", array(1 => $label));
+        $error[] = E::ts("The '%1' is not set in the Genius Payment Processor settings.", [1 => $label]);
       }
     }
     if (!empty($error)) {
@@ -141,17 +141,17 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   public static function getPaymentProcessorSettings($paymentProcessorId) {
     $fields = ["signature", "subject", "user_name", "is_test"];
     try {
-      $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', array(
+      $paymentProcessorDetails = civicrm_api3('PaymentProcessor', 'getsingle', [
         'return' => $fields,
         'id' => $paymentProcessorId,
-      ));
+      ]);
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
       return [];
     }
 
@@ -170,7 +170,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @return array of payment processor id => web api key
    */
   public static function getAllTsysPaymentProcessors() {
-    $allTsysPaymentProcessors = array();
+    $allTsysPaymentProcessors = [];
     try {
       $tsysPaymentProcessors = civicrm_api3('PaymentProcessorType', 'getsingle', [
         'title' => "TSYS",
@@ -182,10 +182,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     foreach ($tsysPaymentProcessors['api.PaymentProcessor.get']['values'] as $key => $processor) {
       if (!empty($processor['id']) && !empty($processor['password'])) {
@@ -201,14 +201,14 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @return array
    */
   protected function getCreditCardFormFields() {
-    return array(
+    return [
       'credit_card_type',
       'credit_card_number',
       'cvv2',
       'credit_card_exp_date',
       // ADD PAYMENT TOKEN
       'payment_token',
-    );
+    ];
   }
 
   /**
@@ -237,10 +237,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     // look up the default currency, if its usd set this transaction to use us dollars
     if (!empty($defaultCurrency['values'][0]['defaultCurrency'])
@@ -347,14 +347,14 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     !empty($params['credit_card_exp_date']['Y']) &&
     $params['unit_test'] == 1
     ) {
-      $creditCardInfo = array(
+      $creditCardInfo = [
         'credit_card' => $params['credit_card_number'],
         'cvv' => $params['cvv2'],
         'exp' => $params['credit_card_exp_date']['M'] . substr($params['credit_card_exp_date']['Y'], -2),
         'AvsStreetAddress' => '',
         'AvsZipCode' => '',
         'CardHolder' => "{$params['billing_first_name']} {$params['billing_last_name']}",
-      );
+      ];
       if (!empty($params['location_type_id'])) {
         if (!empty($params['billing_street_address-' . $params['location_type_id']])) {
           $creditCardInfo['AvsStreetAddress'] = $params['billing_street_address-' . $params['location_type_id']];
@@ -395,10 +395,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     if (!empty($paymentToken['count'])) {
       $paymentTokenCount = $paymentToken['count'];
@@ -549,10 +549,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
               }
               catch (CRM_Core_Exception $e) {
                 $error = $e->getMessage();
-                CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+                CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
                   'domain' => 'com.aghstrategies.tsys',
                   1 => $error,
-                )));
+                ]));
               }
             }
             if (!empty($cardType['value'])) {
@@ -572,10 +572,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
         }
       }
       else {
-        CRM_Core_Error::debug_log_message(E::ts('Error retrieving %1 from XML', array(
+        CRM_Core_Error::debug_log_message(E::ts('Error retrieving %1 from XML', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $fieldInXML,
-        )));
+        ]));
       }
     }
     return $params;
@@ -602,7 +602,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   /**
    * support corresponding CiviCRM method
    */
-  public function cancelSubscription(&$message = '', $params = array()) {
+  public function cancelSubscription(&$message = '', $params = []) {
     $userAlert = E::ts('You have cancelled this recurring contribution.');
     CRM_Core_Session::setStatus($userAlert, E::ts('Warning'), 'alert');
     return TRUE;
@@ -660,10 +660,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     // Get Payment Processor Settings
     $tsysCreds = CRM_Core_Payment_Tsys::getPaymentProcessorSettings($params['payment_processor_id']);
@@ -765,10 +765,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
      }
      catch (CRM_Core_Exception $e) {
        $error = $e->getMessage();
-       CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+       CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
          'domain' => 'com.aghstrategies.tsys',
          1 => $error,
-       )));
+       ]));
      }
      if (!empty($result['values'][1]['tsys_devices'])) {
        foreach ($result['values'][1]['tsys_devices'] as $key => &$value) {

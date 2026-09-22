@@ -7,8 +7,8 @@
  */
 
 
-return array(
-  'tsys_devices' => array(
+return [
+  'tsys_devices' => [
     'group_name' => 'TSYS Devices',
     'group' => 'tsys',
     'name' => 'tsys_devices',
@@ -19,5 +19,5 @@ return array(
     'is_contact' => 0,
     'description' => 'Array of Devices',
     'help_text' => 'civicontribute page(s) for which pricesets should be displayed as styled buttons',
-  ),
-);
+  ],
+];

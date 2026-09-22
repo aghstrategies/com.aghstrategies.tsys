@@ -33,10 +33,10 @@ class CRM_Tsys_Recur {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     // Save the payment token to the contribution
     if (!empty($paymentToken['payment_token_id.token'])) {
@@ -46,7 +46,7 @@ class CRM_Tsys_Recur {
     else {
       // CRM_Core_Error::statusBounce(E::ts('Unable to complete payment! Please this to the site administrator with a description of what you were trying to do.'));
       Civi::log()->debug('Genius token was not passed!  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
-      return E::ts('no payment token found for recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
+      return E::ts('no payment token found for recurring contribution in series id %1: ', [1 => $contribution['contribution_recur_id']]);
     }
 
     // Get tsys credentials.
@@ -58,7 +58,7 @@ class CRM_Tsys_Recur {
     if (empty($tsysCreds)) {
       CRM_Core_Error::statusBounce(E::ts('No valid payment processor credentials found'));
       Civi::log()->debug('No valid Genius credentials found.  Report this message to the site administrator. $contribution: ' . print_r($contribution, TRUE));
-      return E::ts('no Genius Credentials found for payment processor id: %1 ', array(1 => $contribution['payment_processor']));
+      return E::ts('no Genius Credentials found for payment processor id: %1 ', [1 => $contribution['payment_processor']]);
     }
 
     // Use the payment token to make the transaction
@@ -72,10 +72,10 @@ class CRM_Tsys_Recur {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     if (!empty($contributionResult)) {
       // Pass back the created id indirectly since I'm calling by reference.
@@ -83,46 +83,46 @@ class CRM_Tsys_Recur {
       // Connect to a membership if requested.
       if (!empty($options['membership_id'])) {
         try {
-         $membershipPayment = civicrm_api3('MembershipPayment', 'create', array(
+         $membershipPayment = civicrm_api3('MembershipPayment', 'create', [
            'contribution_id' => $contribution['id'],
            'membership_id' => $options['membership_id']
-         ));
+         ]);
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
       }
       // if contribution needs to be completed
       if ($contribution['contribution_status_id'] == $completedStatusId) {
-        $complete = array(
+        $complete = [
          'id' => $contribution['id'],
          'payment_processor_id' => $contribution['payment_processor'],
          'trxn_id' => $contribution['trxn_id'],
          'receive_date' => $contribution['receive_date'],
-        );
+        ];
         $complete['is_email_receipt'] = empty($options['is_email_receipt']) ? 0 : 1;
         try {
          $contributionResult = civicrm_api3('contribution', 'completetransaction', $complete);
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
       }
     }
     // Now return the appropriate message.
     if ($contribution['contribution_status_id'] == $completedStatusId && $contributionResult['is_error'] == 0) {
-      return E::ts('Successfully processed recurring contribution in series id %1: ', array(1 => $contribution['contribution_recur_id']));
+      return E::ts('Successfully processed recurring contribution in series id %1: ', [1 => $contribution['contribution_recur_id']]);
     }
     else {
-      return E::ts('Failed to process recurring contribution id %1: ', array(1 => $contribution['contribution_recur_id']));
+      return E::ts('Failed to process recurring contribution id %1: ', [1 => $contribution['contribution_recur_id']]);
     }
   }
 
@@ -176,12 +176,12 @@ class CRM_Tsys_Recur {
    */
   public static function getContributionTemplate($contribution) {
     // Get the 1st contribution in the series that matches the total_amount:
-    $template = array();
-    $get = array(
+    $template = [];
+    $get = [
       'contribution_recur_id' => $contribution['contribution_recur_id'],
-      'options' => array('sort' => ' id', 'limit' => 1),
+      'options' => ['sort' => ' id', 'limit' => 1],
       'return' => ['tax_amount', 'contribution_recur_id', 'total_amount', 'id', 'campaign_id', 'amount_level'],
-    );
+    ];
     if (!empty($contribution['total_amount'])) {
       $get['total_amount'] = $contribution['total_amount'];
     }
@@ -190,10 +190,10 @@ class CRM_Tsys_Recur {
     }
     catch (CRM_Core_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+      CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
         'domain' => 'com.aghstrategies.tsys',
         1 => $error,
-      )));
+      ]));
     }
     if (!empty($ogContribution['values'])) {
       $contribution_ids = array_keys($ogContribution['values']);
@@ -202,22 +202,22 @@ class CRM_Tsys_Recur {
       if ($ogContribution['values'][$contribution_ids[0]]['tax_amount']) {
         $template['tax_amount'] = $ogContribution['values'][$contribution_ids[0]]['tax_amount'];
       }
-      $template['line_items'] = array();
-      $get = array('entity_table' => 'civicrm_contribution', 'entity_id' => $contribution_ids[0]);
+      $template['line_items'] = [];
+      $get = ['entity_table' => 'civicrm_contribution', 'entity_id' => $contribution_ids[0]];
       try {
         $lineItem = civicrm_api3('LineItem', 'get', $get);
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if (!empty($lineItem['values'])) {
         foreach ($lineItem['values'] as $initial_line_item) {
-          $line_item = array();
-          foreach (array(
+          $line_item = [];
+          foreach ([
             'price_field_id',
             'qty',
             'line_total',
@@ -225,7 +225,7 @@ class CRM_Tsys_Recur {
             'label',
             'price_field_value_id',
             'financial_type_id',
-          ) as $key) {
+          ] as $key) {
             $line_item[$key] = $initial_line_item[$key];
           }
           $template['line_items'][] = $line_item;
@@ -242,9 +242,9 @@ class CRM_Tsys_Recur {
    */
   public static function getInstallmentsDone($type = 'simple') {
     // Restrict this method of recurring contribution processing to only this payment processors.
-    $args = array(
-      1 => array('Payment_Tsys', 'String'),
-    );
+    $args = [
+      1 => ['Payment_Tsys', 'String'],
+    ];
 
     if ($type == 'simple') {
       $select = 'SELECT cr.id, count(c.id) AS installments_done, cr.installments
@@ -320,10 +320,10 @@ class CRM_Tsys_Recur {
       }
       catch (CRM_Core_Exception $e) {
         $error = $e->getMessage();
-        CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+        CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
           'domain' => 'com.aghstrategies.tsys',
           1 => $error,
-        )));
+        ]));
       }
       if (!empty($paymentToken['id'])) {
         try {
@@ -335,10 +335,10 @@ class CRM_Tsys_Recur {
         }
         catch (CRM_Core_Exception $e) {
           $error = $e->getMessage();
-          CRM_Core_Error::debug_log_message(E::ts('API Error %1', array(
+          CRM_Core_Error::debug_log_message(E::ts('API Error %1', [
             'domain' => 'com.aghstrategies.tsys',
             1 => $error,
-          )));
+          ]));
         }
         $paymentTokenId = $paymentToken['id'];
       }

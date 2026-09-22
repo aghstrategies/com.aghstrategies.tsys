@@ -56,10 +56,10 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
     $results = $this->processRecurringContribution($params);
     $results = $this->processRecurringContributionResponse($results, $this->_completedStatusID);
     $results['receive_date'] = "2009-07-01 11:53:50";
-    $message = CRM_Tsys_Recur::processContributionPayment($results, array(), $results['id']);
+    $message = CRM_Tsys_Recur::processContributionPayment($results, [], $results['id']);
     $this->assertEquals($message, ts(
       'Successfully processed recurring contribution in series id %1: ',
-      array(1 => $results['contribution_recur_id'])
+      [1 => $results['contribution_recur_id']]
     ));
     $this->spitOutResults('MerchantWARE 4.5 37.00 M', $results);
   }
@@ -104,10 +104,10 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
 
     $unBoard = CRM_Tsys_Soap::composeUnBoardCardSoapRequest($results['vault_token'], $this->_tsysCreds);
     $results['receive_date'] = "2009-07-01 11:53:50";
-    $response = CRM_Tsys_Recur::processContributionPayment($results, array(), $results['id']);
+    $response = CRM_Tsys_Recur::processContributionPayment($results, [], $results['id']);
     $this->assertEquals($response, ts(
       'Failed to process recurring contribution id %1: ',
-      array(1 => $results['contribution_recur_id'])
+      [1 => $results['contribution_recur_id']]
     ));
     $this->spitOutResults('MerchantWARE 4.5 43.00 M', $results);
   }
@@ -159,10 +159,10 @@ class CRM_Tsys_RecurringContributionTsysTest extends CRM_Tsys_BaseTest {
     ];
     $contrib = $this->processRecurringContribution($params, $dates);
     $contrib = $this->processRecurringContributionResponse($contrib, $this->_completedStatusID);
-    $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', array(
+    $recurringContribution = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contrib['contribution_recur_id'],
       'return' => ["payment_token_id", 'next_sched_contribution_date', 'amount', 'id'],
-    ));
+    ]);
     $recurJob = $this->assertCronRuns("2019-01-02 11:46:27");
     $this->assertEquals($recurJob['count'], 1);
     $this->assertEquals($recurJob['is_error'], 0);
