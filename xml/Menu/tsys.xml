@@ -29,6 +29,7 @@
     <page_callback>CRM_Tsys_Page_GetTransportKey</page_callback>
     <title>GetTransportKey</title>
     <access_arguments>1</access_arguments>
+    <is_ajax>true</is_ajax>
   </item>
   <item>
     <path>civicrm/tsysdevicepayment</path>
