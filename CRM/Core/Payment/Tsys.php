@@ -1,5 +1,5 @@
 <?php
-
+use Civi\Payment\PropertyBag;
 use CRM_Tsys_ExtensionUtil as E;
 
 /**
@@ -266,12 +266,15 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doPayment(&$params, $component = 'contribute') {
-    // AGH #19994 if amount is 0 skip pinging tsys and just record a completed payment
+	  $propertyBag = PropertyBag::cast($paymentParams);
+ 	  
+     // AGH #19994 if amount is 0 skip pinging tsys and just record a completed payment
     if ($params['amount'] == 0) {
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $params['contribution_status_id'] = $completedStatusId;
       return $params;
     }
+    $propertyBag = $this->beginDoPayment($propertyBag);
     if (empty($params['invoice_number'])) {
       $params['invoice_number'] = rand(1, 9999999);
     }
@@ -375,8 +378,10 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $errorMessage = self::handleErrorNotification('No Payment Token', $params['tsys_error_url']);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
-    $params = self::processTransaction($makeTransaction, $params, $tsysCreds);
-    return $params;
+    $trxnDetails = self::processTransaction($makeTransaction, $params, $tsysCreds);
+    $params = $this->getPropertyBagAsArray($propertyBag);
+    $params = array_merge($params, $trxnDetails);
+    return $this->endDoPayment($params);
   }
 
   /**
@@ -406,6 +411,135 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     return $paymentTokenCount;
   }
 
+    /**
+   * Call this at the end of a call to CRM_Core_Payment::doPayment() to build the
+   * standard return parameters array.
+   *
+   * @param \Civi\Payment\PropertyBag|array $params
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function endDoPayment($params) {
+    $propertyBag = PropertyBag::cast($params);
+
+    // We need to set this to ensure that contributions are set to the correct status
+    // It should have already been set to "Completed" if we made a successful payment
+    if (!$propertyBag->has('payment_status_id')) {
+      $propertyBag = $this->setStatusPaymentPending($propertyBag);
+    }
+
+    // payment_status is the newer property. It *should* be set but we'll make sure.
+    if (!$propertyBag->has('payment_status')) {
+      CRM_Core_Error::deprecatedWarning('endDoPayment payment_status is not set! Make sure you are using setStatusPaymentPending/Completed');
+      if ($propertyBag->getCustomProperty('payment_status_id') == CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed')) {
+        $propertyBag->setCustomProperty('payment_status', 'Completed');
+      }
+      else {
+        $propertyBag->setCustomProperty('payment_status', 'Pending');
+      }
+    }
+
+    // See https://lab.civicrm.org/dev/financial/-/issues/141
+    $returnParams = [
+      'payment_status_id' => $propertyBag->getCustomProperty('payment_status_id'),
+      'payment_status' => $propertyBag->getCustomProperty('payment_status'),
+      'trxn_id' => $propertyBag->transactionID,
+      'order_reference' => $propertyBag->transactionID ?? NULL,
+    ];
+    if ($propertyBag->has('feeAmount')) {
+      $returnParams['fee_amount'] = $propertyBag->getFeeAmount();
+    }
+    return $returnParams;
+  }
+
+
+    /**
+   * Call this at the beginning of call to CRM_Core_Payment::doPayment()
+   * to ensure that all necessary parameters are set.
+   *
+   * @param \Civi\Payment\PropertyBag $propertyBag
+   *
+   * @return \Civi\Payment\PropertyBag
+   */
+  protected function beginDoPayment($propertyBag) {
+    // Make sure it's a propertyBag
+    $propertyBag = PropertyBag::cast($propertyBag);
+    // This currently doesn't have a default (5.27). Should be fixed in a future version of CiviCRM.
+    if (!$propertyBag->has('isRecur')) {
+      $propertyBag->setIsRecur(FALSE);
+    }
+
+    if (!$propertyBag->has('billingCountry') && $propertyBag->has('country')) {
+      $propertyBag->setBillingCountry($propertyBag->getCustomProperty('country'));
+    }
+
+    // Make sure we have a description for the contribution
+    if (!$propertyBag->has('description')) {
+      $propertyBag->setDescription(E::ts('Contribution: TSYS'));
+    }
+
+    // $propertyBag->setCustomProperty('error_url', $this->getErrorUrl($propertyBag));
+
+    // Make sure we have a contactID set on propertyBag
+    $this->getContactId($propertyBag);
+    return $propertyBag;
+  }
+
+ /**
+   * Get the contact id
+   *
+   * @param \Civi\Payment\PropertyBag $propertyBag
+   *
+   * @return int|NULL The ContactID
+   */
+  protected function getContactId(&$propertyBag) {
+    if ($propertyBag->has('contactID')) {
+      return $propertyBag->getContactID();
+    }
+
+    // cms_contactID is set by: membership payment workflow when "on behalf of" / related contact is used.
+    $contactId = $propertyBag->getter('cms_contactID', TRUE) ?? $propertyBag->getter('cid', TRUE);
+    if (empty($contactId)) {
+      // FIXME: Ref: https://lab.civicrm.org/extensions/stripe/issues/16
+      // The problem is that when registering for a paid event, civicrm does not pass in the
+      // contact id to the payment processor (civicrm version 5.3). So, I had to patch your
+      // getContactId to check the session for a contact id. It's a hack and probably should be fixed in core.
+      // The code below is exactly what CiviEvent does, but does not pass it through to the next function.
+      $session = CRM_Core_Session::singleton();
+      $contactId = $session->get('transaction.userID', NULL);
+    }
+    if (!empty($contactId)) {
+      $propertyBag->setContactID($contactId);
+      return $propertyBag->getContactID();
+    }
+    return NULL;
+  }
+
+    /**
+   * This converts from \Civi\Payment\PropertyBag to array
+   * It can be called on a propertyBag or an array.
+   * @see https://github.com/civicrm/civicrm-core/pull/17507
+   *
+   * @param array|\Civi\Payment\PropertyBag $propertyBag
+   * @param string $label
+   *
+   * @return mixed
+   * @throws \ReflectionException
+   */
+  public function getPropertyBagAsArray($propertyBag, $label = 'default') {
+    if ($propertyBag instanceof PropertyBag) {
+      $reflectionClass = new ReflectionClass($propertyBag);
+      $reflectionProperty = $reflectionClass->getProperty('props');
+      $reflectionProperty->setAccessible(TRUE);
+      $params = $reflectionProperty->getValue($propertyBag)['default'];
+    }
+    else {
+      $params = $propertyBag;
+    }
+    return $params;
+  }
+
   /**
    * After making the Tsys Soap Call, deal with the response
    * @param  object $makeTransaction response from tsys
@@ -424,6 +558,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
+      $params['payment_status'] = "Complete";
 
       // Check if the token has been saved to the database
       $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
