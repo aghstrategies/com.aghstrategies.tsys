@@ -379,9 +379,14 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
     $trxnDetails = self::processTransaction($makeTransaction, $params, $tsysCreds);
-    $params = $this->getPropertyBagAsArray($propertyBag);
-    $params = array_merge($params, $trxnDetails);
-    return $this->endDoPayment($params);
+    \Civi::log()->debug('trxnDetails dump: {data}', [
+      'data' => print_r($trxnDetails, TRUE),
+    ]);
+    if ($trxnDetails['payment_status'] == "Completed") {
+	    $this->setStatusPaymentCompleted($propertyBag);
+	    $propertyBag->setAmount($params['amount']);
+    }
+    return $this->endDoPayment($trxnDetails);
   }
 
   /**
@@ -558,7 +563,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       // Successful contribution update the status and get the rest of the info from Tsys Response
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $completedStatusId;
-      $params['payment_status'] = "Complete";
+      $params['payment_status'] = "Completed";
 
       // Check if the token has been saved to the database
       $previousTransactionToken = (string) $makeTransaction->Body->SaleResponse->SaleResult->Token;
