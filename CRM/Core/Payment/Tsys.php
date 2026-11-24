@@ -581,6 +581,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       if (!empty($params['is_recur'])
       && $savedTokens == 0
       && !empty($params['contributionRecurID'])) {
+        $propertyBag->setIsRecur(TRUE);
         $paymentTokenId = CRM_Tsys_Recur::boardCard(
           $params['contributionRecurID'],
           $previousTransactionToken,
