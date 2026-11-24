@@ -456,7 +456,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     $returnParams = [
       'payment_status_id' => $propertyBag->getCustomProperty('payment_status_id'),
       'payment_status' => $propertyBag->getCustomProperty('payment_status'),
-      'trxn_id' => $propertyBag->transactionID,
+      'trxn_id' => $params['trxn_id'],
       'order_reference' => $propertyBag->transactionID ?? NULL,
     ];
     if ($propertyBag->has('feeAmount')) {
