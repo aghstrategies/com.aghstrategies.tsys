@@ -267,13 +267,17 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
    */
   public function doPayment(&$params, $component = 'contribute') {
 	  $propertyBag = PropertyBag::cast($paymentParams);
- 	  
+
      // AGH #19994 if amount is 0 skip pinging tsys and just record a completed payment
     if ($params['amount'] == 0) {
       $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       $params['payment_status_id'] = $params['contribution_status_id'] = $completedStatusId;
+      $params['payment_status'] = "Completed";
+      $this->setStatusPaymentCompleted($propertyBag);
+      $propertyBag->setAmount(0);
       return $params;
     }
+
     $propertyBag = $this->beginDoPayment($propertyBag);
     if (empty($params['invoice_number'])) {
       $params['invoice_number'] = rand(1, 9999999);
@@ -286,7 +290,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     if (!(array_key_exists('qfKey', $params))) {
       // Probably not called from a civicrm form (e.g. webform) -
       // will return error object to original api caller.
-      $params['stripe_error_url'] = NULL;
+      $params['tsys_error_url'] = NULL;
     }
     else {
       $qfKey = $params['qfKey'];
@@ -294,6 +298,9 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $url_path = substr($parsed_url['path'], 1);
       $params['tsys_error_url'] = CRM_Utils_System::url($url_path,
       $parsed_url['query'] . "&_qf_Main_display=1&qfKey={$qfKey}", FALSE, NULL, FALSE);
+    }
+    if (!empty($params['tsys_error_url'])) {
+      $propertyBag->setCustomProperty('error_url', $params['tsys_error_url']);
     }
 
     // IF currency is not USD throw error and quit
@@ -379,9 +386,9 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
     $trxnDetails = self::processTransaction($makeTransaction, $params, $tsysCreds);
-    \Civi::log()->debug('trxnDetails dump: {data}', [
-      'data' => print_r($trxnDetails, TRUE),
-    ]);
+    // \Civi::log()->debug('trxnDetails dump: {data}', [
+    //   'data' => print_r($trxnDetails, TRUE),
+    // ]);
     if ($trxnDetails['payment_status'] == "Completed") {
 	    $this->setStatusPaymentCompleted($propertyBag);
 	    $propertyBag->setAmount($params['amount']);
@@ -470,6 +477,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
   protected function beginDoPayment($propertyBag) {
     // Make sure it's a propertyBag
     $propertyBag = PropertyBag::cast($propertyBag);
+
     // This currently doesn't have a default (5.27). Should be fixed in a future version of CiviCRM.
     if (!$propertyBag->has('isRecur')) {
       $propertyBag->setIsRecur(FALSE);
@@ -481,7 +489,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
 
     // Make sure we have a description for the contribution
     if (!$propertyBag->has('description')) {
-      $propertyBag->setDescription(E::ts('Contribution: TSYS'));
+      $propertyBag->setDescription(E::ts('Contribution: Global Payments'));
     }
 
     // $propertyBag->setCustomProperty('error_url', $this->getErrorUrl($propertyBag));
@@ -521,7 +529,7 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     return NULL;
   }
 
-    /**
+  /**
    * This converts from \Civi\Payment\PropertyBag to array
    * It can be called on a propertyBag or an array.
    * @see https://github.com/civicrm/civicrm-core/pull/17507
