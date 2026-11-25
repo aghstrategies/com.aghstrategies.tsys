@@ -385,15 +385,15 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
       $errorMessage = self::handleErrorNotification('No Payment Token', $params['tsys_error_url']);
       throw new \Civi\Payment\Exception\PaymentProcessorException('Failed to create Genius Charge: ' . $errorMessage);
     }
-    $trxnDetails = self::processTransaction($makeTransaction, $params, $tsysCreds, $propertyBag);
-    // \Civi::log()->debug('trxnDetails dump: {data}', [
-    //   'data' => print_r($trxnDetails, TRUE),
+    $params = self::processTransaction($makeTransaction, $params, $tsysCreds, $propertyBag);
+    // \Civi::log()->debug('params dump: {data}', [
+    //   'data' => print_r($params, TRUE),
     // ]);
-    if ($trxnDetails['payment_status'] == "Completed") {
+    if ($params['payment_status'] == "Completed") {
 	    $this->setStatusPaymentCompleted($propertyBag);
 	    $propertyBag->setAmount($params['amount']);
     }
-    return $this->endDoPayment($trxnDetails);
+    return $this->endDoPayment($params);
   }
 
   /**
@@ -462,7 +462,8 @@ class CRM_Core_Payment_Tsys extends CRM_Core_Payment {
     if ($propertyBag->has('feeAmount')) {
       $returnParams['fee_amount'] = $propertyBag->getFeeAmount();
     }
-    return $returnParams;
+
+    return $params;
   }
 
 
